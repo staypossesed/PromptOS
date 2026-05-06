@@ -1,0 +1,77 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 36 38% 97%;
+    --foreground: 35 16% 12%;
+    --card: 0 0% 100%;
+    --card-foreground: 35 16% 12%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 35 16% 12%;
+    --primary: 19 61% 46%;
+    --primary-foreground: 36 38% 97%;
+    --secondary: 36 33% 92%;
+    --secondary-foreground: 35 16% 18%;
+    --muted: 36 30% 94%;
+    --muted-foreground: 35 11% 36%;
+    --accent: 22 64% 90%;
+    --accent-foreground: 35 16% 12%;
+    --destructive: 0 65% 45%;
+    --destructive-foreground: 36 38% 97%;
+    --border: 35 22% 88%;
+    --input: 35 22% 88%;
+    --ring: 19 61% 46%;
+    --radius: 0.875rem;
+    --font-fraunces: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
+  }
+
+  * { @apply border-border; }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  ::selection { @apply bg-clay-200 text-ink-900; }
+}
+
+@layer utilities {
+  .bg-paper {
+    background-color: hsl(var(--background));
+    background-image:
+      radial-gradient(at 0% 0%, hsla(22, 64%, 90%, 0.35) 0px, transparent 50%),
+      radial-gradient(at 98% 2%, hsla(36, 38%, 90%, 0.5) 0px, transparent 50%),
+      radial-gradient(at 50% 100%, hsla(22, 50%, 88%, 0.25) 0px, transparent 50%);
+  }
+
+  .text-balance { text-wrap: balance; }
+  .text-pretty  { text-wrap: pretty; }
+  .border-hairline { @apply border border-ink-100/80; }
+
+  .card-soft {
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.6) inset,
+      0 1px 2px 0 rgba(66,29,14,0.04),
+      0 8px 24px -12px rgba(66,29,14,0.08);
+  }
+
+  .card-soft-lg {
+    box-shadow:
+      0 1px 0 0 rgba(255,255,255,0.7) inset,
+      0 2px 4px 0 rgba(66,29,14,0.04),
+      0 16px 40px -16px rgba(66,29,14,0.12);
+  }
+
+  .bg-dotgrid {
+    background-image: radial-gradient(circle at 1px 1px, hsl(35 22% 80%) 1px, transparent 0);
+    background-size: 18px 18px;
+  }
+}
