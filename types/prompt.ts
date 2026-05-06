@@ -22,6 +22,7 @@ export interface PromptContext {
   audience?: string;
   constraints?: string;
   outputFormat?: string;
+  examples?: string;
 }
 
 // ─── Database row shape (matches Supabase prompts table exactly) ───────────

@@ -46,6 +46,7 @@ export function buildMetaPrompt(input: GenerateInput): {
   if (ctx.audience) contextLines.push(`Audience: ${ctx.audience}`);
   if (ctx.constraints) contextLines.push(`Constraints from user: ${ctx.constraints}`);
   if (ctx.outputFormat) contextLines.push(`Output format hint: ${ctx.outputFormat}`);
+  if (ctx.examples) contextLines.push(`Examples / reference: ${ctx.examples}`);
 
   const system = [
     `You are PromptOS, an expert prompt engineer. You turn rough user ideas into execution-ready prompts for the exact AI tool the user has chosen.`,

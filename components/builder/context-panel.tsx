@@ -1,41 +1,60 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
+import type { PromptContext } from "@/types/prompt";
+import { useState } from "react";
 
-const CONTEXT_FIELDS = [
+interface ContextPanelProps {
+  value: PromptContext;
+  onChange: (next: PromptContext) => void;
+}
+
+const CONTEXT_FIELDS: {
+  key: keyof PromptContext;
+  label: string;
+  placeholder: string;
+  type: "input" | "textarea";
+}[] = [
   {
     key: "projectType",
     label: "Project type",
     placeholder: "e.g. Next.js 15 + Supabase SaaS",
-    type: "input" as const,
+    type: "input",
   },
   {
     key: "audience",
     label: "Audience",
     placeholder: "e.g. Series A founders, junior developers",
-    type: "input" as const,
+    type: "input",
   },
   {
     key: "constraints",
     label: "Constraints",
     placeholder: "Must-haves and must-nots. e.g. No external state libraries.",
-    type: "textarea" as const,
+    type: "textarea",
   },
   {
     key: "outputFormat",
     label: "Output format",
     placeholder: "e.g. Single fenced code block, JSON array, bulleted list",
-    type: "input" as const,
+    type: "input",
+  },
+  {
+    key: "examples",
+    label: "Examples / reference",
+    placeholder: "e.g. Notion, Linear, Stripe Docs — inspiration or constraints",
+    type: "textarea",
   },
 ];
 
-export function ContextPanel() {
+export function ContextPanel({ value, onChange }: ContextPanelProps) {
   const [expanded, setExpanded] = useState(false);
+
+  const filledCount = CONTEXT_FIELDS.filter((f) => !!value[f.key]?.trim()).length;
 
   return (
     <div className="rounded-xl border border-ink-200/50 bg-white/60 overflow-hidden">
@@ -53,7 +72,11 @@ export function ContextPanel() {
           </div>
           <div className="text-left">
             <div className="text-sm font-medium text-ink-800">Add context</div>
-            <div className="text-[11px] text-ink-400">Optional — improves the score</div>
+            <div className="text-[11px] text-ink-400">
+              {filledCount > 0
+                ? `${filledCount} field${filledCount > 1 ? "s" : ""} filled`
+                : "Optional — improves the score"}
+            </div>
           </div>
         </div>
         <ChevronDown
@@ -80,11 +103,22 @@ export function ContextPanel() {
                     {field.label}
                   </label>
                   {field.type === "input" ? (
-                    <Input placeholder={field.placeholder} className="bg-white" />
+                    <Input
+                      placeholder={field.placeholder}
+                      className="bg-white"
+                      value={value[field.key] ?? ""}
+                      onChange={(e) =>
+                        onChange({ ...value, [field.key]: e.target.value })
+                      }
+                    />
                   ) : (
                     <Textarea
                       placeholder={field.placeholder}
                       className="bg-white min-h-[72px]"
+                      value={value[field.key] ?? ""}
+                      onChange={(e) =>
+                        onChange({ ...value, [field.key]: e.target.value })
+                      }
                     />
                   )}
                 </div>

@@ -14,6 +14,7 @@ import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-
 import { cn } from "@/lib/utils";
 import { EXAMPLE_IDEAS, type ToolId } from "@/lib/mock-data";
 import type { PromptRecord } from "@/types/prompt";
+import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
 import { Suspense } from "react";
 
@@ -27,6 +28,7 @@ function BuilderInner() {
   // ── Core builder state ──────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
   const [tool, setTool] = useState<ToolId>("claude");
+  const [context, setContext] = useState<PromptContext>({});
   const [generatedPrompt, setGeneratedPrompt] = useState("");
   const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
@@ -68,6 +70,7 @@ function BuilderInner() {
         }
         setIdea(data.idea);
         setTool(data.target_tool);
+        setContext(data.context ?? {});
         setGeneratedPrompt(data.generated_prompt);
         setScore(data.score);
         setSavedId(data.id);
@@ -80,9 +83,8 @@ function BuilderInner() {
   // ── Mark as "unsaved" whenever the user edits after loading ─────────────
   useEffect(() => {
     if (savedId) setIsSaved(false);
-    // Only run when idea/tool/generatedPrompt changes, not on savedId change
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idea, tool, generatedPrompt]);
+  }, [idea, tool, context, generatedPrompt]);
 
   // ── Score helper (shared by generate flow and manual retry) ──────────────
   const runScoring = useCallback(async (prompt: string) => {
@@ -134,7 +136,7 @@ function BuilderInner() {
       const res = await fetch("/api/prompts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, target_tool: tool }),
+        body: JSON.stringify({ idea, target_tool: tool, context }),
       });
 
       if (!res.ok) {
@@ -172,7 +174,7 @@ function BuilderInner() {
     } finally {
       setIsGenerating(false); // safety reset if streaming itself threw
     }
-  }, [idea, tool, isGenerating, isScoring, runScoring]);
+  }, [idea, tool, context, isGenerating, isScoring, runScoring]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = useCallback(() => {
@@ -185,6 +187,7 @@ function BuilderInner() {
       const body = {
         idea,
         target_tool: tool,
+        context,
         generated_prompt: generatedPrompt,
         score,
         title: generateTitleFromIdea(idea),
@@ -221,7 +224,7 @@ function BuilderInner() {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
       }
     });
-  }, [idea, tool, generatedPrompt, score, savedId, router]);
+  }, [idea, tool, context, generatedPrompt, score, savedId, router]);
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
@@ -353,7 +356,7 @@ function BuilderInner() {
                 </div>
 
                 <ToolSelector value={tool} onChange={setTool} />
-                <ContextPanel />
+                <ContextPanel value={context} onChange={setContext} />
               </div>
 
               <Button
