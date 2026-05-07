@@ -11,6 +11,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import { resolveModel } from "@/lib/ai/config";
 import type {
   PromptRecord,
   PromptSummary,
@@ -102,10 +103,11 @@ export async function createPrompt(body: CreatePromptBody): Promise<{
   }
 
   // Log a generation record (best-effort, no rollback if this fails)
+  const { model: defaultModel } = resolveModel();
   await supabase.from("prompt_generations").insert({
     user_id: user.id,
     prompt_id: (data as PromptRecord).id,
-    model: "mock", // will be replaced in Day 4 with real model name
+    model: defaultModel,
     tokens_used: null,
     latency_ms: null,
   });
