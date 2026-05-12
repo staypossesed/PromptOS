@@ -4,9 +4,10 @@ import {
   Sparkles,
   Wand2,
   Gauge,
-  Download,
+  TrendingUp,
   CheckCircle2,
   Zap,
+  Save,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
@@ -23,8 +24,8 @@ export default function LandingPage() {
           <Logo />
           <nav className="hidden md:flex items-center gap-7 text-sm text-ink-600">
             <a href="#features" className="hover:text-ink-900 transition-colors">Features</a>
-            <a href="#tools" className="hover:text-ink-900 transition-colors">Supported tools</a>
             <a href="#how" className="hover:text-ink-900 transition-colors">How it works</a>
+            <a href="#use-cases" className="hover:text-ink-900 transition-colors">Use cases</a>
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
@@ -42,7 +43,6 @@ export default function LandingPage() {
 
       {/* Hero */}
       <section className="relative overflow-hidden">
-        {/* Soft warm glow */}
         <div className="absolute inset-x-0 top-0 -z-10 pointer-events-none">
           <div className="absolute top-0 left-1/2 -translate-x-1/2 size-[800px] rounded-full bg-clay-200/30 blur-3xl" />
           <div className="absolute top-32 right-0 size-[500px] rounded-full bg-clay-100/40 blur-3xl" />
@@ -50,13 +50,11 @@ export default function LandingPage() {
 
         <div className="max-w-6xl mx-auto px-5 lg:px-8 pt-16 md:pt-24 pb-16 md:pb-24">
           <div className="max-w-3xl mx-auto text-center">
-            {/* Eyebrow */}
             <div className="inline-flex items-center gap-2 rounded-full border border-clay-200/60 bg-white/60 backdrop-blur-sm px-3 py-1 text-xs text-ink-600 mb-7">
               <span className="size-1.5 rounded-full bg-clay-500 animate-pulse" />
-              Built for vibe coders, automation freelancers, and creators
+              Built for developers, automation builders, and AI power users
             </div>
 
-            {/* Headline */}
             <h1 className="font-serif text-[44px] md:text-[68px] leading-[1.02] tracking-[-0.02em] text-ink-900 text-balance">
               Describe what you want.
               <br />
@@ -64,19 +62,19 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-ink-500 leading-relaxed max-w-2xl mx-auto text-pretty">
-              PromptOS turns rough ideas into execution-ready prompts for the exact AI tool you use — scored across six dimensions, exported in one click.
+              PromptOS generates execution-ready prompts tuned for the exact AI tool you use —
+              scored across six quality dimensions, one-click optimized, and saved to your workspace.
             </p>
 
-            {/* CTA */}
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/builder">
-                  Start building
+                  Start building free
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                <Link href="/dashboard">View example dashboard</Link>
+                <Link href="/dashboard">View dashboard</Link>
               </Button>
             </div>
 
@@ -86,7 +84,6 @@ export default function LandingPage() {
             </p>
           </div>
 
-          {/* Hero demo card */}
           <div className="mt-14 md:mt-20">
             <LandingHeroDemo />
           </div>
@@ -110,7 +107,8 @@ export default function LandingPage() {
             A workspace built around <span className="italic">how</span> AI tools actually work.
           </h2>
           <p className="mt-5 text-lg text-ink-500 leading-relaxed text-pretty">
-            Generic prompt generators give you generic output. PromptOS is tuned per-tool, scored on real quality dimensions, and exports the way each tool expects.
+            Generic prompt generators give you generic output. PromptOS is tuned per-tool,
+            scored on real quality dimensions, and iterates until the prompt performs.
           </p>
         </div>
 
@@ -128,11 +126,11 @@ export default function LandingPage() {
               From idea to a prompt that actually performs.
             </h2>
 
-            <div className="grid md:grid-cols-3 gap-8 md:gap-10">
+            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8 md:gap-6">
               {STEPS.map((step, i) => (
                 <div key={step.title} className="relative">
                   <div className="flex items-center gap-3 mb-3">
-                    <div className="size-8 rounded-full bg-clay-500 text-white text-sm font-semibold flex items-center justify-center font-mono">
+                    <div className="size-8 rounded-full bg-clay-500 text-white text-sm font-semibold flex items-center justify-center font-mono shrink-0">
                       {i + 1}
                     </div>
                     <step.icon className="size-4 text-ink-400" />
@@ -147,6 +145,43 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* Use cases */}
+      <section id="use-cases" className="max-w-6xl mx-auto px-5 lg:px-8 pb-20 md:pb-28">
+        <div className="max-w-2xl mb-10 md:mb-14">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
+            Use cases
+          </div>
+          <h2 className="font-serif text-4xl md:text-5xl tracking-tight text-ink-900 leading-[1.05]">
+            What people build with PromptOS.
+          </h2>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-5">
+          {USE_CASES.map((uc) => (
+            <div
+              key={uc.title}
+              className="rounded-2xl border border-ink-100/70 bg-white card-soft p-6 space-y-3"
+            >
+              <div className="inline-flex items-center gap-1.5 rounded-full border border-ink-100 bg-cream-50 px-2.5 py-1 text-[11px] font-medium text-ink-600">
+                {uc.tool}
+              </div>
+              <h3 className="font-serif text-xl font-medium text-ink-900 leading-snug">
+                {uc.title}
+              </h3>
+              <p className="text-[14px] text-ink-500 leading-relaxed">
+                {uc.body}
+              </p>
+              <div className="pt-1">
+                <div className="rounded-lg bg-cream-100/70 border border-ink-100/60 px-3 py-2 font-mono text-[11px] text-ink-600 leading-relaxed">
+                  &ldquo;{uc.idea}&rdquo;
+                </div>
+                <p className="text-[11px] text-ink-400 mt-1.5">Example idea typed into PromptOS</p>
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
@@ -178,8 +213,11 @@ export default function LandingPage() {
       <footer className="border-t border-ink-100/60 bg-cream-50/40">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 py-10 flex flex-col md:flex-row items-center justify-between gap-4">
           <Logo />
-          <div className="text-xs text-ink-400">
-            © {new Date().getFullYear()} PromptOS. Crafted for prompt engineers.
+          <div className="flex items-center gap-5 text-xs text-ink-400">
+            <Link href="/privacy" className="hover:text-ink-700 transition-colors">Privacy</Link>
+            <Link href="/terms" className="hover:text-ink-700 transition-colors">Terms</Link>
+            <Link href="/help" className="hover:text-ink-700 transition-colors">Help</Link>
+            <span>© {new Date().getFullYear()} PromptOS</span>
           </div>
         </div>
       </footer>
@@ -191,16 +229,42 @@ const STEPS = [
   {
     icon: Sparkles,
     title: "Describe your goal",
-    body: "Type what you want to build, write, or generate — in plain language. Optionally add context, constraints, and examples.",
+    body: "Type what you want to build, write, or generate in plain language. Add optional context — audience, constraints, output format — to sharpen the result.",
   },
   {
     icon: Wand2,
     title: "Pick your tool",
-    body: "PromptOS knows what Cursor, Claude, and ChatGPT each respond to best — and structures the prompt accordingly.",
+    body: "Choose Cursor, Claude, or ChatGPT. PromptOS knows what each tool responds to best and structures the prompt accordingly — XML tags for Claude, step-by-step for Cursor, persona-first for ChatGPT.",
   },
   {
     icon: Gauge,
-    title: "Score and ship",
-    body: "Get a 0–100 score across clarity, context, constraints, examples, format, and tool fit. Copy or export and go.",
+    title: "Generate & score",
+    body: "Get a full prompt in seconds, immediately scored across six dimensions: Clarity, Context, Constraints, Examples, Output Format, and Tool Fit. Each dimension includes an actionable tip.",
+  },
+  {
+    icon: TrendingUp,
+    title: "Optimize & save",
+    body: 'Click "Optimize weak dimensions" to automatically rewrite the prompt targeting every low-scoring area. Then save it to your workspace — reopen and iterate anytime.',
+  },
+];
+
+const USE_CASES = [
+  {
+    tool: "Cursor",
+    title: "Build a SaaS client portal",
+    body: "Generate a step-by-step Cursor prompt that names the right files, specifies the tech stack, sets acceptance criteria, and lists what not to break.",
+    idea: "Build a client portal with a dashboard, document uploads, and invoice history in Next.js and Supabase",
+  },
+  {
+    tool: "Claude",
+    title: "Deep competitor research",
+    body: "Write a structured Claude prompt that frames the analysis role, scopes the research dimensions, and specifies the output format — ready to paste and run.",
+    idea: "Analyze the top 5 competitors in the AI writing tools space — pricing, positioning, strengths, and gaps",
+  },
+  {
+    tool: "ChatGPT",
+    title: "Cold email campaign",
+    body: "Create a ChatGPT prompt with the right persona, explicit tone guidance, example emails, and a clear deliverable — a full sequence, not a single message.",
+    idea: "Write a 3-email cold outreach sequence targeting early-stage SaaS founders for a dev tools product",
   },
 ];

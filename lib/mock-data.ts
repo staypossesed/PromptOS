@@ -191,8 +191,8 @@ export const MOCK_PROMPTS: MockPrompt[] = [
 ];
 
 export const EXAMPLE_IDEAS = [
-  "Build a Next.js auth flow with magic links",
-  "Write a cold email to a Series A founder",
-  "Generate a landing page hero for a B2B AI tool",
-  "Refactor my React component to use server actions",
+  "Build a SaaS client portal with Cursor",
+  "Write a cold email campaign in ChatGPT",
+  "Analyze competitors with Claude",
+  "Create an n8n lead automation workflow",
 ];

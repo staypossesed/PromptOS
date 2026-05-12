@@ -1,22 +1,22 @@
-import { Wand2, Gauge, Boxes } from "lucide-react";
+import { Wand2, Gauge, TrendingUp } from "lucide-react";
 
 const FEATURES = [
   {
     icon: Wand2,
-    title: "Tool-tuned prompts",
-    body: "Cursor wants codebase context and file paths. Claude wants XML and explicit success criteria. ChatGPT wants persona and few-shot. PromptOS knows the difference.",
+    title: "Tool-tuned generation",
+    body: "Cursor wants file paths and step-by-step instructions. Claude wants XML tags and explicit success criteria. ChatGPT wants persona and few-shot examples. PromptOS knows the difference — and structures the output accordingly.",
     accent: "from-clay-100/80 to-cream-50",
   },
   {
     icon: Gauge,
     title: "Six-dimension score",
-    body: "Every prompt is rated on clarity, context, constraints, examples, output format, and tool fit. Each dimension comes with one actionable tip to push the score up.",
+    body: "Every prompt is rated on Clarity, Context, Constraints, Examples, Output Format, and Tool Fit — each 0 to 100. Each dimension comes with one concrete, actionable tip you can apply immediately.",
     accent: "from-cream-200/80 to-cream-50",
   },
   {
-    icon: Boxes,
-    title: "Export-ready output",
-    body: "Copy as plain text, download as markdown, or send straight to your tool. Soon: Chrome extension to improve prompts anywhere on the web.",
+    icon: TrendingUp,
+    title: "One-click optimization",
+    body: 'Click "Optimize weak dimensions" and PromptOS rewrites the prompt targeting every low-scoring area using the exact tips from your score. A before → after comparison confirms the improvement.',
     accent: "from-clay-50/80 to-cream-50",
   },
 ];
@@ -29,7 +29,6 @@ export function FeatureTriad() {
           key={feature.title}
           className="group relative rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden p-7 hover:card-soft-lg transition-all"
         >
-          {/* Subtle warm gradient backdrop */}
           <div className={`absolute inset-0 bg-gradient-to-br ${feature.accent} opacity-50 pointer-events-none`} />
 
           <div className="relative">
