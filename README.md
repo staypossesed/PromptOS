@@ -173,11 +173,69 @@ To add a new model: add an entry to `MODEL_REGISTRY` in `lib/ai/providers.ts`.
 
 ## Deployment (Vercel)
 
-1. Push to GitHub and import the repo in [vercel.com](https://vercel.com).
-2. Add all env vars in **Project Settings → Environment Variables**.
-3. Set `NEXT_PUBLIC_SITE_URL` to your production domain (e.g. `https://promptos.app`).
-4. Update Supabase **Site URL** and **Redirect URLs** to match the production domain.
-5. Deploy.
+### Step-by-step
+
+1. Push this repo to GitHub (if you haven't already).
+2. Go to [vercel.com](https://vercel.com) → **Add New Project** → import the GitHub repo.
+3. Leave the build settings at their defaults (Next.js is auto-detected).
+4. In **Environment Variables**, add every variable from the table below — paste all seven before the first deploy.
+5. Click **Deploy**. Wait for the build to finish.
+6. Copy your Vercel domain (e.g. `https://promptos.vercel.app` or your custom domain).
+7. **Update `NEXT_PUBLIC_SITE_URL`** in Vercel env vars to that exact domain. Redeploy for it to take effect.
+8. In Supabase → **Authentication → URL Configuration**:
+   - Set **Site URL** to your Vercel domain (e.g. `https://promptos.vercel.app`)
+   - Under **Redirect URLs**, add: `https://promptos.vercel.app/auth/callback`
+   - Keep `http://localhost:3000/auth/callback` in the list for local dev.
+9. Test a magic link login on the production URL (see smoke test below).
+
+### Vercel environment variables
+
+Paste these into **Project Settings → Environment Variables**:
+
+| Variable | Value |
+|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
+| `NEXT_PUBLIC_SITE_URL` | Your Vercel domain, e.g. `https://promptos.vercel.app` |
+| `ANTHROPIC_API_KEY` | Your Anthropic API key (server-only — never use `NEXT_PUBLIC_`) |
+| `DEFAULT_AI_PROVIDER` | `anthropic` |
+| `DEFAULT_AI_MODEL` | `claude-sonnet-4-6` |
+| `SCORE_AI_MODEL` | `claude-sonnet-4-6` |
+
+> **Important:** `ANTHROPIC_API_KEY` must NOT have the `NEXT_PUBLIC_` prefix — it is server-only and must never be exposed to the browser.
+
+### Supabase URL Configuration (after first deploy)
+
+Go to **Supabase → Authentication → URL Configuration** and set:
+
+| Field | Value |
+|---|---|
+| **Site URL** | `https://<your-vercel-domain>` |
+| **Redirect URLs** | `https://<your-vercel-domain>/auth/callback` |
+
+Keep `http://localhost:3000/auth/callback` in Redirect URLs for local development.
+
+---
+
+## Production Smoke Test
+
+After deploying, verify each item manually:
+
+- [ ] Landing page loads at the root URL
+- [ ] "Start building free" CTA links to `/builder`
+- [ ] `/login` loads; entering email sends a magic link
+- [ ] Clicking the magic link in email redirects to `/dashboard`
+- [ ] `/builder` opens; idea input is focusable
+- [ ] Generate prompt → prompt streams in
+- [ ] Score panel shows after generation
+- [ ] Optimize weak dimensions → improved prompt appears with toast
+- [ ] Save prompt → "Saved" badge appears
+- [ ] `/history` shows the saved prompt
+- [ ] Clicking a history item reopens it in `/builder`
+- [ ] `/settings` loads and shows the signed-in email
+- [ ] `/privacy`, `/terms`, `/help` all load without auth
+- [ ] Visiting `/dashboard` while signed out redirects to `/login`
+- [ ] No `console.error` in browser DevTools during the above flows
 
 ---
 
