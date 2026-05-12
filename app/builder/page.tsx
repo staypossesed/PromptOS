@@ -41,7 +41,9 @@ function BuilderInner() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScoring, setIsScoring] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [isSaving, startSaveTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
 
@@ -86,8 +88,10 @@ function BuilderInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idea, tool, context, generatedPrompt]);
 
-  // ── Score helper (shared by generate flow and manual retry) ──────────────
-  const runScoring = useCallback(async (prompt: string) => {
+  // ── Score helper (shared by generate flow, manual retry, and optimize) ─────
+  const runScoring = useCallback(async (
+    prompt: string
+  ): Promise<import("@/types/prompt").PromptScore | null> => {
     setScoreError(null);
     setIsScoring(true);
     setActiveTab("score");
@@ -100,12 +104,15 @@ function BuilderInner() {
       if (res.ok) {
         const { data } = await res.json();
         setScore(data);
+        return data;
       } else {
         const json = await res.json().catch(() => ({}));
         setScoreError(json.error ?? "Scoring failed. Try again.");
+        return null;
       }
     } catch {
       setScoreError("Scoring failed. Check your connection and try again.");
+      return null;
     } finally {
       setIsScoring(false);
     }
@@ -116,6 +123,55 @@ function BuilderInner() {
     if (!generatedPrompt || isScoring || isGenerating) return;
     runScoring(generatedPrompt);
   }, [generatedPrompt, isScoring, isGenerating, runScoring]);
+
+  // ── Optimize weak dimensions ─────────────────────────────────────────────
+  const handleOptimize = useCallback(async () => {
+    if (!generatedPrompt || !score || isOptimizing || isGenerating || isScoring) return;
+
+    const prevOverall = score.overall;
+    setIsOptimizing(true);  // stays true through optimize + re-score
+    setOptimizeError(null);
+    setIsSaved(false);
+
+    try {
+      const res = await fetch("/api/prompts/optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          idea,
+          target_tool: tool,
+          context,
+          generated_prompt: generatedPrompt,
+          score,
+        }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setOptimizeError(json.error ?? "Optimization failed. Try again.");
+        return;
+      }
+      const improved: string = json.data?.improved_prompt;
+      if (!improved) {
+        setOptimizeError("Optimization returned an empty prompt.");
+        return;
+      }
+      setGeneratedPrompt(improved);
+      // isOptimizing stays true during re-scoring so the button stays locked
+      const newScore = await runScoring(improved);
+      // Before/after toast
+      if (newScore) {
+        if (newScore.overall > prevOverall) {
+          showToast("success", `Optimized: ${prevOverall} → ${newScore.overall}`);
+        } else {
+          showToast("success", "Optimized — review the changes.");
+        }
+      }
+    } catch {
+      setOptimizeError("Optimization failed. Check your connection and try again.");
+    } finally {
+      setIsOptimizing(false);
+    }
+  }, [generatedPrompt, score, idea, tool, context, isOptimizing, isGenerating, isScoring, runScoring]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async () => {
@@ -286,7 +342,7 @@ function BuilderInner() {
               variant="outline"
               size="sm"
               onClick={handleSave}
-              disabled={isSaving || isLoading || isGenerating || isScoring || !generatedPrompt}
+              disabled={isSaving || isLoading || isGenerating || isScoring || isOptimizing || !generatedPrompt}
             >
               {isSaving ? (
                 <Loader2 className="size-3.5 animate-spin" />
@@ -363,12 +419,14 @@ function BuilderInner() {
                 size="lg"
                 className="w-full"
                 onClick={handleGenerate}
-                disabled={!idea.trim() || isGenerating || isScoring}
+                disabled={!idea.trim() || isGenerating || isScoring || isOptimizing}
               >
                 {isGenerating ? (
                   <><Loader2 className="size-4 animate-spin" />Generating…</>
                 ) : isScoring ? (
                   <><Loader2 className="size-4 animate-spin" />Scoring…</>
+                ) : isOptimizing ? (
+                  <><Loader2 className="size-4 animate-spin" />Optimizing…</>
                 ) : (
                   <><Wand2 className="size-4" />{generatedPrompt ? "Regenerate" : "Generate prompt"}</>
                 )}
@@ -380,7 +438,7 @@ function BuilderInner() {
                 variant="outline"
                 className="w-full md:hidden"
                 onClick={handleSave}
-                disabled={isSaving || isGenerating || isScoring || !generatedPrompt}
+                disabled={isSaving || isGenerating || isScoring || isOptimizing || !generatedPrompt}
               >
                 {isSaving ? (
                   <Loader2 className="size-4 animate-spin" />
@@ -408,10 +466,11 @@ function BuilderInner() {
                     targetTool={tool}
                     isSaved={isSaved}
                     isGenerating={isGenerating}
+                    isOptimizing={isOptimizing}
                     onRegenerate={handleGenerate}
                   />
                 ) : (
-                  <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} />
+                  <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />
                 )}
               </div>
             </div>
@@ -423,11 +482,12 @@ function BuilderInner() {
                 targetTool={tool}
                 isSaved={isSaved}
                 isGenerating={isGenerating}
+                isOptimizing={isOptimizing}
                 onRegenerate={handleGenerate}
               />
             </div>
             <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-13rem)] sticky top-24">
-              <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} />
+              <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />
             </div>
           </div>
         )}

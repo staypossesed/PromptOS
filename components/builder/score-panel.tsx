@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertTriangle, Lightbulb, RefreshCw, TrendingUp, Wand2 } from "lucide-react";
+import { AlertTriangle, Lightbulb, Loader2, RefreshCw, TrendingUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PromptScore } from "@/types/prompt";
@@ -11,9 +11,20 @@ interface ScorePanelProps {
   isScoring?: boolean;
   error?: string | null;
   onRetry?: () => void;
+  onOptimize?: () => void;
+  isOptimizing?: boolean;
+  optimizeError?: string | null;
 }
 
-export function ScorePanel({ score, isScoring, error, onRetry }: ScorePanelProps) {
+export function ScorePanel({
+  score,
+  isScoring,
+  error,
+  onRetry,
+  onOptimize,
+  isOptimizing,
+  optimizeError,
+}: ScorePanelProps) {
   if (!score) {
     return (
       <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
@@ -80,6 +91,7 @@ export function ScorePanel({ score, isScoring, error, onRetry }: ScorePanelProps
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400">
               <TrendingUp className="size-3" />
               Prompt Score
+              {isScoring && <Loader2 className="size-3 animate-spin ml-0.5" />}
             </div>
             <Grade score={overall} />
           </div>
@@ -109,14 +121,24 @@ export function ScorePanel({ score, isScoring, error, onRetry }: ScorePanelProps
       </div>
 
       {/* Optimize CTA */}
-      <div className="border-t border-ink-100/60 p-4 bg-cream-50/40">
-        <Button className="w-full" variant="default" disabled>
-          <Wand2 className="size-3.5" />
-          Optimize weak dimensions
-          <span className="ml-auto text-[10px] opacity-70 border border-white/30 rounded-full px-1.5 py-0.5">
-            Soon
-          </span>
+      <div className="border-t border-ink-100/60 p-4 bg-cream-50/40 space-y-2">
+        <Button
+          className="w-full"
+          variant="default"
+          onClick={onOptimize}
+          disabled={isOptimizing || isScoring}
+        >
+          {isOptimizing ? (
+            <><Loader2 className="size-3.5 animate-spin" />Optimizing…</>
+          ) : (
+            <><Wand2 className="size-3.5" />Optimize weak dimensions</>
+          )}
         </Button>
+        {optimizeError && (
+          <p className="text-[11px] text-destructive text-center leading-snug">
+            {optimizeError}
+          </p>
+        )}
       </div>
     </div>
   );

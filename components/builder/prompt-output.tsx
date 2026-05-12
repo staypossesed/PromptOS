@@ -17,6 +17,7 @@ interface PromptOutputProps {
   targetTool: ToolId;
   isSaved?: boolean;
   isGenerating?: boolean;
+  isOptimizing?: boolean;
   onRegenerate?: () => void;
 }
 
@@ -25,6 +26,7 @@ export function PromptOutput({
   targetTool,
   isSaved,
   isGenerating,
+  isOptimizing,
   onRegenerate,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
@@ -69,6 +71,11 @@ export function PromptOutput({
             <Badge variant="default" className="gap-1.5">
               <Loader2 className="size-3 animate-spin" />
               Streaming
+            </Badge>
+          ) : isOptimizing ? (
+            <Badge variant="default" className="gap-1.5">
+              <Loader2 className="size-3 animate-spin" />
+              Optimizing
             </Badge>
           ) : (
             <Badge variant="soft">{isSaved ? "Saved" : "Draft"}</Badge>
