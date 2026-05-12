@@ -18,6 +18,8 @@ import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
 import { Suspense } from "react";
 import { track } from "@/lib/analytics";
+import { TEMPLATES } from "@/lib/templates";
+import { OnboardingPanel } from "@/components/builder/onboarding-panel";
 
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
@@ -25,6 +27,7 @@ function BuilderInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
+  const templateId = searchParams.get("template");
 
   // ── Core builder state ──────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
@@ -88,6 +91,17 @@ function BuilderInner() {
       .catch(() => showToast("error", "Failed to load prompt."))
       .finally(() => setIsLoading(false));
   }, [promptId]);
+
+  // ── Prefill from ?template= param (only when not loading an existing prompt)
+  useEffect(() => {
+    if (!templateId || promptId) return;
+    const template = TEMPLATES.find((t) => t.id === templateId);
+    if (!template) return;
+    setIdea(template.idea);
+    setTool(template.target_tool);
+    if (template.context) setContext(template.context);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [templateId]);
 
   // ── Mark as "unsaved" whenever the user edits after loading ─────────────
   useEffect(() => {
@@ -395,6 +409,16 @@ function BuilderInner() {
             Describe what you want — pick your tool — get an execution-ready prompt.
           </p>
         </div>
+
+        {!isLoading && !promptId && !templateId && !idea && (
+          <OnboardingPanel
+            onSelect={(newIdea, newTool, newContext) => {
+              setIdea(newIdea);
+              setTool(newTool);
+              setContext(newContext);
+            }}
+          />
+        )}
 
         {isLoading ? (
           <BuilderSkeleton />

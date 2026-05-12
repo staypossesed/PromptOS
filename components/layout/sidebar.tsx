@@ -35,7 +35,7 @@ const PRIMARY_NAV: NavItem[] = [
 ];
 
 const SECONDARY_NAV: NavItem[] = [
-  { href: "#templates", label: "Templates", icon: Sparkles, badge: "Soon" },
+  { href: "/templates", label: "Templates", icon: Sparkles },
 ];
 
 const FOOTER_NAV: NavItem[] = [
@@ -95,7 +95,7 @@ export function Sidebar() {
 
         <NavGroup label="Library" className="mt-6">
           {SECONDARY_NAV.map((item) => (
-            <NavLink key={item.label} item={item} active={false} disabled />
+            <NavLink key={item.label} item={item} active={pathname === item.href} />
           ))}
         </NavGroup>
       </nav>

@@ -13,11 +13,18 @@ interface MobileNavProps {
   onClose: () => void;
 }
 
-const NAV = [
+interface MobileNavItem {
+  href: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  disabled?: boolean;
+}
+
+const NAV: MobileNavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: Home },
   { href: "/builder", label: "New Prompt", icon: Wand2 },
   { href: "/history", label: "History", icon: History },
-  { href: "#templates", label: "Templates", icon: Sparkles, disabled: true },
+  { href: "/templates", label: "Templates", icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/help", label: "Help & Docs", icon: HelpCircle },
   { href: "/privacy", label: "Privacy", icon: Shield },

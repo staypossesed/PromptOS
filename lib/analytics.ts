@@ -26,12 +26,17 @@ export type AnalyticsEvent =
   | "prompt_downloaded"
   | "history_opened"
   | "settings_opened"
-  | "feedback_submitted";
+  | "feedback_submitted"
+  | "templates_opened"
+  | "template_used"
+  | "onboarding_option_selected";
 
 export interface EventProperties {
   target_tool?: string;
   score_overall?: number;
   action_type?: string;
+  option?: string;
+  template_id?: string;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {

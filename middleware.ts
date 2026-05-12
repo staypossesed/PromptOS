@@ -5,7 +5,7 @@ import { createMiddlewareClient } from "@/lib/supabase/server";
  * Routes that require an active session.
  * Any path that starts with these prefixes will be guarded.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/settings"];
+const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/settings", "/templates"];
 
 /**
  * Routes that authenticated users should not see.
