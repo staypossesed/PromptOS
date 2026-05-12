@@ -9,13 +9,16 @@ import { ToolSelector } from "@/components/builder/tool-selector";
 import { ContextPanel } from "@/components/builder/context-panel";
 import { PromptOutput } from "@/components/builder/prompt-output";
 import { ScorePanel } from "@/components/builder/score-panel";
+import { PackTypeSelector } from "@/components/builder/pack-type-selector";
+import { PromptPackOutput } from "@/components/builder/prompt-pack-output";
 import { Button } from "@/components/ui/button";
-import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EXAMPLE_IDEAS, type ToolId } from "@/lib/mock-data";
 import type { PromptRecord } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
+import type { PackType, PromptPack } from "@/types/prompt-pack";
 import { Suspense } from "react";
 import { track } from "@/lib/analytics";
 import { TEMPLATES } from "@/lib/templates";
@@ -29,6 +32,9 @@ function BuilderInner() {
   const promptId = searchParams.get("id");
   const templateId = searchParams.get("template");
 
+  // ── Mode ────────────────────────────────────────────────────────────────
+  const [mode, setMode] = useState<"single" | "pack">("single");
+
   // ── Core builder state ──────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
   const [tool, setTool] = useState<ToolId>("claude");
@@ -37,6 +43,12 @@ function BuilderInner() {
   const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+
+  // ── Pack state ──────────────────────────────────────────────────────────
+  const [packType, setPackType] = useState<PackType>("build_an_app");
+  const [packResult, setPackResult] = useState<PromptPack | null>(null);
+  const [isGeneratingPack, setIsGeneratingPack] = useState(false);
+  const [packError, setPackError] = useState<string | null>(null);
 
   // ── Tab state (mobile) ──────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState<"prompt" | "score">("prompt");
@@ -195,6 +207,38 @@ function BuilderInner() {
       setIsOptimizing(false);
     }
   }, [generatedPrompt, score, idea, tool, context, isOptimizing, isGenerating, isScoring, runScoring]);
+
+  // ── Generate Pack ────────────────────────────────────────────────────────
+  const handleGeneratePack = useCallback(async () => {
+    if (!idea.trim()) {
+      showToast("error", "Add your idea first.");
+      return;
+    }
+    if (isGeneratingPack) return;
+
+    setIsGeneratingPack(true);
+    setPackResult(null);
+    setPackError(null);
+
+    try {
+      const res = await fetch("/api/prompt-packs/generate", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea, pack_type: packType, context }),
+      });
+      const json = await res.json();
+      if (!res.ok) {
+        setPackError(json.error ?? "Pack generation failed. Try again.");
+        return;
+      }
+      setPackResult(json.data);
+      track("prompt_pack_generated", { pack_type: packType });
+    } catch {
+      setPackError("Pack generation failed. Check your connection and try again.");
+    } finally {
+      setIsGeneratingPack(false);
+    }
+  }, [idea, packType, context, isGeneratingPack]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async () => {
@@ -401,16 +445,46 @@ function BuilderInner() {
       )}
 
       <main className="flex-1 px-4 md:px-8 lg:px-10 py-6 md:py-8">
-        <div className="mb-6">
-          <h1 className="font-serif text-2xl md:text-3xl tracking-tight text-ink-900 leading-tight">
-            {savedId ? "Edit prompt" : "New prompt"}
-          </h1>
-          <p className="text-sm text-ink-400 mt-1">
-            Describe what you want — pick your tool — get an execution-ready prompt.
-          </p>
+        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h1 className="font-serif text-2xl md:text-3xl tracking-tight text-ink-900 leading-tight">
+              {mode === "pack" ? "Prompt Pack" : savedId ? "Edit prompt" : "New prompt"}
+            </h1>
+            <p className="text-sm text-ink-400 mt-1">
+              {mode === "pack"
+                ? "Generate 5 coordinated prompts that execute a complete project end to end."
+                : "Describe what you want — pick your tool — get an execution-ready prompt."}
+            </p>
+          </div>
+
+          {/* Mode toggle */}
+          <div className="flex p-1 bg-cream-100 rounded-full border border-ink-100/60 shrink-0">
+            <button
+              type="button"
+              onClick={() => setMode("single")}
+              className={cn(
+                "flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all",
+                mode === "single" ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
+              )}
+            >
+              <Wand2 className="size-3.5" />
+              Single
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("pack")}
+              className={cn(
+                "flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all",
+                mode === "pack" ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
+              )}
+            >
+              <Layers className="size-3.5" />
+              Pack
+            </button>
+          </div>
         </div>
 
-        {!isLoading && !promptId && !templateId && !idea && (
+        {!isLoading && !promptId && !templateId && !idea && mode === "single" && (
           <OnboardingPanel
             onSelect={(newIdea, newTool, newContext) => {
               setIdea(newIdea);
@@ -422,7 +496,34 @@ function BuilderInner() {
 
         {isLoading ? (
           <BuilderSkeleton />
+        ) : mode === "pack" ? (
+          /* ── Pack mode layout ─────────────────────────────────────────── */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            <div className="lg:col-span-4 space-y-5">
+              <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 space-y-5">
+                <IdeaInput value={idea} onChange={setIdea} />
+                <ContextPanel value={context} onChange={setContext} />
+                <PackTypeSelector value={packType} onChange={setPackType} />
+              </div>
+              <Button
+                size="lg"
+                className="w-full"
+                onClick={handleGeneratePack}
+                disabled={!idea.trim() || isGeneratingPack}
+              >
+                {isGeneratingPack ? (
+                  <><Loader2 className="size-4 animate-spin" />Generating pack…</>
+                ) : (
+                  <><Layers className="size-4" />{packResult ? "Regenerate pack" : "Generate pack"}</>
+                )}
+              </Button>
+            </div>
+            <div className="lg:col-span-8">
+              <PromptPackOutput pack={packResult} isGenerating={isGeneratingPack} error={packError} />
+            </div>
+          </div>
         ) : (
+          /* ── Single mode layout ───────────────────────────────────────── */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Left: input column */}
             <div className="lg:col-span-4 space-y-5">

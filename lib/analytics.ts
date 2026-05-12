@@ -29,7 +29,9 @@ export type AnalyticsEvent =
   | "feedback_submitted"
   | "templates_opened"
   | "template_used"
-  | "onboarding_option_selected";
+  | "onboarding_option_selected"
+  | "prompt_pack_generated"
+  | "prompt_pack_copied";
 
 export interface EventProperties {
   target_tool?: string;
@@ -37,6 +39,7 @@ export interface EventProperties {
   action_type?: string;
   option?: string;
   template_id?: string;
+  pack_type?: string;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {
