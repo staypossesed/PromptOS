@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Home, Wand2, History, Sparkles, Settings, HelpCircle, Plus } from "lucide-react";
+import { X, Home, Wand2, History, Sparkles, Settings, HelpCircle, Plus, Shield, FileText } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,8 @@ const NAV = [
   { href: "#templates", label: "Templates", icon: Sparkles, disabled: true },
   { href: "/settings", label: "Settings", icon: Settings },
   { href: "/help", label: "Help & Docs", icon: HelpCircle },
+  { href: "/privacy", label: "Privacy", icon: Shield },
+  { href: "/terms", label: "Terms", icon: FileText },
 ];
 
 export function MobileNav({ open, onClose }: MobileNavProps) {

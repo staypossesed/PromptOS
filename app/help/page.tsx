@@ -144,6 +144,17 @@ export default async function HelpPage() {
             </Link>
           </Button>
         </div>
+
+        {/* Legal links */}
+        <div className="flex items-center justify-center gap-4 pt-4 pb-2">
+          <Link href="/privacy" className="text-xs text-ink-400 hover:text-ink-600 transition-colors">
+            Privacy Policy
+          </Link>
+          <span className="text-xs text-ink-200">·</span>
+          <Link href="/terms" className="text-xs text-ink-400 hover:text-ink-600 transition-colors">
+            Terms of Service
+          </Link>
+        </div>
       </main>
     </AppShell>
   );
