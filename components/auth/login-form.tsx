@@ -8,6 +8,7 @@ import { ArrowRight, Mail, CheckCircle2, AlertCircle, Loader2 } from "lucide-rea
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { sendMagicLink } from "@/app/actions/auth";
+import { track } from "@/lib/analytics";
 
 type Stage = "idle" | "sent";
 
@@ -31,6 +32,7 @@ export function LoginForm() {
     }
 
     setErrorMsg(null);
+    track("signup_started");
 
     startTransition(async () => {
       const { error } = await sendMagicLink(trimmed, next);

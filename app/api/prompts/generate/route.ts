@@ -23,34 +23,9 @@ import { createClient } from "@/lib/supabase/server";
 import { streamGeneratedPrompt, type GenerateInput } from "@/lib/ai/generate-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
+import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
-
-// ─── Naive in-memory rate limiter ────────────────────────────────────────
-// 20 generations per user per hour.
-// TODO(day-5): replace with @upstash/ratelimit + Redis.
-
-const RATE_LIMIT_MAX = 20;
-const RATE_LIMIT_WINDOW_MS = 60 * 60 * 1000;
-const usage = new Map<string, { count: number; resetAt: number }>();
-
-function checkRateLimit(userId: string): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const entry = usage.get(userId);
-
-  if (!entry || entry.resetAt < now) {
-    const fresh = { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS };
-    usage.set(userId, fresh);
-    return { allowed: true, remaining: RATE_LIMIT_MAX - 1, resetAt: fresh.resetAt };
-  }
-
-  if (entry.count >= RATE_LIMIT_MAX) {
-    return { allowed: false, remaining: 0, resetAt: entry.resetAt };
-  }
-
-  entry.count += 1;
-  return { allowed: true, remaining: RATE_LIMIT_MAX - entry.count, resetAt: entry.resetAt };
-}
 
 // ─── Body validation ──────────────────────────────────────────────────────
 
@@ -106,19 +81,18 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Rate limit
-  const rate = checkRateLimit(user.id);
+  const rate = await rateLimit(user.id, "generate");
   if (!rate.allowed) {
     const retryAfter = Math.ceil((rate.resetAt - Date.now()) / 1000);
     return NextResponse.json(
-      {
-        error: `Rate limit exceeded. You can generate up to ${RATE_LIMIT_MAX} prompts per hour. Try again in ${Math.ceil(retryAfter / 60)} minutes.`,
-      },
+      { error: `Rate limit exceeded. You can generate up to ${rate.limit} prompts per day. Try again in ${retryAfterMessage(rate.resetAt)}.` },
       {
         status: 429,
         headers: {
           "Retry-After": String(retryAfter),
           "X-RateLimit-Remaining": "0",
           "X-RateLimit-Reset": String(rate.resetAt),
+          "X-RateLimit-Limit": String(rate.limit),
         },
       }
     );
@@ -147,6 +121,7 @@ export async function POST(request: NextRequest) {
       headers: {
         "X-RateLimit-Remaining": String(rate.remaining),
         "X-RateLimit-Reset": String(rate.resetAt),
+        "X-RateLimit-Limit": String(rate.limit),
         "X-Model-Used": choice.config.shortName,
         "X-Provider-Used": choice.provider,
       },
@@ -154,7 +129,7 @@ export async function POST(request: NextRequest) {
   } catch (err) {
     // Provider mis-configuration → 503 (the server can't fulfil the request)
     if (err instanceof ProviderConfigError) {
-      console.error(`[generate] provider ${err.provider} not configured:`, err.message);
+      console.error("[generate]", { timestamp: new Date().toISOString(), userId: user.id, error: err.message });
       return NextResponse.json(
         { error: err.message, provider: err.provider },
         { status: 503 }
@@ -168,7 +143,7 @@ export async function POST(request: NextRequest) {
 
     // Anything else → 500
     const message = err instanceof Error ? err.message : "AI generation failed.";
-    console.error("[generate] unexpected error:", message);
+    console.error("[generate]", { timestamp: new Date().toISOString(), userId: user.id, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

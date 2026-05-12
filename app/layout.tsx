@@ -4,6 +4,7 @@ import { GeistMono } from "geist/font/mono";
 // Self-hosted via @fontsource-variable — no external network request at build time
 import "@fontsource-variable/fraunces";
 import "./globals.css";
+import { PostHogProvider } from "@/components/providers/posthog-provider";
 
 export const metadata: Metadata = {
   title: "Umprompt — From rough ideas to perfect AI prompts",
@@ -23,7 +24,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className="bg-paper antialiased text-ink-900 min-h-screen">
-        {children}
+        <PostHogProvider>{children}</PostHogProvider>
       </body>
     </html>
   );

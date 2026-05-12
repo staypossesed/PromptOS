@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import type { ToolId } from "@/lib/mock-data";
+import { track } from "@/lib/analytics";
 
 const TOOL_LABELS: Record<ToolId, string> = {
   claude: "Claude",
@@ -35,6 +36,7 @@ export function PromptOutput({
     navigator.clipboard.writeText(prompt);
     setCopied(true);
     setTimeout(() => setCopied(false), 1500);
+    track("prompt_copied", { target_tool: targetTool });
   }
 
   function handleDownload() {
@@ -45,6 +47,7 @@ export function PromptOutput({
     a.download = "prompt.md";
     a.click();
     URL.revokeObjectURL(url);
+    track("prompt_downloaded", { target_tool: targetTool });
   }
 
   const isEmpty = !prompt.trim();

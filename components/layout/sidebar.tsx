@@ -127,7 +127,7 @@ export function Sidebar() {
             </div>
           </div>
           <div className="mt-2 text-[11px] leading-relaxed text-ink-400">
-            Free workspace
+            Free plan · 20 gen/day
           </div>
         </div>
 

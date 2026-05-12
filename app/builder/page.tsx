@@ -17,6 +17,7 @@ import type { PromptRecord } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
 import { Suspense } from "react";
+import { track } from "@/lib/analytics";
 
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
@@ -58,6 +59,11 @@ function BuilderInner() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  // ── Analytics: builder_opened (fires once on mount) ─────────────────────
+  useEffect(() => {
+    track("builder_opened");
+  }, []);
+
   // ── Load existing prompt when ?id= is present ───────────────────────────
   useEffect(() => {
     if (!promptId) return;
@@ -77,6 +83,7 @@ function BuilderInner() {
         setScore(data.score);
         setSavedId(data.id);
         setIsSaved(true);
+        track("prompt_reopened", { target_tool: data.target_tool });
       })
       .catch(() => showToast("error", "Failed to load prompt."))
       .finally(() => setIsLoading(false));
@@ -104,6 +111,7 @@ function BuilderInner() {
       if (res.ok) {
         const { data } = await res.json();
         setScore(data);
+        track("prompt_scored", { target_tool: tool, score_overall: data.overall });
         return data;
       } else {
         const json = await res.json().catch(() => ({}));
@@ -165,6 +173,7 @@ function BuilderInner() {
         } else {
           showToast("success", "Optimized — review the changes.");
         }
+        track("prompt_optimized", { target_tool: tool, score_overall: newScore.overall });
       }
     } catch {
       setOptimizeError("Optimization failed. Check your connection and try again.");
@@ -223,6 +232,7 @@ function BuilderInner() {
 
       // Generation done — hand off to scoring (separate phase)
       setIsGenerating(false);
+      track("prompt_generated", { target_tool: tool });
       await runScoring(accumulated);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Generation failed.";
@@ -261,6 +271,7 @@ function BuilderInner() {
           if (!res.ok) throw new Error(json.error ?? "Update failed.");
           setIsSaved(true);
           showToast("success", "Prompt updated.");
+          track("prompt_saved", { target_tool: tool, action_type: "update" });
         } else {
           // Create new record
           const res = await fetch("/api/prompts", {
@@ -275,6 +286,7 @@ function BuilderInner() {
           // Update URL without a full navigation so the page knows its ID
           router.replace(`/builder?id=${json.data.id}`, { scroll: false });
           showToast("success", "Prompt saved.");
+          track("prompt_saved", { target_tool: tool, action_type: "create" });
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");

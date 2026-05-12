@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { listPrompts } from "@/lib/prompts";
 import type { PromptSummary } from "@/types/prompt";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -49,6 +50,7 @@ export default async function HistoryPage({
 
   return (
     <AppShell>
+      <PageViewTracker event="history_opened" />
       <Topbar
         breadcrumb={[{ label: "Workspace" }, { label: "History" }]}
         actions={

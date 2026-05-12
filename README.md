@@ -239,6 +239,87 @@ After deploying, verify each item manually:
 
 ---
 
+## Production Hardening
+
+### Analytics (PostHog)
+
+Umprompt uses [PostHog](https://posthog.com) for client-side event tracking. All calls are silent noops if `NEXT_PUBLIC_POSTHOG_KEY` is not set — the app works without analytics.
+
+**Setup:**
+1. Create a free project at [posthog.com](https://posthog.com)
+2. Copy the **Project API Key** (starts with `phc_`)
+3. Add to Vercel env vars: `NEXT_PUBLIC_POSTHOG_KEY=phc_...`
+4. Optionally add `NEXT_PUBLIC_POSTHOG_HOST` (default: `https://us.i.posthog.com`)
+
+**Events tracked** (safe metadata only — no prompt content, no API keys):
+
+| Event | Trigger | Properties |
+|---|---|---|
+| `landing_view` | Landing page load | — |
+| `signup_started` | Magic link form submitted | — |
+| `builder_opened` | Builder page mount | — |
+| `prompt_generated` | Generation stream completes | `target_tool` |
+| `prompt_scored` | Score API returns | `target_tool`, `score_overall` |
+| `prompt_optimized` | Optimization completes | `target_tool`, `score_overall` |
+| `prompt_saved` | Save/update succeeds | `target_tool`, `action_type` |
+| `prompt_reopened` | Existing prompt loaded in builder | `target_tool` |
+| `prompt_copied` | Copy button clicked | `target_tool` |
+| `prompt_downloaded` | Download button clicked | `target_tool` |
+| `history_opened` | History page mount | — |
+| `settings_opened` | Settings page mount | — |
+
+---
+
+### Rate Limiting
+
+Default: **in-memory per-process**. Works locally but resets on cold starts and is NOT reliable across concurrent serverless invocations.
+
+Production (recommended): **Upstash Redis** — persists across all function instances.
+
+**Free-tier limits (per user per day):**
+
+| Endpoint | Limit |
+|---|---|
+| `/api/prompts/generate` | 20 |
+| `/api/prompts/score` | 50 |
+| `/api/prompts/optimize` | 10 |
+
+**Setup:**
+1. Create a free Redis database at [upstash.com](https://upstash.com)
+2. Copy **REST URL** and **REST Token** from the database dashboard
+3. Add to Vercel env vars:
+   ```
+   UPSTASH_REDIS_REST_URL=https://...upstash.io
+   UPSTASH_REDIS_REST_TOKEN=...
+   ```
+
+**Testing rate limits locally:**
+```bash
+# Trigger in-memory limiter (generate limit is 20/day):
+for i in $(seq 1 21); do
+  curl -X POST http://localhost:3000/api/prompts/generate \
+    -H "Content-Type: application/json" \
+    -d '{"idea":"test","target_tool":"claude"}' \
+    -b "your-session-cookie"
+done
+# The 21st request returns HTTP 429 with a user-friendly error message.
+```
+
+---
+
+### New env vars for production hardening
+
+Add these to Vercel **Project Settings → Environment Variables**:
+
+| Variable | Required | Description |
+|---|---|---|
+| `NEXT_PUBLIC_POSTHOG_KEY` | Optional | PostHog project API key — enables analytics |
+| `NEXT_PUBLIC_POSTHOG_HOST` | Optional | PostHog ingest host (default: `https://us.i.posthog.com`) |
+| `UPSTASH_REDIS_REST_URL` | Optional | Upstash Redis URL — enables persistent rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | Optional | Upstash Redis token |
+
+---
+
 ## Roadmap
 
 - [ ] Templates library — curated, community-contributed prompts

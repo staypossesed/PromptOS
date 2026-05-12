@@ -1,0 +1,103 @@
+/**
+ * lib/rate-limit.ts — Centralized rate limiting.
+ *
+ * Production: Upstash Redis (persists across serverless invocations).
+ *   Requires UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN env vars.
+ *
+ * Fallback: in-memory Map.
+ *   NOT reliable in serverless — resets on cold starts and does not
+ *   share state across concurrent function instances. Fine for local dev.
+ *
+ * Free-tier limits (per user per day):
+ *   generate  → 20
+ *   score     → 50
+ *   optimize  → 10
+ */
+
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis";
+
+export type RateLimitAction = "generate" | "score" | "optimize";
+
+export interface RateLimitResult {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number; // Unix ms
+  limit: number;
+}
+
+const LIMITS: Record<RateLimitAction, { max: number; windowMs: number; window: string }> = {
+  generate: { max: 20, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
+  score:    { max: 50, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
+  optimize: { max: 10, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
+};
+
+// ── Upstash Redis (production) ─────────────────────────────────────────────
+
+let _upstashLimiters: Map<RateLimitAction, Ratelimit> | null = null;
+
+function getUpstashLimiters(): Map<RateLimitAction, Ratelimit> | null {
+  if (!process.env.UPSTASH_REDIS_REST_URL || !process.env.UPSTASH_REDIS_REST_TOKEN) return null;
+  if (_upstashLimiters) return _upstashLimiters;
+
+  try {
+    const redis = Redis.fromEnv();
+    _upstashLimiters = new Map([
+      ["generate", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.generate.max, LIMITS.generate.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:generate", analytics: false })],
+      ["score",    new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.score.max,    LIMITS.score.window    as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:score",    analytics: false })],
+      ["optimize", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.optimize.max, LIMITS.optimize.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:optimize", analytics: false })],
+    ]);
+    return _upstashLimiters;
+  } catch {
+    return null;
+  }
+}
+
+// ── In-memory fallback (dev / not-serverless) ──────────────────────────────
+
+const _memoryStore = new Map<string, { count: number; resetAt: number }>();
+
+function memoryRateLimit(key: string, action: RateLimitAction): RateLimitResult {
+  const { max, windowMs } = LIMITS[action];
+  const now = Date.now();
+  const entry = _memoryStore.get(key);
+
+  if (!entry || entry.resetAt < now) {
+    _memoryStore.set(key, { count: 1, resetAt: now + windowMs });
+    return { allowed: true, remaining: max - 1, resetAt: now + windowMs, limit: max };
+  }
+
+  if (entry.count >= max) {
+    return { allowed: false, remaining: 0, resetAt: entry.resetAt, limit: max };
+  }
+
+  entry.count += 1;
+  return { allowed: true, remaining: max - entry.count, resetAt: entry.resetAt, limit: max };
+}
+
+// ── Public API ─────────────────────────────────────────────────────────────
+
+export async function rateLimit(userId: string, action: RateLimitAction): Promise<RateLimitResult> {
+  const key = `${userId}:${action}`;
+  const limiters = getUpstashLimiters();
+
+  if (limiters) {
+    const limiter = limiters.get(action)!;
+    const { success, remaining, reset } = await limiter.limit(key);
+    return {
+      allowed: success,
+      remaining,
+      resetAt: reset * 1000, // Upstash returns Unix seconds — convert to ms
+      limit: LIMITS[action].max,
+    };
+  }
+
+  return memoryRateLimit(key, action);
+}
+
+export function retryAfterMessage(resetAt: number): string {
+  const diffMs = resetAt - Date.now();
+  if (diffMs <= 0) return "shortly";
+  const hours = Math.ceil(diffMs / (1000 * 60 * 60));
+  return hours === 1 ? "1 hour" : `${hours} hours`;
+}

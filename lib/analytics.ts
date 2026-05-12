@@ -1,0 +1,52 @@
+/**
+ * lib/analytics.ts — Client-side analytics wrapper (PostHog).
+ *
+ * Noops safely when:
+ *  - NEXT_PUBLIC_POSTHOG_KEY is not set
+ *  - PostHog has not finished initializing
+ *  - Running server-side (SSR guard)
+ *
+ * Do NOT import this file in Server Components.
+ * Do NOT log prompt content, API keys, or private tokens.
+ */
+
+import posthog from "posthog-js";
+
+export type AnalyticsEvent =
+  | "landing_view"
+  | "signup_started"
+  | "login_success"
+  | "builder_opened"
+  | "prompt_generated"
+  | "prompt_scored"
+  | "prompt_optimized"
+  | "prompt_saved"
+  | "prompt_reopened"
+  | "prompt_copied"
+  | "prompt_downloaded"
+  | "history_opened"
+  | "settings_opened";
+
+export interface EventProperties {
+  target_tool?: string;
+  score_overall?: number;
+  action_type?: string;
+}
+
+export function track(event: AnalyticsEvent, properties?: EventProperties): void {
+  if (typeof window === "undefined") return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  try {
+    posthog.capture(event, properties ?? {});
+  } catch {
+    // Analytics must never crash the app
+  }
+}
+
+export function identify(userId: string, traits?: { email?: string }): void {
+  if (typeof window === "undefined") return;
+  if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  try {
+    posthog.identify(userId, traits);
+  } catch {}
+}

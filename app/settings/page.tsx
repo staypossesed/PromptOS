@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
 import { listPrompts } from "@/lib/prompts";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export const dynamic = "force-dynamic";
 
@@ -23,6 +24,7 @@ export default async function SettingsPage() {
 
   return (
     <AppShell>
+      <PageViewTracker event="settings_opened" />
       <Topbar breadcrumb={[{ label: "Workspace" }, { label: "Settings" }]} />
 
       <main className="flex-1 px-4 md:px-8 lg:px-10 py-8 md:py-10 max-w-2xl">

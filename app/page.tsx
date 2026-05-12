@@ -14,10 +14,12 @@ import { Logo } from "@/components/brand/logo";
 import { LandingHeroDemo } from "@/components/marketing/hero-demo";
 import { FeatureTriad } from "@/components/marketing/feature-triad";
 import { ToolStrip } from "@/components/marketing/tool-strip";
+import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-paper">
+      <PageViewTracker event="landing_view" />
       {/* Top nav */}
       <header className="sticky top-0 z-30 backdrop-blur-md bg-cream-50/70 border-b border-ink-100/40">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">

@@ -18,6 +18,7 @@ import { createClient } from "@/lib/supabase/server";
 import { scorePrompt } from "@/lib/ai/score-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
+import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,24 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) {
     return NextResponse.json({ error: "Unauthenticated." }, { status: 401 });
+  }
+
+  // Rate limit
+  const rate = await rateLimit(user.id, "score");
+  if (!rate.allowed) {
+    const retryAfter = Math.ceil((rate.resetAt - Date.now()) / 1000);
+    return NextResponse.json(
+      { error: `Rate limit exceeded. You can score up to ${rate.limit} prompts per day. Try again in ${retryAfterMessage(rate.resetAt)}.` },
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfter),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(rate.resetAt),
+          "X-RateLimit-Limit": String(rate.limit),
+        },
+      }
+    );
   }
 
   // Parse
@@ -65,7 +84,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: err.message, provider: err.provider }, { status: 503 });
     }
     const message = err instanceof Error ? err.message : "Scoring failed.";
-    console.error("[score] error:", message);
+    console.error("[score]", { timestamp: new Date().toISOString(), userId: user.id, error: message });
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }
