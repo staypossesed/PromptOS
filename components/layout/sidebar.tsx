@@ -127,11 +127,23 @@ export function Sidebar() {
             </div>
           </div>
           <div className="mt-2 text-[11px] leading-relaxed text-ink-400">
-            8 of 20 prompts used this month
+            Free workspace
           </div>
-          <div className="mt-2 h-1.5 w-full rounded-full bg-cream-200 overflow-hidden">
-            <div className="h-full w-[40%] bg-clay-500 rounded-full" />
-          </div>
+        </div>
+
+        {/* Legal links */}
+        <div className="mt-3 flex items-center justify-center gap-3 pb-1">
+          <Link href="/privacy" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
+            Privacy
+          </Link>
+          <span className="text-[10px] text-ink-200">·</span>
+          <Link href="/terms" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
+            Terms
+          </Link>
+          <span className="text-[10px] text-ink-200">·</span>
+          <Link href="/help" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
+            Help
+          </Link>
         </div>
       </div>
     </aside>
