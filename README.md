@@ -64,8 +64,10 @@ Open `.env.local` and fill in all values (see table below). The file is gitignor
 2. Open **SQL Editor** in your Supabase dashboard.
 3. Paste the full contents of `supabase/schema.sql` and click **Run**.
    This creates the `profiles`, `prompts`, and `prompt_generations` tables, RLS policies, indexes, and triggers in one pass. It is safe to re-run.
-4. Go to **Authentication → Providers → Email** and enable **Magic Link**.
-5. Go to **Authentication → URL Configuration** and set:
+4. Paste the full contents of `supabase/feedback.sql` and click **Run**.
+   This adds the `feedback` table with RLS. It is safe to re-run.
+5. Go to **Authentication → Providers → Email** and enable **Magic Link**.
+6. Go to **Authentication → URL Configuration** and set:
    - **Site URL**: `http://localhost:3000`
    - **Redirect URLs**: add `http://localhost:3000/auth/callback`
 
@@ -267,14 +269,27 @@ Umprompt uses [PostHog](https://posthog.com) for client-side event tracking. All
 | `prompt_downloaded` | Download button clicked | `target_tool` |
 | `history_opened` | History page mount | — |
 | `settings_opened` | Settings page mount | — |
+| `feedback_submitted` | Feedback modal submitted | — |
+
+**Launch funnel** (track conversion through these events in PostHog):
+
+```
+landing_view → signup_started → builder_opened → prompt_generated → prompt_scored → prompt_optimized → prompt_saved
+```
+
+Use PostHog **Funnels** to identify where users drop off. The critical step is `landing_view → signup_started` (top-of-funnel conversion) and `prompt_generated → prompt_saved` (activation).
+
+**PostHog configuration note:** Autocapture is disabled by default (`capture_pageview: false`). This keeps the event stream clean and ensures only meaningful, named events appear in your dashboard. Do not enable autocapture — it creates high-volume noise that drowns out the custom events above.
 
 ---
 
 ### Rate Limiting
 
-Default: **in-memory per-process**. Works locally but resets on cold starts and is NOT reliable across concurrent serverless invocations.
+Default: **in-memory per-process**. Works locally and in single-instance deployments, but resets on cold starts and is **not reliable** across concurrent serverless invocations.
 
-Production (recommended): **Upstash Redis** — persists across all function instances.
+**Production (required for correctness): Upstash Redis** — persistent sliding-window limits that work across all Vercel function instances.
+
+> **Without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` set, rate limits will not hold under concurrent load.** Add both before going public.
 
 **Free-tier limits (per user per day):**
 
@@ -287,7 +302,7 @@ Production (recommended): **Upstash Redis** — persists across all function ins
 **Setup:**
 1. Create a free Redis database at [upstash.com](https://upstash.com)
 2. Copy **REST URL** and **REST Token** from the database dashboard
-3. Add to Vercel env vars:
+3. Add **both** to Vercel env vars:
    ```
    UPSTASH_REDIS_REST_URL=https://...upstash.io
    UPSTASH_REDIS_REST_TOKEN=...

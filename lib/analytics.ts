@@ -25,7 +25,8 @@ export type AnalyticsEvent =
   | "prompt_copied"
   | "prompt_downloaded"
   | "history_opened"
-  | "settings_opened";
+  | "settings_opened"
+  | "feedback_submitted";
 
 export interface EventProperties {
   target_tool?: string;

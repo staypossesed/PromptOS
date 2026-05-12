@@ -12,12 +12,14 @@ import {
   HelpCircle,
   Plus,
   LogOut,
+  MessageSquare,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
+import { FeedbackModal } from "@/components/feedback/feedback-modal";
 import type { User } from "@supabase/supabase-js";
 
 interface NavItem {
@@ -44,6 +46,7 @@ const FOOTER_NAV: NavItem[] = [
 export function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
 
   useEffect(() => {
     const supabase = createClient();
@@ -105,6 +108,16 @@ export function Sidebar() {
           ))}
         </NavGroup>
 
+        {/* Feedback */}
+        <button
+          type="button"
+          onClick={() => setFeedbackOpen(true)}
+          className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-400 hover:bg-cream-100 hover:text-ink-700 transition-colors"
+        >
+          <MessageSquare className="size-[15px]" />
+          Feedback
+        </button>
+
         {/* Sign out */}
         <form action={signOut}>
           <button
@@ -115,6 +128,12 @@ export function Sidebar() {
             Sign out
           </button>
         </form>
+
+        <FeedbackModal
+          open={feedbackOpen}
+          onClose={() => setFeedbackOpen(false)}
+          page={pathname}
+        />
 
         {/* Plan card */}
         <div className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-white p-3.5 card-soft">

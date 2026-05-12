@@ -71,7 +71,7 @@ export default function LandingPage() {
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Button asChild size="lg" className="w-full sm:w-auto">
                 <Link href="/builder">
-                  Start building free
+                  Try Umprompt free
                   <ArrowRight className="size-4" />
                 </Link>
               </Button>
@@ -82,7 +82,7 @@ export default function LandingPage() {
 
             <p className="mt-5 text-xs text-ink-400 flex items-center justify-center gap-1.5">
               <CheckCircle2 className="size-3.5 text-clay-500" />
-              Free to start · No credit card · Works with Cursor, Claude, ChatGPT
+              No credit card. Built for Claude, Cursor, and ChatGPT.
             </p>
           </div>
 
