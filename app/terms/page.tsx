@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service — PromptOS",
-  description: "Terms and conditions for using PromptOS.",
+  title: "Terms of Service — Umprompt",
+  description: "Terms and conditions for using Umprompt.",
 };
 
 const LAST_UPDATED = "May 2026";
@@ -43,7 +43,7 @@ export default function TermsPage() {
         <div className="space-y-8">
           <Section title="Acceptance">
             <p>
-              By using PromptOS you agree to these terms. If you do not agree, do not use the
+              By using Umprompt you agree to these terms. If you do not agree, do not use the
               service. These terms may be updated at any time — continued use constitutes
               acceptance of the current version.
             </p>
@@ -51,7 +51,7 @@ export default function TermsPage() {
 
           <Section title="Service provided as-is">
             <p>
-              PromptOS is provided &ldquo;as is&rdquo; without warranties of any kind, express or implied. We
+              Umprompt is provided &ldquo;as is&rdquo; without warranties of any kind, express or implied. We
               do not guarantee that the service will be uninterrupted, error-free, or that AI
               output will be accurate, complete, or suitable for your specific purpose.
             </p>
@@ -64,19 +64,19 @@ export default function TermsPage() {
 
           <Section title="Your content">
             <p>
-              You own the ideas, context, and prompts you create with PromptOS. We claim no
+              You own the ideas, context, and prompts you create with Umprompt. We claim no
               intellectual property rights over your inputs or the AI-generated outputs produced
               from them.
             </p>
             <p>
-              By using PromptOS, you grant us a limited license to store and process your content
+              By using Umprompt, you grant us a limited license to store and process your content
               solely to provide the service (display your prompts, run AI generation, score
               results).
             </p>
           </Section>
 
           <Section title="Acceptable use">
-            <p>You agree not to use PromptOS to:</p>
+            <p>You agree not to use Umprompt to:</p>
             <ul>
               <li>Generate or distribute illegal content of any kind.</li>
               <li>Violate any applicable law or regulation.</li>
@@ -93,7 +93,7 @@ export default function TermsPage() {
 
           <Section title="Billing">
             <p>
-              PromptOS is currently free to use. Billing and paid plans are not active. When
+              Umprompt is currently free to use. Billing and paid plans are not active. When
               billing is introduced, users will be notified in advance and must affirmatively
               agree to any paid terms before being charged.
             </p>
@@ -101,7 +101,7 @@ export default function TermsPage() {
 
           <Section title="Limitation of liability">
             <p>
-              To the maximum extent permitted by law, PromptOS and its creators are not liable for
+              To the maximum extent permitted by law, Umprompt and its creators are not liable for
               any indirect, incidental, special, consequential, or punitive damages arising from
               your use of the service, including any losses resulting from AI-generated content.
             </p>
@@ -121,7 +121,7 @@ export default function TermsPage() {
           <Section title="Governing law">
             <p>
               These terms are governed by applicable law. Any disputes shall be resolved in the
-              jurisdiction where PromptOS operates.
+              jurisdiction where Umprompt operates.
             </p>
           </Section>
 
@@ -153,7 +153,7 @@ export default function TermsPage() {
               Terms
             </Link>
             <span className="text-ink-200">·</span>
-            <span>© {new Date().getFullYear()} PromptOS</span>
+            <span>© {new Date().getFullYear()} Umprompt</span>
           </div>
         </div>
       </footer>

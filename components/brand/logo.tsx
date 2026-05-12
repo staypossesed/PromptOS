@@ -15,7 +15,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
           viewBox="0 0 28 28"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
-          aria-label="PromptOS"
+          aria-label="Umprompt"
         >
           {/* Warm clay rounded-square base */}
           <rect width="28" height="28" rx="8" fill="#BD5D2E" />
@@ -47,7 +47,7 @@ export function Logo({ className, showWordmark = true }: LogoProps) {
       </div>
       {showWordmark && (
         <span className="font-serif text-lg font-medium tracking-tight text-ink-900">
-          Prompt<span className="text-clay-600">OS</span>
+          <span className="text-clay-600">Um</span>prompt
         </span>
       )}
     </div>

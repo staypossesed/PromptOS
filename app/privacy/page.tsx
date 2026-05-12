@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — PromptOS",
-  description: "How PromptOS handles your data.",
+  title: "Privacy Policy — Umprompt",
+  description: "How Umprompt handles your data.",
 };
 
 const LAST_UPDATED = "May 2026";
@@ -69,7 +69,7 @@ export default function PrivacyPage() {
                 </a>
                 .
               </li>
-              <li>To improve PromptOS (aggregated, anonymized usage only — no prompt content).</li>
+              <li>To improve Umprompt (aggregated, anonymized usage only — no prompt content).</li>
             </ul>
           </Section>
 
@@ -117,7 +117,7 @@ export default function PrivacyPage() {
           <Section title="Changes to this policy">
             <p>
               If we make material changes to this policy, we will update the &ldquo;Last updated&rdquo; date
-              above. Continued use of PromptOS after changes constitutes acceptance.
+              above. Continued use of Umprompt after changes constitutes acceptance.
             </p>
           </Section>
 
@@ -149,7 +149,7 @@ export default function PrivacyPage() {
               Terms
             </Link>
             <span className="text-ink-200">·</span>
-            <span>© {new Date().getFullYear()} PromptOS</span>
+            <span>© {new Date().getFullYear()} Umprompt</span>
           </div>
         </div>
       </footer>

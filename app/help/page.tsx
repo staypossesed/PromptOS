@@ -10,8 +10,8 @@ export const dynamic = "force-dynamic";
 
 const FAQS = [
   {
-    q: "What is PromptOS?",
-    a: "PromptOS turns rough ideas into execution-ready AI prompts. Describe what you want to build, pick your target tool (Claude, Cursor, or ChatGPT), and PromptOS generates a structured, scored prompt ready to paste.",
+    q: "What is Umprompt?",
+    a: "Umprompt turns rough ideas into execution-ready AI prompts. Describe what you want to build, pick your target tool (Claude, Cursor, or ChatGPT), and Umprompt generates a structured, scored prompt ready to paste.",
   },
   {
     q: "How does the scoring work?",
@@ -44,12 +44,12 @@ const STEPS = [
   {
     icon: Zap,
     title: "2. Pick your tool",
-    body: "Choose Claude, Cursor, or ChatGPT. PromptOS tailors the structure and tone to match how each tool works best.",
+    body: "Choose Claude, Cursor, or ChatGPT. Umprompt tailors the structure and tone to match how each tool works best.",
   },
   {
     icon: TrendingUp,
     title: "3. Generate & score",
-    body: "Hit Generate. PromptOS writes the prompt and immediately scores it across 6 dimensions. Review the tips to understand any weak spots.",
+    body: "Hit Generate. Umprompt writes the prompt and immediately scores it across 6 dimensions. Review the tips to understand any weak spots.",
   },
   {
     icon: Save,
@@ -84,7 +84,7 @@ export default async function HelpPage() {
             Help & Docs
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed">
-            Everything you need to get the most out of PromptOS.
+            Everything you need to get the most out of Umprompt.
           </p>
         </div>
 

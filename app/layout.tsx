@@ -6,9 +6,9 @@ import "@fontsource-variable/fraunces";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "PromptOS — Describe what you want. Get the perfect prompt.",
+  title: "Umprompt — From rough ideas to perfect AI prompts",
   description:
-    "PromptOS turns your idea into an execution-ready prompt for the exact AI tool you use. Cursor, Claude, ChatGPT, and more.",
+    "Generate, score, optimize, and save execution-ready prompts for Claude, Cursor, and ChatGPT.",
 };
 
 export default function RootLayout({

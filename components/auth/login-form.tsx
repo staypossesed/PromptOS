@@ -73,11 +73,11 @@ export function LoginForm() {
 
       <p className="mt-5 text-center text-xs text-ink-400">
         By continuing, you agree to our{" "}
-        <Link href="#" className="underline hover:text-ink-700 transition-colors">
+        <Link href="/terms" className="underline hover:text-ink-700 transition-colors">
           Terms of Service
         </Link>{" "}
         and{" "}
-        <Link href="#" className="underline hover:text-ink-700 transition-colors">
+        <Link href="/privacy" className="underline hover:text-ink-700 transition-colors">
           Privacy Policy
         </Link>
         .
@@ -115,7 +115,7 @@ function FormState({
           No password required
         </div>
         <h1 className="font-serif text-3xl font-medium text-ink-900 leading-tight">
-          Sign in to PromptOS
+          Sign in to Umprompt
         </h1>
         <p className="mt-2 text-sm text-ink-500 leading-relaxed">
           Enter your email — we&apos;ll send a magic link. One click and you&apos;re in.

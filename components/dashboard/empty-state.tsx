@@ -18,7 +18,7 @@ export function EmptyState() {
           No prompts yet
         </h3>
         <p className="text-sm text-ink-500 leading-relaxed mb-6 text-pretty">
-          Describe what you want, pick your tool, and PromptOS turns it into an execution-ready prompt — scored across 6 dimensions.
+          Describe what you want, pick your tool, and Umprompt turns it into an execution-ready prompt — scored across 6 dimensions.
         </p>
         <Button asChild size="lg">
           <Link href="/builder">

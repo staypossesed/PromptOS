@@ -23,7 +23,7 @@ export function LandingHeroDemo() {
             <span className="size-2.5 rounded-full bg-ink-200" />
           </div>
           <div className="ml-3 h-5 px-2.5 rounded-full bg-white border border-ink-100 flex items-center text-[10px] text-ink-400 font-mono">
-            promptos.app/builder
+            umprompt.app/builder
           </div>
         </div>
 

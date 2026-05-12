@@ -1,7 +1,7 @@
 /**
  * lib/ai/tool-profiles.ts
  *
- * Tool profiles are the core IP of PromptOS.
+ * Tool profiles are the core IP of Umprompt.
  * Each profile encodes how to write a prompt that performs well
  * for a specific target tool. The system prompt assembled from a
  * profile is what differentiates "tool-tuned" output from generic

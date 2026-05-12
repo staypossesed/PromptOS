@@ -4,7 +4,7 @@ const FEATURES = [
   {
     icon: Wand2,
     title: "Tool-tuned generation",
-    body: "Cursor wants file paths and step-by-step instructions. Claude wants XML tags and explicit success criteria. ChatGPT wants persona and few-shot examples. PromptOS knows the difference — and structures the output accordingly.",
+    body: "Cursor wants file paths and step-by-step instructions. Claude wants XML tags and explicit success criteria. ChatGPT wants persona and few-shot examples. Umprompt knows the difference — and structures the output accordingly.",
     accent: "from-clay-100/80 to-cream-50",
   },
   {
@@ -16,7 +16,7 @@ const FEATURES = [
   {
     icon: TrendingUp,
     title: "One-click optimization",
-    body: 'Click "Optimize weak dimensions" and PromptOS rewrites the prompt targeting every low-scoring area using the exact tips from your score. A before → after comparison confirms the improvement.',
+    body: 'Click "Optimize weak dimensions" and Umprompt rewrites the prompt targeting every low-scoring area using the exact tips from your score. A before → after comparison confirms the improvement.',
     accent: "from-clay-50/80 to-cream-50",
   },
 ];

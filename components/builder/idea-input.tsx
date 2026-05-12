@@ -29,7 +29,7 @@ export function IdeaInput({ value, onChange }: IdeaInputProps) {
         <div className="absolute inset-0 rounded-xl ring-1 ring-clay-300/0 group-focus-within:ring-clay-300/40 transition-shadow pointer-events-none" />
       </div>
       <p className="text-xs text-ink-400 leading-relaxed">
-        The more specific your idea, the stronger the generated prompt. PromptOS handles the structure.
+        The more specific your idea, the stronger the generated prompt. Umprompt handles the structure.
       </p>
     </div>
   );

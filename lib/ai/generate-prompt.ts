@@ -49,7 +49,7 @@ export function buildMetaPrompt(input: GenerateInput): {
   if (ctx.examples) contextLines.push(`Examples / reference: ${ctx.examples}`);
 
   const system = [
-    `You are PromptOS, an expert prompt engineer. You turn rough user ideas into execution-ready prompts for the exact AI tool the user has chosen.`,
+    `You are Umprompt, an expert prompt engineer. You turn rough user ideas into execution-ready prompts for the exact AI tool the user has chosen.`,
     ``,
     profile.systemPrimer,
     ``,

@@ -56,14 +56,14 @@ export default function LandingPage() {
             </div>
 
             <h1 className="font-serif text-[44px] md:text-[68px] leading-[1.02] tracking-[-0.02em] text-ink-900 text-balance">
-              Describe what you want.
+              From <span className="italic text-clay-600">&ldquo;um…&rdquo;</span>
               <br />
-              <span className="italic text-clay-600">Get the perfect prompt.</span>
+              to the perfect prompt.
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-ink-500 leading-relaxed max-w-2xl mx-auto text-pretty">
-              PromptOS generates execution-ready prompts tuned for the exact AI tool you use —
-              scored across six quality dimensions, one-click optimized, and saved to your workspace.
+              Umprompt turns rough ideas into execution-ready prompts for Claude, Cursor, and ChatGPT
+              — scored, optimized, and saved to your workspace.
             </p>
 
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -74,7 +74,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                <Link href="/dashboard">View dashboard</Link>
+                <Link href="/dashboard">View example workspace</Link>
               </Button>
             </div>
 
@@ -107,7 +107,7 @@ export default function LandingPage() {
             A workspace built around <span className="italic">how</span> AI tools actually work.
           </h2>
           <p className="mt-5 text-lg text-ink-500 leading-relaxed text-pretty">
-            Generic prompt generators give you generic output. PromptOS is tuned per-tool,
+            Generic prompt generators give you generic output. Umprompt is tuned per-tool,
             scored on real quality dimensions, and iterates until the prompt performs.
           </p>
         </div>
@@ -155,7 +155,7 @@ export default function LandingPage() {
             Use cases
           </div>
           <h2 className="font-serif text-4xl md:text-5xl tracking-tight text-ink-900 leading-[1.05]">
-            What people build with PromptOS.
+            What people build with Umprompt.
           </h2>
         </div>
 
@@ -178,7 +178,7 @@ export default function LandingPage() {
                 <div className="rounded-lg bg-cream-100/70 border border-ink-100/60 px-3 py-2 font-mono text-[11px] text-ink-600 leading-relaxed">
                   &ldquo;{uc.idea}&rdquo;
                 </div>
-                <p className="text-[11px] text-ink-400 mt-1.5">Example idea typed into PromptOS</p>
+                <p className="text-[11px] text-ink-400 mt-1.5">Example idea typed into Umprompt</p>
               </div>
             </div>
           ))}
@@ -202,7 +202,7 @@ export default function LandingPage() {
             className="mt-8 bg-white text-clay-700 hover:bg-cream-50 shadow-xl"
           >
             <Link href="/builder">
-              Open PromptOS
+              Open Umprompt
               <ArrowRight className="size-4" />
             </Link>
           </Button>
@@ -217,7 +217,7 @@ export default function LandingPage() {
             <Link href="/privacy" className="hover:text-ink-700 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-ink-700 transition-colors">Terms</Link>
             <Link href="/help" className="hover:text-ink-700 transition-colors">Help</Link>
-            <span>© {new Date().getFullYear()} PromptOS</span>
+            <span>© {new Date().getFullYear()} Umprompt</span>
           </div>
         </div>
       </footer>
@@ -234,7 +234,7 @@ const STEPS = [
   {
     icon: Wand2,
     title: "Pick your tool",
-    body: "Choose Cursor, Claude, or ChatGPT. PromptOS knows what each tool responds to best and structures the prompt accordingly — XML tags for Claude, step-by-step for Cursor, persona-first for ChatGPT.",
+    body: "Choose Cursor, Claude, or ChatGPT. Umprompt knows what each tool responds to best and structures the prompt accordingly — XML tags for Claude, step-by-step for Cursor, persona-first for ChatGPT.",
   },
   {
     icon: Gauge,

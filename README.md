@@ -1,8 +1,8 @@
-# PromptOS
+# Umprompt
 
 **Turn rough ideas into execution-ready AI prompts — scored, optimized, and saved.**
 
-PromptOS is a prompt engineering workspace for developers, automation builders, and AI power users. Describe what you want in plain language, pick your target AI tool, and get a structured prompt that actually performs — scored across six quality dimensions, one-click optimized, and saved to your account.
+Umprompt is a prompt engineering workspace for developers, automation builders, and AI power users. Describe what you want in plain language, pick your target AI tool, and get a structured prompt that actually performs — scored across six quality dimensions, one-click optimized, and saved to your account.
 
 ---
 
@@ -10,7 +10,7 @@ PromptOS is a prompt engineering workspace for developers, automation builders, 
 
 | Feature | What it does |
 |---|---|
-| **Generate** | Describe your goal in plain English. PromptOS applies tool-specific profiles (Cursor, Claude, ChatGPT) to produce a structured, execution-ready prompt. |
+| **Generate** | Describe your goal in plain English. Umprompt applies tool-specific profiles (Cursor, Claude, ChatGPT) to produce a structured, execution-ready prompt. |
 | **Score** | Every prompt is scored 0–100 across Clarity, Context, Constraints, Examples, Output Format, and Tool Fit. Each dimension includes one actionable improvement tip. |
 | **Optimize** | Click "Optimize weak dimensions" to rewrite the prompt targeting every low-scoring dimension automatically. Confirms improvement with a before → after score. |
 | **Save & Reopen** | Prompts are saved to your account with full score data. Reopen any prompt from History to refine and update it. |
@@ -180,11 +180,11 @@ To add a new model: add an entry to `MODEL_REGISTRY` in `lib/ai/providers.ts`.
 3. Leave the build settings at their defaults (Next.js is auto-detected).
 4. In **Environment Variables**, add every variable from the table below — paste all seven before the first deploy.
 5. Click **Deploy**. Wait for the build to finish.
-6. Copy your Vercel domain (e.g. `https://promptos.vercel.app` or your custom domain).
+6. Copy your Vercel domain (e.g. `https://umprompt.vercel.app` or your custom domain).
 7. **Update `NEXT_PUBLIC_SITE_URL`** in Vercel env vars to that exact domain. Redeploy for it to take effect.
 8. In Supabase → **Authentication → URL Configuration**:
-   - Set **Site URL** to your Vercel domain (e.g. `https://promptos.vercel.app`)
-   - Under **Redirect URLs**, add: `https://promptos.vercel.app/auth/callback`
+   - Set **Site URL** to your Vercel domain (e.g. `https://umprompt.vercel.app`)
+   - Under **Redirect URLs**, add: `https://umprompt.vercel.app/auth/callback`
    - Keep `http://localhost:3000/auth/callback` in the list for local dev.
 9. Test a magic link login on the production URL (see smoke test below).
 
@@ -196,7 +196,7 @@ Paste these into **Project Settings → Environment Variables**:
 |---|---|
 | `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
-| `NEXT_PUBLIC_SITE_URL` | Your Vercel domain, e.g. `https://promptos.vercel.app` |
+| `NEXT_PUBLIC_SITE_URL` | Your Vercel domain, e.g. `https://umprompt.vercel.app` |
 | `ANTHROPIC_API_KEY` | Your Anthropic API key (server-only — never use `NEXT_PUBLIC_`) |
 | `DEFAULT_AI_PROVIDER` | `anthropic` |
 | `DEFAULT_AI_MODEL` | `claude-sonnet-4-6` |

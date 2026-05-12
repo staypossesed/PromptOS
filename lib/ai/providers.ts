@@ -75,7 +75,7 @@ function getOpenRouter() {
       // Harmless if missing.
       headers: {
         "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
-        "X-Title": "PromptOS",
+        "X-Title": "Umprompt",
       },
     });
   }
