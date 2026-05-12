@@ -7,13 +7,14 @@ import {
   TrendingUp,
   CheckCircle2,
   Zap,
-  Save,
+  MessageSquare,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
 import { LandingHeroDemo } from "@/components/marketing/hero-demo";
 import { FeatureTriad } from "@/components/marketing/feature-triad";
 import { ToolStrip } from "@/components/marketing/tool-strip";
+import { UseCasesDeep } from "@/components/marketing/use-cases";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export default function LandingPage() {
@@ -25,6 +26,7 @@ export default function LandingPage() {
         <div className="max-w-6xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
           <Logo />
           <nav className="hidden md:flex items-center gap-7 text-sm text-ink-600">
+            <Link href="/demo" className="hover:text-ink-900 transition-colors">Demo</Link>
             <a href="#features" className="hover:text-ink-900 transition-colors">Features</a>
             <a href="#how" className="hover:text-ink-900 transition-colors">How it works</a>
             <a href="#use-cases" className="hover:text-ink-900 transition-colors">Use cases</a>
@@ -99,6 +101,18 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Value props */}
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-16 md:py-20">
+        <div className="grid md:grid-cols-3 gap-6">
+          {VALUE_PROPS.map((vp) => (
+            <div key={vp.headline} className="rounded-2xl border border-ink-100/60 bg-white card-soft p-7">
+              <h3 className="font-serif text-xl font-medium text-ink-900 mb-2">{vp.headline}</h3>
+              <p className="text-[14px] text-ink-500 leading-relaxed">{vp.body}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Features */}
       <section id="features" className="max-w-6xl mx-auto px-5 lg:px-8 py-20 md:py-28">
         <div className="max-w-2xl mb-12 md:mb-16">
@@ -160,30 +174,25 @@ export default function LandingPage() {
             What people build with Umprompt.
           </h2>
         </div>
+        <UseCasesDeep />
+      </section>
 
-        <div className="grid md:grid-cols-3 gap-5">
-          {USE_CASES.map((uc) => (
-            <div
-              key={uc.title}
-              className="rounded-2xl border border-ink-100/70 bg-white card-soft p-6 space-y-3"
-            >
-              <div className="inline-flex items-center gap-1.5 rounded-full border border-ink-100 bg-cream-50 px-2.5 py-1 text-[11px] font-medium text-ink-600">
-                {uc.tool}
-              </div>
-              <h3 className="font-serif text-xl font-medium text-ink-900 leading-snug">
-                {uc.title}
-              </h3>
-              <p className="text-[14px] text-ink-500 leading-relaxed">
-                {uc.body}
-              </p>
-              <div className="pt-1">
-                <div className="rounded-lg bg-cream-100/70 border border-ink-100/60 px-3 py-2 font-mono text-[11px] text-ink-600 leading-relaxed">
-                  &ldquo;{uc.idea}&rdquo;
-                </div>
-                <p className="text-[11px] text-ink-400 mt-1.5">Example idea typed into Umprompt</p>
-              </div>
-            </div>
-          ))}
+      {/* Feedback CTA */}
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 pb-12">
+        <div className="rounded-2xl border border-ink-100/70 bg-white card-soft px-7 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="size-4 text-clay-600 shrink-0" />
+            <p className="text-[14px] text-ink-700">
+              Trying Umprompt? We read every message.{" "}
+              <span className="text-ink-400">Your feedback shapes what we build next.</span>
+            </p>
+          </div>
+          <Button asChild variant="outline" size="sm" className="shrink-0">
+            <Link href="/login">
+              Send feedback
+              <ArrowRight className="size-3.5" />
+            </Link>
+          </Button>
         </div>
       </section>
 
@@ -250,23 +259,17 @@ const STEPS = [
   },
 ];
 
-const USE_CASES = [
+const VALUE_PROPS = [
   {
-    tool: "Cursor",
-    title: "Build a SaaS client portal",
-    body: "Generate a step-by-step Cursor prompt that names the right files, specifies the tech stack, sets acceptance criteria, and lists what not to break.",
-    idea: "Build a client portal with a dashboard, document uploads, and invoice history in Next.js and Supabase",
+    headline: "Not another prompt library.",
+    body: "Libraries give you prompts someone else wrote. Umprompt generates prompts from your specific idea — structured around how your target tool actually works.",
   },
   {
-    tool: "Claude",
-    title: "Deep competitor research",
-    body: "Write a structured Claude prompt that frames the analysis role, scopes the research dimensions, and specifies the output format — ready to paste and run.",
-    idea: "Analyze the top 5 competitors in the AI writing tools space — pricing, positioning, strengths, and gaps",
+    headline: "Built for people who actually use AI tools.",
+    body: "Not for sharing on Twitter. For shipping work. If you use Claude, Cursor, or ChatGPT to build real things, Umprompt is the missing step between your idea and execution.",
   },
   {
-    tool: "ChatGPT",
-    title: "Cold email campaign",
-    body: "Create a ChatGPT prompt with the right persona, explicit tone guidance, example emails, and a clear deliverable — a full sequence, not a single message.",
-    idea: "Write a 3-email cold outreach sequence targeting early-stage SaaS founders for a dev tools product",
+    headline: "Generate, score, optimize, and save.",
+    body: "One idea. Four steps. A quality-scored, optimized prompt saved to your workspace — ready to paste, iterate on, and reuse.",
   },
 ];

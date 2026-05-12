@@ -335,6 +335,58 @@ Add these to Vercel **Project Settings → Environment Variables**:
 
 ---
 
+## Launch Checklist
+
+### Where to share
+
+| Channel | Notes |
+|---|---|
+| Twitter / X | Post a short demo GIF or screenshot of the before/after score. Tag with `#buildinpublic`, `#cursor`, `#claude`. |
+| Indie Hackers | Post in "Show IH" — emphasize the score + optimize loop, not just generation. |
+| Reddit: r/ChatGPT, r/ClaudeAI | Show a concrete before/after example with real output. No self-promo tone. |
+| Reddit: r/webdev, r/nextjs | Frame as a dev tool — Cursor use case performs well here. |
+| Hacker News: Show HN | Submit as "Show HN: Umprompt — Score and optimize AI prompts before you run them". Keep it factual. |
+| Product Hunt | Schedule a launch day. Add a demo GIF and 5 screenshots minimum. |
+| Discord servers (Cursor, Claude, AI builders) | Share as a tool tip in context, not a cold promo link. |
+
+### Pre-launch demo checklist
+
+- [ ] Visit `/demo` — all 5 steps render correctly, before/after scores show
+- [ ] Landing page loads at root — hero CTA reads "Try Umprompt free"
+- [ ] `/builder` opens without auth redirect
+- [ ] Generate → score → optimize → save flow completes end-to-end
+- [ ] History shows saved prompt; clicking reopens in builder
+- [ ] Feedback button appears in sidebar; modal opens and saves to Supabase
+- [ ] PostHog Live Events shows events firing during the above flow
+- [ ] `/privacy`, `/terms`, `/help`, `/demo` all load without auth
+- [ ] Mobile layout works on 390px viewport
+- [ ] No `console.error` during any of the above
+
+### First-user feedback checklist
+
+After your first 10 users, check these in PostHog and Supabase:
+
+| Signal | What to look for |
+|---|---|
+| `landing_view → signup_started` funnel | Conversion rate. If < 10%, the hero or CTA needs work. |
+| `builder_opened → prompt_generated` | Drop here = friction in the idea input or tool selection. |
+| `prompt_generated → prompt_saved` | This is activation. Target > 50% for retained users. |
+| `prompt_optimized` rate | Low = users don't see weak scores or don't understand optimize. |
+| Supabase `feedback` table | Read every row. Tag them: bug / UX friction / missing feature. |
+| `feedback_submitted` event count | Low count = users can't find the feedback button or don't trust it. |
+
+### PostHog events to watch on launch day
+
+1. `landing_view` — confirms the page is getting traffic
+2. `signup_started` — measures CTA effectiveness
+3. `builder_opened` — measures auth conversion
+4. `prompt_generated` — first value moment
+5. `prompt_scored` — confirms AI pipeline is running
+6. `prompt_saved` — activation metric
+7. `feedback_submitted` — qualitative signal channel
+
+---
+
 ## Roadmap
 
 - [ ] Templates library — curated, community-contributed prompts

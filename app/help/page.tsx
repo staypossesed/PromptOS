@@ -4,6 +4,7 @@ import { HelpCircle, Wand2, TrendingUp, Save, RefreshCw, Zap } from "lucide-reac
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
+import { FeedbackButton } from "@/components/feedback/feedback-button";
 import { createClient } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
@@ -143,6 +144,14 @@ export default async function HelpPage() {
               Open the Builder
             </Link>
           </Button>
+        </div>
+
+        {/* Feedback CTA */}
+        <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <p className="text-sm text-ink-600">
+            Something missing from these docs? Have a suggestion?
+          </p>
+          <FeedbackButton page="/help" label="Send feedback" />
         </div>
 
         {/* Legal links */}
