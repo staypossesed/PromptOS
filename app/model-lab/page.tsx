@@ -172,7 +172,17 @@ export default function ModelLabPage() {
         body: JSON.stringify({ idea, target_tool: tool, models: selectedModels }),
       });
       const json = await res.json();
-      if (!res.ok) throw new Error(json.error ?? "Comparison failed.");
+      if (!res.ok) {
+        if (res.status === 429) {
+          const retryMsg =
+            typeof json.retryAfterSeconds === "number"
+              ? `Try again in ${formatRetryAfter(json.retryAfterSeconds)}.`
+              : "Try again later.";
+          const limitHint = typeof json.limit === "number" ? ` (${json.limit}/day)` : "";
+          throw new Error(`Model Lab limit reached${limitHint}. ${retryMsg}`);
+        }
+        throw new Error(json.error ?? "Comparison failed.");
+      }
 
       const data: ModelLabResult[] = json.data;
       setResults(data);
@@ -835,6 +845,17 @@ function MetaBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
       {label}
     </div>
   );
+}
+
+// ─── Retry-after helper ────────────────────────────────────────────────────
+
+function formatRetryAfter(seconds: number): string {
+  if (seconds <= 0) return "shortly";
+  const totalMinutes = Math.ceil(seconds / 60);
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
 
 // ─── Date helper ───────────────────────────────────────────────────────────

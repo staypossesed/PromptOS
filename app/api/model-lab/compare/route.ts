@@ -19,7 +19,7 @@ import { createClient } from "@/lib/supabase/server";
 import { generatePromptText } from "@/lib/ai/generate-prompt";
 import { scorePrompt } from "@/lib/ai/score-prompt";
 import { getModelConfig, isValidModelId, ProviderConfigError } from "@/lib/ai/providers";
-import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
+import { rateLimit } from "@/lib/rate-limit";
 import { isValidToolId } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import type { ToolId } from "@/lib/mock-data";
@@ -101,11 +101,24 @@ export async function POST(request: NextRequest) {
   // 2. Rate limit
   const rate = await rateLimit(user.id, "model_lab");
   if (!rate.allowed) {
+    const retryAfterSeconds = Math.max(0, Math.ceil((rate.resetAt - Date.now()) / 1000));
     return NextResponse.json(
       {
-        error: `Model Lab limit reached (${rate.limit}/day). Try again in ${retryAfterMessage(rate.resetAt)}.`,
+        error: "Model Lab limit reached.",
+        limit: rate.limit,
+        remaining: 0,
+        resetAt: new Date(rate.resetAt).toISOString(),
+        retryAfterSeconds,
       },
-      { status: 429 }
+      {
+        status: 429,
+        headers: {
+          "Retry-After": String(retryAfterSeconds),
+          "X-RateLimit-Limit": String(rate.limit),
+          "X-RateLimit-Remaining": "0",
+          "X-RateLimit-Reset": String(Math.floor(rate.resetAt / 1000)),
+        },
+      }
     );
   }
 

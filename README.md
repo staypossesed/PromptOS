@@ -194,7 +194,7 @@ KIMI_MODEL=moonshotai/kimi-k2.6
 
 ### Rate limit
 
-10 comparisons per user per day (independent of the normal generate limit).
+30 comparisons per user per day (independent of the normal generate limit). Higher than the production limits because Model Lab is an internal/beta tool used to build the evaluation dataset — not exposed to end users.
 
 ### Cost estimates
 
@@ -392,11 +392,12 @@ Default: **in-memory per-process**. Works locally and in single-instance deploym
 
 **Free-tier limits (per user per day):**
 
-| Endpoint | Limit |
-|---|---|
-| `/api/prompts/generate` | 20 |
-| `/api/prompts/score` | 50 |
-| `/api/prompts/optimize` | 10 |
+| Endpoint | Limit | Notes |
+|---|---|---|
+| `/api/prompts/generate` | 20 | |
+| `/api/prompts/score` | 50 | |
+| `/api/prompts/optimize` | 10 | |
+| `/api/model-lab/compare` | 30 | Internal/beta — not shown to end users |
 
 **Setup:**
 1. Create a free Redis database at [upstash.com](https://upstash.com)

@@ -13,6 +13,7 @@
  *   score     → 50
  *   optimize  → 10
  *   pack      → 5
+ *   model_lab → 30 (internal/beta tool)
  */
 
 import { Ratelimit } from "@upstash/ratelimit";
@@ -32,7 +33,7 @@ const LIMITS: Record<RateLimitAction, { max: number; windowMs: number; window: s
   score:     { max: 50, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   optimize:  { max: 10, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   pack:      { max: 5,  windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
-  model_lab: { max: 10, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
+  model_lab: { max: 30, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
 };
 
 // ── Upstash Redis (production) ─────────────────────────────────────────────
@@ -92,7 +93,7 @@ export async function rateLimit(userId: string, action: RateLimitAction): Promis
     return {
       allowed: success,
       remaining,
-      resetAt: reset * 1000, // Upstash returns Unix seconds — convert to ms
+      resetAt: reset, // Upstash returns Unix ms timestamp
       limit: LIMITS[action].max,
     };
   }
@@ -103,6 +104,9 @@ export async function rateLimit(userId: string, action: RateLimitAction): Promis
 export function retryAfterMessage(resetAt: number): string {
   const diffMs = resetAt - Date.now();
   if (diffMs <= 0) return "shortly";
-  const hours = Math.ceil(diffMs / (1000 * 60 * 60));
-  return hours === 1 ? "1 hour" : `${hours} hours`;
+  const totalMinutes = Math.ceil(diffMs / (1000 * 60));
+  if (totalMinutes < 60) return `${totalMinutes}m`;
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return m > 0 ? `${h}h ${m}m` : `${h}h`;
 }
