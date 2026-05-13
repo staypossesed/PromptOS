@@ -211,7 +211,14 @@ export default function ModelLabPage() {
       if (!result.output) return;
       sessionStorage.setItem(
         "ump:lab_output",
-        JSON.stringify({ idea, tool, generatedPrompt: result.output })
+        JSON.stringify({
+          idea,
+          tool,
+          generatedPrompt: result.output,
+          score: result.score ?? null,
+          model: result.shortName,
+          source: "model-lab",
+        })
       );
       track("model_output_used", {
         selected_model: result.shortName,

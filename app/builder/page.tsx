@@ -95,14 +95,38 @@ function BuilderInner() {
     if (!raw) return;
     sessionStorage.removeItem("ump:lab_output");
     try {
-      const { idea: i, tool: t, generatedPrompt: p } = JSON.parse(raw) as {
+      const {
+        idea: i,
+        tool: t,
+        generatedPrompt: p,
+        score: s,
+      } = JSON.parse(raw) as {
         idea?: string;
         tool?: ToolId;
         generatedPrompt?: string;
+        score?: import("@/types/prompt").PromptScore | null;
+        model?: string;
+        source?: string;
       };
       if (i) setIdea(i);
-      if (t && (t === "claude" || t === "cursor" || t === "chatgpt")) setTool(t);
-      if (p) setGeneratedPrompt(p);
+      const parsedTool: ToolId | undefined =
+        t === "claude" || t === "cursor" || t === "chatgpt" ? t : undefined;
+      if (parsedTool) setTool(parsedTool);
+      if (p) {
+        setGeneratedPrompt(p);
+        setIsSaved(false);
+        if (s && typeof s === "object") {
+          // Score already available from Model Lab — restore it directly.
+          setScore(s as import("@/types/prompt").PromptScore);
+          showToast("success", "Model Lab output loaded. Score restored.");
+        } else {
+          // No score in payload — trigger scoring now.
+          // Pass idea/tool explicitly because runScoring's closure still
+          // holds the empty initial values at this point in the mount cycle.
+          showToast("success", "Model Lab output loaded. Scoring…");
+          runScoring(p, { idea: i, tool: parsedTool });
+        }
+      }
     } catch {
       // malformed storage — ignore
     }
@@ -189,8 +213,11 @@ function BuilderInner() {
 
   // ── Score helper (shared by generate flow, manual retry, and optimize) ─────
   const runScoring = useCallback(async (
-    prompt: string
+    prompt: string,
+    opts?: { idea?: string; tool?: ToolId }
   ): Promise<import("@/types/prompt").PromptScore | null> => {
+    const effectiveIdea = opts?.idea ?? idea;
+    const effectiveTool = opts?.tool ?? tool;
     setScoreError(null);
     setIsScoring(true);
     setActiveTab("score");
@@ -198,12 +225,12 @@ function BuilderInner() {
       const res = await fetch("/api/prompts/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generated_prompt: prompt, idea, target_tool: tool }),
+        body: JSON.stringify({ generated_prompt: prompt, idea: effectiveIdea, target_tool: effectiveTool }),
       });
       if (res.ok) {
         const { data } = await res.json();
         setScore(data);
-        track("prompt_scored", { target_tool: tool, score_overall: data.overall });
+        track("prompt_scored", { target_tool: effectiveTool, score_overall: data.overall });
         return data;
       } else {
         const json = await res.json().catch(() => ({}));
