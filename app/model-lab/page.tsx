@@ -41,6 +41,7 @@ const LAB_MODELS = [
     provider: "Anthropic",
     costHint: "$3 / $15 per MTok",
     defaultChecked: true,
+    experimental: false,
   },
   {
     id: "claude-haiku-4-5",
@@ -48,6 +49,7 @@ const LAB_MODELS = [
     provider: "Anthropic",
     costHint: "$1 / $5 per MTok",
     defaultChecked: false,
+    experimental: false,
   },
   {
     id: "moonshotai/kimi-k2.6",
@@ -55,6 +57,7 @@ const LAB_MODELS = [
     provider: "OpenRouter",
     costHint: "$0.74 / $3.49 per MTok",
     defaultChecked: true,
+    experimental: true,
   },
 ] as const;
 
@@ -329,12 +332,26 @@ export default function ModelLabPage() {
             Compare Claude and Kimi side by side. Same idea, same tool — see which output you&apos;d ship.
           </p>
 
-          {/* Decision helper note */}
-          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-ink-100/80 bg-cream-50 px-4 py-3 text-sm text-ink-500">
-            <Info className="size-4 shrink-0 mt-0.5 text-ink-400" />
-            <span>
-              Use this lab to compare quality, cost, and latency before changing the default production model.
-            </span>
+          {/* Decision helper note + checklist */}
+          <div className="mt-4 rounded-xl border border-ink-100/80 bg-cream-50 px-4 py-3 space-y-2">
+            <div className="flex items-start gap-2.5 text-sm text-ink-500">
+              <Info className="size-4 shrink-0 mt-0.5 text-ink-400" />
+              <span>
+                Use this lab to compare quality, cost, and latency before changing the default production model.
+              </span>
+            </div>
+            <div className="pl-6 space-y-1">
+              {[
+                "Compare at least 10 prompts before changing defaults.",
+                "Watch score, latency, cost, and failure rate.",
+                "Do not switch free users to a model that times out often.",
+              ].map((item) => (
+                <div key={item} className="flex items-start gap-1.5 text-[12px] text-ink-400">
+                  <span className="mt-0.5 leading-none select-none">·</span>
+                  <span>{item}</span>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -376,7 +393,14 @@ export default function ModelLabPage() {
                           {checked && <Check className="size-2.5 text-white" strokeWidth={3} />}
                         </div>
                         <div className="min-w-0">
-                          <div className="text-sm font-medium text-ink-800">{m.label}</div>
+                          <div className="flex items-center gap-1.5">
+                            <div className="text-sm font-medium text-ink-800">{m.label}</div>
+                            {m.experimental && (
+                              <span className="text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200/60 rounded-full px-1.5 py-0.5 leading-none">
+                                Experimental
+                              </span>
+                            )}
+                          </div>
                           <div className="text-[11px] text-ink-400 mt-0.5">
                             {m.provider} · {m.costHint}
                           </div>
@@ -385,6 +409,9 @@ export default function ModelLabPage() {
                     );
                   })}
                 </div>
+                <p className="text-[11px] text-ink-400 leading-relaxed">
+                  Kimi is being tested for lower-cost generation. Claude remains the production default.
+                </p>
               </div>
             </div>
 
@@ -558,6 +585,9 @@ function ResultCard({
   const score = result.score?.overall ?? null;
   const PREVIEW_CHARS = 500;
   const isLong = (result.output?.length ?? 0) > PREVIEW_CHARS;
+  const isKimiTimeout =
+    (result.model.includes("kimi") || result.model.includes("moonshot")) &&
+    (result.error?.includes("timed out") ?? false);
 
   return (
     <div
@@ -598,7 +628,11 @@ function ResultCard({
         {result.error ? (
           <div className="flex items-start gap-2 text-sm text-destructive">
             <AlertCircle className="size-4 shrink-0 mt-0.5" />
-            <span>{result.error}</span>
+            <span>
+              {isKimiTimeout
+                ? "Kimi timed out. Claude is recommended for production use."
+                : result.error}
+            </span>
           </div>
         ) : result.output ? (
           <>

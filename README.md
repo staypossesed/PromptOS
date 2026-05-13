@@ -227,12 +227,18 @@ KIMI_MODEL=moonshotai/kimi-k2.6
 
 ### Decision criteria before switching the default model
 
-Before setting Kimi (or any other model) as the default for all users:
+Before setting Kimi (or any other model) as the default for all users, **all four rules must hold**:
 
-- **Sample size**: At least 20–30 comparisons across different idea types and target tools.
-- **Win rate**: Kimi wins ≥ 60% of comparisons where the winning reason is quality (not only cost/speed).
-- **Score parity**: Average Kimi score is within 5 points of Claude Sonnet across all comparisons.
-- **No hard failures**: No comparisons where Kimi output was clearly unusable or off-topic.
+| Rule | Threshold |
+|---|---|
+| **Win/tie rate** | Kimi wins or ties ≥ 70% of comparisons (quality wins, not only cost/speed) |
+| **Cost savings** | Kimi saves meaningful cost per run vs. Claude Sonnet on average |
+| **Timeout rate** | Kimi times out in < 10% of comparisons |
+| **Score parity** | Average Kimi score is within 5 points of Claude Sonnet across all comparisons |
+
+If any rule is not met — especially timeout rate — **keep Claude as the default**.
+
+Minimum sample size: 20–30 comparisons across different idea types and target tools.
 
 When all criteria are met, set in `.env.local` (and Vercel env vars):
 
@@ -241,7 +247,7 @@ DEFAULT_AI_PROVIDER=openrouter
 DEFAULT_AI_MODEL=moonshotai/kimi-k2.6
 ```
 
-**⚠️ Do not flip this switch until the above criteria are met.**
+**⚠️ Do not flip this switch until all four rules are met. A model that times out often will silently degrade the free tier.**
 
 ---
 
