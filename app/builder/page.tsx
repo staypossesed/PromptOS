@@ -86,6 +86,29 @@ function BuilderInner() {
     track("builder_opened");
   }, []);
 
+  // ── Prefill from Model Lab "Use this output" ──────────────────────────────
+  // Reads sessionStorage once on mount. Runs before other load effects so that
+  // promptId / packId effects (which run on their own deps) can override if needed.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const raw = sessionStorage.getItem("ump:lab_output");
+    if (!raw) return;
+    sessionStorage.removeItem("ump:lab_output");
+    try {
+      const { idea: i, tool: t, generatedPrompt: p } = JSON.parse(raw) as {
+        idea?: string;
+        tool?: ToolId;
+        generatedPrompt?: string;
+      };
+      if (i) setIdea(i);
+      if (t && (t === "claude" || t === "cursor" || t === "chatgpt")) setTool(t);
+      if (p) setGeneratedPrompt(p);
+    } catch {
+      // malformed storage — ignore
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // ── Load existing prompt when ?id= is present ───────────────────────────
   useEffect(() => {
     if (!promptId) return;

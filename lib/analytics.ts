@@ -34,7 +34,10 @@ export type AnalyticsEvent =
   | "prompt_pack_copied"
   | "prompt_pack_saved"
   | "prompt_pack_reopened"
-  | "prompt_pack_deleted";
+  | "prompt_pack_deleted"
+  | "model_lab_opened"
+  | "model_comparison_run"
+  | "model_output_used";
 
 export interface EventProperties {
   target_tool?: string;
@@ -43,6 +46,9 @@ export interface EventProperties {
   option?: string;
   template_id?: string;
   pack_type?: string;
+  models_compared?: string;
+  model_count?: number;
+  selected_model?: string;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {

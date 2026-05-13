@@ -13,6 +13,7 @@ import {
   Plus,
   LogOut,
   MessageSquare,
+  FlaskConical,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -36,6 +37,7 @@ const PRIMARY_NAV: NavItem[] = [
 
 const SECONDARY_NAV: NavItem[] = [
   { href: "/templates", label: "Templates", icon: Sparkles },
+  { href: "/model-lab", label: "Model Lab", icon: FlaskConical, badge: "beta" },
 ];
 
 const FOOTER_NAV: NavItem[] = [

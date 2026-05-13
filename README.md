@@ -158,6 +158,50 @@ To add a new model: add an entry to `MODEL_REGISTRY` in `lib/ai/providers.ts`.
 
 ---
 
+## Model Lab
+
+`/model-lab` is an internal testing tool for comparing model outputs side by side. It is auth-protected and not linked from public pages.
+
+### Purpose
+
+Compare Claude and cheaper alternatives (Kimi K2.6 via OpenRouter) on the same idea and tool, with scoring and latency. Used to evaluate whether a cheaper model can replace Claude for production traffic without degrading output quality.
+
+**⚠️ Do not set Kimi as the default model until you have run enough comparisons to be confident in quality parity.**
+
+### Setup
+
+1. Get an [OpenRouter](https://openrouter.ai/keys) API key.
+2. Add to `.env.local` (and Vercel env vars):
+
+```
+OPENROUTER_API_KEY=sk-or-v1-...
+KIMI_MODEL=moonshotai/kimi-k2.6
+```
+
+3. Navigate to `/model-lab` while signed in.
+
+### How it works
+
+- Select 1–4 models to compare (Sonnet, Haiku, Kimi).
+- Enter an idea and target tool.
+- Click "Generate comparison" — all models run in parallel.
+- Each result shows: generated prompt, quality score (0–100), latency (ms), estimated cost (USD).
+- Click "Use this" on any result to carry it into the Builder.
+
+### Rate limit
+
+10 comparisons per user per day (independent of the normal generate limit).
+
+### Cost estimates
+
+| Model | Input | Output |
+|---|---|---|
+| Claude Sonnet 4.6 | $3 / MTok | $15 / MTok |
+| Claude Haiku 4.5 | $1 / MTok | $5 / MTok |
+| Kimi K2.6 | $0.74 / MTok | $3.49 / MTok |
+
+---
+
 ## API Routes
 
 | Endpoint | Method | Auth | Description |
@@ -170,6 +214,7 @@ To add a new model: add an entry to `MODEL_REGISTRY` in `lib/ai/providers.ts`.
 | `/api/prompts/generate` | POST | Required | Stream an AI-generated prompt (text/plain) |
 | `/api/prompts/score` | POST | Required | Score a prompt across 6 dimensions |
 | `/api/prompts/optimize` | POST | Required | Rewrite prompt targeting weak dimensions |
+| `/api/model-lab/compare` | POST | Required | Compare N models on the same idea (10/day limit) |
 
 ---
 
@@ -203,6 +248,8 @@ Paste these into **Project Settings → Environment Variables**:
 | `DEFAULT_AI_PROVIDER` | `anthropic` |
 | `DEFAULT_AI_MODEL` | `claude-sonnet-4-6` |
 | `SCORE_AI_MODEL` | `claude-sonnet-4-6` |
+| `OPENROUTER_API_KEY` | OpenRouter key for Kimi (optional — only needed for Model Lab) |
+| `KIMI_MODEL` | `moonshotai/kimi-k2.6` (informational — actual ID is hardcoded in registry) |
 
 > **Important:** `ANTHROPIC_API_KEY` must NOT have the `NEXT_PUBLIC_` prefix — it is server-only and must never be exposed to the browser.
 

@@ -10,7 +10,7 @@
  * and lib/ai/config.ts — see those for how to add or swap models.
  */
 
-import { streamText } from "ai";
+import { streamText, generateText } from "ai";
 import { getToolProfile } from "@/lib/ai/tool-profiles";
 import { resolveModel, type ResolvedModelChoice } from "@/lib/ai/config";
 import type { ToolId } from "@/lib/mock-data";
@@ -112,6 +112,39 @@ export function streamGeneratedPrompt(input: GenerateInput): StreamResult {
   });
 
   return { stream, choice };
+}
+
+// ─── Non-streaming generation (used by Model Lab compare) ────────────────
+// Returns the full text in one call instead of a stream.
+// Useful when the caller needs all outputs before rendering.
+
+export interface GenerateTextResult {
+  text: string;
+  choice: ResolvedModelChoice;
+  usage: { inputTokens: number; outputTokens: number };
+}
+
+export async function generatePromptText(input: GenerateInput): Promise<GenerateTextResult> {
+  const choice = resolveModel(input.modelOverride);
+  const { system, user } = buildMetaPrompt(input);
+  const model = choice.config.factory();
+
+  const result = await generateText({
+    model,
+    system,
+    messages: [{ role: "user", content: user }],
+    maxTokens: MAX_TOKENS,
+    temperature: TEMPERATURE,
+  });
+
+  return {
+    text: result.text,
+    choice,
+    usage: {
+      inputTokens: result.usage.promptTokens,
+      outputTokens: result.usage.completionTokens,
+    },
+  };
 }
 
 // ─── Exported for tests / inspection ──────────────────────────────────────
