@@ -148,8 +148,9 @@ function BuilderInner() {
   // ── Load existing pack when ?pack= is present ─────────────────────────────
   useEffect(() => {
     if (!packId) return;
+    const controller = new AbortController();
     setIsLoading(true);
-    fetch(`/api/prompt-packs/${packId}`)
+    fetch(`/api/prompt-packs/${packId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then(({ data, error }: { data?: PromptPackRecord; error?: string }) => {
         if (error || !data) {
@@ -165,8 +166,12 @@ function BuilderInner() {
         setIsPackSaved(true);
         track("prompt_pack_reopened", { pack_type: data.pack_type });
       })
-      .catch(() => showToast("error", "Failed to load pack."))
+      .catch((err) => {
+        if ((err as Error).name === "AbortError") return;
+        showToast("error", "Failed to load pack.");
+      })
       .finally(() => setIsLoading(false));
+    return () => controller.abort();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packId]);
 
@@ -295,7 +300,8 @@ function BuilderInner() {
       setPackResult(json.data);
       if (savedPackId) setIsPackSaved(false);
       track("prompt_pack_generated", { pack_type: packType });
-    } catch {
+    } catch (err) {
+      console.error("[handleGeneratePack]", err);
       setPackError("Pack generation failed. Check your connection and try again.");
     } finally {
       setIsGeneratingPack(false);
@@ -497,8 +503,10 @@ function BuilderInner() {
         const json = await res.json();
         if (!res.ok) throw new Error(json.error ?? "Delete failed.");
         setPackResult(null);
+        setPackError(null);
         setSavedPackId(null);
         setIsPackSaved(false);
+        setIsLoading(false);
         router.replace("/builder", { scroll: false });
         showToast("success", "Pack deleted.");
         track("prompt_pack_deleted", { pack_type: packType });
