@@ -208,7 +208,10 @@ export default function ModelLabPage() {
   // ── Use output in Builder ──────────────────────────────────────────────
   const handleUseOutput = useCallback(
     (result: ModelLabResult) => {
-      if (!result.output) return;
+      if (!result.output || result.error) {
+        showToast("error", "Cannot use this output — the model failed.");
+        return;
+      }
       sessionStorage.setItem(
         "ump:lab_output",
         JSON.stringify({
@@ -578,7 +581,7 @@ function ResultCard({
             </div>
           </div>
           <div className="flex items-center gap-1.5 flex-wrap justify-end">
-            {score !== null && <ScoreBadge score={score} />}
+            {score !== null && !result.error && <ScoreBadge score={score} />}
             <MetaBadge icon={<Clock className="size-3" />} label={`${result.latencyMs}ms`} />
             {result.estimatedCostUSD !== null && (
               <MetaBadge
@@ -597,7 +600,7 @@ function ResultCard({
             <AlertCircle className="size-4 shrink-0 mt-0.5" />
             <span>{result.error}</span>
           </div>
-        ) : (
+        ) : result.output ? (
           <>
             <p
               className={cn(
@@ -627,6 +630,11 @@ function ResultCard({
               </button>
             )}
           </>
+        ) : (
+          <div className="flex items-start gap-2 text-sm text-ink-400">
+            <AlertCircle className="size-4 shrink-0 mt-0.5" />
+            <span>No output returned.</span>
+          </div>
         )}
       </div>
 
@@ -725,8 +733,7 @@ function HistoryRow({
     ? (item.results.find((r) => r.model === item.winner_model)?.shortName ?? item.winner_model)
     : null;
   const scoreText = item.results
-    .filter((r) => r.score !== null)
-    .map((r) => `${r.shortName}: ${r.score!.overall}`)
+    .map((r) => r.score !== null ? `${r.shortName}: ${r.score.overall}` : `${r.shortName}: failed`)
     .join("  ");
 
   return (

@@ -25,6 +25,12 @@ import type { PromptContext } from "@/types/prompt";
 import type { ToolId } from "@/lib/mock-data";
 import type { ModelLabResult } from "@/types/model-comparison";
 
+// ─── Constants ─────────────────────────────────────────────────────────────
+
+// Per-model timeout. Keeps the route responsive even if OpenRouter is slow.
+// Note: your Vercel function timeout must be ≥ this value.
+const GENERATION_TIMEOUT_MS = 30_000;
+
 // ─── Types ─────────────────────────────────────────────────────────────────
 
 interface CompareBody {
@@ -132,18 +138,41 @@ export async function POST(request: NextRequest) {
       let shortName: string;
 
       try {
-        const gen = await generatePromptText({
-          idea,
-          target_tool,
-          context,
-          modelOverride: { model: modelId },
-        });
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(
+            () => reject(new Error(`Generation timed out after ${GENERATION_TIMEOUT_MS / 1000}s. Try again.`)),
+            GENERATION_TIMEOUT_MS
+          )
+        );
+        const gen = await Promise.race([
+          generatePromptText({ idea, target_tool, context, modelOverride: { model: modelId } }),
+          timeoutPromise,
+        ]);
         text = gen.text;
         usage = gen.usage;
         displayName = gen.choice.config.displayName;
         shortName = gen.choice.config.shortName;
+
+        if (!text || !text.trim()) {
+          return {
+            model: modelId,
+            displayName,
+            shortName,
+            output: null,
+            score: null,
+            latencyMs: Date.now() - start,
+            estimatedCostUSD: null,
+            error: "Model returned an empty response. The provider may be unavailable or the model ID may be wrong.",
+          };
+        }
       } catch (err) {
         const config = isValidModelId(modelId) ? getModelConfig(modelId) : null;
+        console.error("[model-lab:compare] model error", {
+          timestamp: new Date().toISOString(),
+          userId: user.id,
+          model: modelId,
+          error: err instanceof Error ? err.message : String(err),
+        });
         const msg =
           err instanceof ProviderConfigError
             ? `Provider not configured: ${err.message}`
