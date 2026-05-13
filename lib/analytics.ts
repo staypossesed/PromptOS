@@ -37,7 +37,8 @@ export type AnalyticsEvent =
   | "prompt_pack_deleted"
   | "model_lab_opened"
   | "model_comparison_run"
-  | "model_output_used";
+  | "model_output_used"
+  | "model_winner_selected";
 
 export interface EventProperties {
   target_tool?: string;
@@ -49,6 +50,10 @@ export interface EventProperties {
   models_compared?: string;
   model_count?: number;
   selected_model?: string;
+  winner_model?: string;
+  reason?: string;
+  latencyMs?: number;
+  estimatedCostUSD?: number;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {

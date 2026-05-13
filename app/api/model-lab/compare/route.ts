@@ -23,6 +23,7 @@ import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
 import { isValidToolId } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import type { ToolId } from "@/lib/mock-data";
+import type { ModelLabResult } from "@/types/model-comparison";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -33,16 +34,7 @@ interface CompareBody {
   models: string[];
 }
 
-export interface ModelLabResult {
-  model: string;
-  displayName: string;
-  shortName: string;
-  output: string | null;
-  score: import("@/types/prompt").PromptScore | null;
-  latencyMs: number;
-  estimatedCostUSD: number | null;
-  error: string | null;
-}
+export type { ModelLabResult };
 
 // ─── Validation ────────────────────────────────────────────────────────────
 

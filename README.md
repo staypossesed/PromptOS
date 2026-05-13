@@ -66,7 +66,11 @@ Open `.env.local` and fill in all values (see table below). The file is gitignor
    This creates the `profiles`, `prompts`, and `prompt_generations` tables, RLS policies, indexes, and triggers in one pass. It is safe to re-run.
 4. Paste the full contents of `supabase/feedback.sql` and click **Run**.
    This adds the `feedback` table with RLS. It is safe to re-run.
-5. Go to **Authentication → Providers → Email** and enable **Magic Link**.
+5. Paste the full contents of `supabase/prompt-packs.sql` and click **Run**.
+   This adds the `prompt_packs` table. It is safe to re-run.
+6. Paste the full contents of `supabase/model-comparisons.sql` and click **Run**.
+   This adds the `model_comparisons` evaluation dataset table. It is safe to re-run.
+7. Go to **Authentication → Providers → Email** and enable **Magic Link**.
 6. Go to **Authentication → URL Configuration** and set:
    - **Site URL**: `http://localhost:3000`
    - **Redirect URLs**: add `http://localhost:3000/auth/callback`
@@ -200,6 +204,45 @@ KIMI_MODEL=moonshotai/kimi-k2.6
 | Claude Haiku 4.5 | $1 / MTok | $5 / MTok |
 | Kimi K2.6 | $0.74 / MTok | $3.49 / MTok |
 
+### Running comparisons and building the evaluation dataset
+
+1. Navigate to `/model-lab`.
+2. Enter an idea and target tool.
+3. Select Claude Sonnet and Kimi K2.6 (or any combination of 1–4 models).
+4. Click **Generate comparison** — all models run in parallel. Each comparison is automatically saved to your account.
+5. Review the outputs side by side: quality score (0–100), latency, and estimated cost are shown per result.
+6. Click **Mark as winner** on the result card you would actually ship, then pick the reason.
+
+### Judging quality
+
+| Reason | When to pick |
+|---|---|
+| **Better structure** | Output uses clearer sections, XML tags, or logical flow |
+| **More specific** | Concrete names, paths, and formats instead of generic placeholders |
+| **Less bloated** | Tighter prompt without unnecessary preamble |
+| **Better Cursor fit** | Accurate file paths, stack refs, and acceptance criteria |
+| **Better examples** | Relevant, runnable examples included |
+| **Cheaper** | Cost is meaningfully lower and quality is acceptable |
+| **Faster** | Latency is meaningfully lower and quality is acceptable |
+
+### Decision criteria before switching the default model
+
+Before setting Kimi (or any other model) as the default for all users:
+
+- **Sample size**: At least 20–30 comparisons across different idea types and target tools.
+- **Win rate**: Kimi wins ≥ 60% of comparisons where the winning reason is quality (not only cost/speed).
+- **Score parity**: Average Kimi score is within 5 points of Claude Sonnet across all comparisons.
+- **No hard failures**: No comparisons where Kimi output was clearly unusable or off-topic.
+
+When all criteria are met, set in `.env.local` (and Vercel env vars):
+
+```
+DEFAULT_AI_PROVIDER=openrouter
+DEFAULT_AI_MODEL=moonshotai/kimi-k2.6
+```
+
+**⚠️ Do not flip this switch until the above criteria are met.**
+
 ---
 
 ## API Routes
@@ -215,6 +258,9 @@ KIMI_MODEL=moonshotai/kimi-k2.6
 | `/api/prompts/score` | POST | Required | Score a prompt across 6 dimensions |
 | `/api/prompts/optimize` | POST | Required | Rewrite prompt targeting weak dimensions |
 | `/api/model-lab/compare` | POST | Required | Compare N models on the same idea (10/day limit) |
+| `/api/model-lab/comparisons` | GET | Required | List last 10 saved comparisons (metadata only) |
+| `/api/model-lab/comparisons` | POST | Required | Save a comparison result to the dataset |
+| `/api/model-lab/comparisons/[id]` | PATCH | Required | Set winner and reason on a saved comparison |
 
 ---
 

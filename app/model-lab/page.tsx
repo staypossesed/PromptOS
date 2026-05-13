@@ -19,14 +19,20 @@ import {
   DollarSign,
   ChevronDown,
   ChevronUp,
+  Trophy,
+  Info,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { track } from "@/lib/analytics";
 import type { ToolId } from "@/lib/mock-data";
-import type { PromptScore } from "@/types/prompt";
+import type {
+  ModelLabResult,
+  ModelComparisonSummary,
+} from "@/types/model-comparison";
+import { WINNER_REASONS } from "@/types/model-comparison";
 
-// ─── Selectable models ────────────────────────────────────────────────────
-// IDs must match MODEL_REGISTRY keys in lib/ai/providers.ts
+// ─── Selectable models ─────────────────────────────────────────────────────
 
 const LAB_MODELS = [
   {
@@ -52,24 +58,12 @@ const LAB_MODELS = [
   },
 ] as const;
 
-// ─── Types ─────────────────────────────────────────────────────────────────
-
-interface ModelLabResult {
-  model: string;
-  displayName: string;
-  shortName: string;
-  output: string | null;
-  score: PromptScore | null;
-  latencyMs: number;
-  estimatedCostUSD: number | null;
-  error: string | null;
-}
-
 // ─── Page ──────────────────────────────────────────────────────────────────
 
 export default function ModelLabPage() {
   const router = useRouter();
 
+  // ── Compare state ──────────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
   const [tool, setTool] = useState<ToolId>("cursor");
   const [selectedModels, setSelectedModels] = useState<string[]>(
@@ -80,26 +74,82 @@ export default function ModelLabPage() {
   const [compareError, setCompareError] = useState<string | null>(null);
   const [copiedModel, setCopiedModel] = useState<string | null>(null);
   const [expandedModels, setExpandedModels] = useState<Set<string>>(new Set());
+
+  // ── Save + winner state ────────────────────────────────────────────────
+  const [comparisonId, setComparisonId] = useState<string | null>(null);
+  const [isSavingComparison, setIsSavingComparison] = useState(false);
+  const [winnerModel, setWinnerModel] = useState<string | null>(null);
+  const [winnerReason, setWinnerReason] = useState<string | null>(null);
+  const [winnerPickingFor, setWinnerPickingFor] = useState<string | null>(null);
+  const [isSavingWinner, setIsSavingWinner] = useState(false);
+
+  // ── History state ──────────────────────────────────────────────────────
+  const [history, setHistory] = useState<ModelComparisonSummary[] | null>(null);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+
+  // ── Toast ──────────────────────────────────────────────────────────────
   const [toast, setToast] = useState<{
     kind: "success" | "error";
     message: string;
   } | null>(null);
-
-  useEffect(() => {
-    track("model_lab_opened");
-  }, []);
 
   function showToast(kind: "success" | "error", message: string) {
     setToast({ kind, message });
     setTimeout(() => setToast(null), 3000);
   }
 
-  const toggleModel = (id: string) => {
-    setSelectedModels((prev) =>
-      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
-    );
-  };
+  // ── Load history ───────────────────────────────────────────────────────
+  const loadHistory = useCallback(async () => {
+    setIsLoadingHistory(true);
+    try {
+      const res = await fetch("/api/model-lab/comparisons");
+      if (res.ok) {
+        const json = await res.json();
+        setHistory(json.data ?? []);
+      }
+    } catch {
+      // best-effort
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  }, []);
 
+  useEffect(() => {
+    track("model_lab_opened");
+    loadHistory();
+  }, [loadHistory]);
+
+  // ── Auto-save comparison after results come in ─────────────────────────
+  const saveComparison = useCallback(
+    async (savedResults: ModelLabResult[], savedIdea: string, savedTool: ToolId, savedModels: string[]) => {
+      setIsSavingComparison(true);
+      try {
+        const res = await fetch("/api/model-lab/comparisons", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idea: savedIdea,
+            target_tool: savedTool,
+            models_compared: savedModels,
+            results: savedResults,
+          }),
+        });
+        if (!res.ok) return;
+        const json = await res.json();
+        if (json.data?.id) {
+          setComparisonId(json.data.id);
+        }
+        loadHistory();
+      } catch {
+        // best-effort — save failure doesn't break the lab
+      } finally {
+        setIsSavingComparison(false);
+      }
+    },
+    [loadHistory]
+  );
+
+  // ── Compare ────────────────────────────────────────────────────────────
   const handleCompare = useCallback(async () => {
     if (!idea.trim() || selectedModels.length === 0 || isComparing) return;
 
@@ -107,6 +157,10 @@ export default function ModelLabPage() {
     setResults(null);
     setCompareError(null);
     setExpandedModels(new Set());
+    setComparisonId(null);
+    setWinnerModel(null);
+    setWinnerReason(null);
+    setWinnerPickingFor(null);
 
     try {
       const res = await fetch("/api/model-lab/compare", {
@@ -116,11 +170,17 @@ export default function ModelLabPage() {
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? "Comparison failed.");
-      setResults(json.data);
 
-      const shortNames = (json.data as ModelLabResult[])
-        .map((r: ModelLabResult) => r.shortName)
-        .join(",");
+      const data: ModelLabResult[] = json.data;
+      setResults(data);
+
+      // Capture current values for the async save (closures would go stale)
+      const snapshotIdea = idea;
+      const snapshotTool = tool;
+      const snapshotModels = [...selectedModels];
+      saveComparison(data, snapshotIdea, snapshotTool, snapshotModels);
+
+      const shortNames = data.map((r) => r.shortName).join(",");
       track("model_comparison_run", {
         target_tool: tool,
         models_compared: shortNames,
@@ -131,8 +191,9 @@ export default function ModelLabPage() {
     } finally {
       setIsComparing(false);
     }
-  }, [idea, tool, selectedModels, isComparing]);
+  }, [idea, tool, selectedModels, isComparing, saveComparison]);
 
+  // ── Copy ───────────────────────────────────────────────────────────────
   const handleCopy = useCallback(async (result: ModelLabResult) => {
     if (!result.output) return;
     try {
@@ -144,6 +205,7 @@ export default function ModelLabPage() {
     }
   }, []);
 
+  // ── Use output in Builder ──────────────────────────────────────────────
   const handleUseOutput = useCallback(
     (result: ModelLabResult) => {
       if (!result.output) return;
@@ -160,6 +222,50 @@ export default function ModelLabPage() {
     [idea, tool, router]
   );
 
+  // ── Mark winner ────────────────────────────────────────────────────────
+  const handleMarkWinner = useCallback(
+    async (result: ModelLabResult, reason: string) => {
+      if (!comparisonId) return;
+      setIsSavingWinner(true);
+      try {
+        const res = await fetch(`/api/model-lab/comparisons/${comparisonId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ winner_model: result.model, winner_reason: reason }),
+        });
+        if (!res.ok) {
+          const json = await res.json();
+          showToast("error", json.error ?? "Failed to save winner.");
+          return;
+        }
+        setWinnerModel(result.model);
+        setWinnerReason(reason);
+        setWinnerPickingFor(null);
+        showToast("success", `${result.displayName} marked as winner.`);
+        track("model_winner_selected", {
+          winner_model: result.shortName,
+          target_tool: tool,
+          reason,
+          score_overall: result.score?.overall,
+          latencyMs: result.latencyMs,
+          estimatedCostUSD: result.estimatedCostUSD ?? undefined,
+        });
+        loadHistory();
+      } catch {
+        showToast("error", "Failed to save winner.");
+      } finally {
+        setIsSavingWinner(false);
+      }
+    },
+    [comparisonId, tool, loadHistory]
+  );
+
+  const toggleModel = (id: string) => {
+    setSelectedModels((prev) =>
+      prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]
+    );
+  };
+
   const toggleExpanded = (modelId: string) => {
     setExpandedModels((prev) => {
       const next = new Set(prev);
@@ -169,6 +275,7 @@ export default function ModelLabPage() {
   };
 
   const canCompare = idea.trim().length > 0 && selectedModels.length > 0;
+  const showWinner = results !== null && results.length > 1;
 
   return (
     <AppShell>
@@ -211,6 +318,14 @@ export default function ModelLabPage() {
           <p className="text-sm text-ink-400 mt-1">
             Compare Claude and Kimi side by side. Same idea, same tool — see which output you&apos;d ship.
           </p>
+
+          {/* Decision helper note */}
+          <div className="mt-4 flex items-start gap-2.5 rounded-xl border border-ink-100/80 bg-cream-50 px-4 py-3 text-sm text-ink-500">
+            <Info className="size-4 shrink-0 mt-0.5 text-ink-400" />
+            <span>
+              Use this lab to compare quality, cost, and latency before changing the default production model.
+            </span>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
@@ -298,11 +413,7 @@ export default function ModelLabPage() {
               <div
                 className={cn(
                   "grid gap-4",
-                  selectedModels.length === 1
-                    ? "grid-cols-1"
-                    : selectedModels.length === 2
-                    ? "grid-cols-1 xl:grid-cols-2"
-                    : "grid-cols-1 xl:grid-cols-2"
+                  selectedModels.length <= 1 ? "grid-cols-1" : "grid-cols-1 xl:grid-cols-2"
                 )}
               >
                 {selectedModels.map((id) => (
@@ -329,11 +440,7 @@ export default function ModelLabPage() {
               <div
                 className={cn(
                   "grid gap-4",
-                  results.length === 1
-                    ? "grid-cols-1"
-                    : results.length === 2
-                    ? "grid-cols-1 xl:grid-cols-2"
-                    : "grid-cols-1 xl:grid-cols-2"
+                  results.length <= 1 ? "grid-cols-1" : "grid-cols-1 xl:grid-cols-2"
                 )}
               >
                 {results.map((result) => (
@@ -342,9 +449,19 @@ export default function ModelLabPage() {
                     result={result}
                     isCopied={copiedModel === result.model}
                     isExpanded={expandedModels.has(result.model)}
+                    showWinner={showWinner}
+                    isSavingComparison={isSavingComparison}
+                    hasComparisonId={comparisonId !== null}
+                    isWinner={winnerModel === result.model}
+                    isPicking={winnerPickingFor === result.model}
+                    isSavingWinner={isSavingWinner}
+                    currentWinnerReason={winnerModel === result.model ? winnerReason : null}
                     onCopy={() => handleCopy(result)}
                     onUse={() => handleUseOutput(result)}
                     onToggleExpand={() => toggleExpanded(result.model)}
+                    onStartPick={() => setWinnerPickingFor(result.model)}
+                    onCancelPick={() => setWinnerPickingFor(null)}
+                    onMarkWinner={(reason) => handleMarkWinner(result, reason)}
                   />
                 ))}
               </div>
@@ -362,6 +479,30 @@ export default function ModelLabPage() {
             )}
           </div>
         </div>
+
+        {/* ── History section ────────────────────────────────────────────── */}
+        <div className="mt-10">
+          <div className="flex items-center gap-2 mb-4">
+            <h2 className="text-sm font-semibold text-ink-700">Recent Comparisons</h2>
+            {isLoadingHistory && <Loader2 className="size-3.5 animate-spin text-ink-400" />}
+          </div>
+
+          {history !== null && history.length === 0 && !isLoadingHistory && (
+            <p className="text-sm text-ink-400">No comparisons yet. Run one above to start building the dataset.</p>
+          )}
+
+          {history !== null && history.length > 0 && (
+            <div className="rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+              {history.map((item, i) => (
+                <HistoryRow
+                  key={item.id}
+                  item={item}
+                  isLast={i === history.length - 1}
+                />
+              ))}
+            </div>
+          )}
+        </div>
       </main>
     </AppShell>
   );
@@ -373,28 +514,56 @@ function ResultCard({
   result,
   isCopied,
   isExpanded,
+  showWinner,
+  isSavingComparison,
+  hasComparisonId,
+  isWinner,
+  isPicking,
+  isSavingWinner,
+  currentWinnerReason,
   onCopy,
   onUse,
   onToggleExpand,
+  onStartPick,
+  onCancelPick,
+  onMarkWinner,
 }: {
   result: ModelLabResult;
   isCopied: boolean;
   isExpanded: boolean;
+  showWinner: boolean;
+  isSavingComparison: boolean;
+  hasComparisonId: boolean;
+  isWinner: boolean;
+  isPicking: boolean;
+  isSavingWinner: boolean;
+  currentWinnerReason: string | null;
   onCopy: () => void;
   onUse: () => void;
   onToggleExpand: () => void;
+  onStartPick: () => void;
+  onCancelPick: () => void;
+  onMarkWinner: (reason: string) => void;
 }) {
   const score = result.score?.overall ?? null;
   const PREVIEW_CHARS = 500;
   const isLong = (result.output?.length ?? 0) > PREVIEW_CHARS;
 
   return (
-    <div className="rounded-2xl border border-ink-100/70 bg-white card-soft flex flex-col overflow-hidden">
+    <div
+      className={cn(
+        "rounded-2xl border bg-white card-soft flex flex-col overflow-hidden transition-colors",
+        isWinner ? "border-clay-300/70" : "border-ink-100/70"
+      )}
+    >
       {/* Header */}
       <div className="px-5 pt-4 pb-3 border-b border-ink-100/60">
         <div className="flex items-start justify-between gap-2">
           <div>
-            <div className="text-sm font-semibold text-ink-900">{result.displayName}</div>
+            <div className="flex items-center gap-1.5">
+              {isWinner && <Trophy className="size-3.5 text-clay-500" />}
+              <div className="text-sm font-semibold text-ink-900">{result.displayName}</div>
+            </div>
             <div className="text-[11px] text-ink-400 mt-0.5">
               {result.model.includes("moonshot") || result.model.includes("kimi")
                 ? "via OpenRouter"
@@ -456,34 +625,142 @@ function ResultCard({
 
       {/* Footer */}
       {!result.error && result.output && (
-        <div className="px-5 pb-4 flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={onCopy}
-            className="flex-1"
-          >
-            {isCopied ? (
-              <>
-                <Check className="size-3.5 text-clay-500" />
-                Copied
-              </>
-            ) : (
-              <>
-                <Copy className="size-3.5" />
-                Copy
-              </>
-            )}
-          </Button>
-          <Button size="sm" onClick={onUse} className="flex-1">
-            Use this
-            <ArrowRight className="size-3.5" />
-          </Button>
+        <div className="px-5 pb-4 space-y-2.5">
+          {/* Copy + Use */}
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={onCopy} className="flex-1">
+              {isCopied ? (
+                <>
+                  <Check className="size-3.5 text-clay-500" />
+                  Copied
+                </>
+              ) : (
+                <>
+                  <Copy className="size-3.5" />
+                  Copy
+                </>
+              )}
+            </Button>
+            <Button size="sm" onClick={onUse} className="flex-1">
+              Use this
+              <ArrowRight className="size-3.5" />
+            </Button>
+          </div>
+
+          {/* Winner section — only when comparing 2+ models */}
+          {showWinner && (
+            <div className="border-t border-ink-100/50 pt-2.5">
+              {isWinner ? (
+                <div className="flex items-center gap-1.5 text-[12px] text-clay-600 font-medium">
+                  <Trophy className="size-3.5" />
+                  Winner{currentWinnerReason ? ` · ${currentWinnerReason}` : ""}
+                </div>
+              ) : isPicking ? (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] text-ink-400 font-medium">Pick a reason:</span>
+                    <button
+                      type="button"
+                      onClick={onCancelPick}
+                      className="text-ink-300 hover:text-ink-500 transition-colors"
+                    >
+                      <X className="size-3.5" />
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {WINNER_REASONS.map((reason) => (
+                      <button
+                        key={reason}
+                        type="button"
+                        onClick={() => onMarkWinner(reason)}
+                        disabled={isSavingWinner}
+                        className="text-[11px] text-ink-600 bg-cream-100 hover:bg-cream-200 border border-ink-100 rounded-full px-2.5 py-1 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {reason}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onStartPick}
+                  disabled={isSavingComparison || !hasComparisonId}
+                  className="flex items-center gap-1.5 text-[12px] text-ink-500 hover:text-ink-700 font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+                >
+                  {isSavingComparison ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Trophy className="size-3.5" />
+                  )}
+                  {isSavingComparison ? "Saving…" : "Mark as winner"}
+                </button>
+              )}
+            </div>
+          )}
         </div>
       )}
     </div>
   );
 }
+
+// ─── History row ───────────────────────────────────────────────────────────
+
+function HistoryRow({
+  item,
+  isLast,
+}: {
+  item: ModelComparisonSummary;
+  isLast: boolean;
+}) {
+  const modelNames = item.results.map((r) => r.shortName).join(", ");
+  const winnerShortName = item.winner_model
+    ? (item.results.find((r) => r.model === item.winner_model)?.shortName ?? item.winner_model)
+    : null;
+  const scoreText = item.results
+    .filter((r) => r.score !== null)
+    .map((r) => `${r.shortName}: ${r.score!.overall}`)
+    .join("  ");
+
+  return (
+    <div
+      className={cn(
+        "px-5 py-3.5 flex items-start gap-4",
+        !isLast && "border-b border-ink-100/60"
+      )}
+    >
+      <div className="flex-1 min-w-0">
+        <div className="text-sm text-ink-800 truncate" title={item.idea}>
+          {item.idea}
+        </div>
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mt-1">
+          <span className="text-[11px] text-ink-400">{item.target_tool}</span>
+          <span className="text-[10px] text-ink-200">·</span>
+          <span className="text-[11px] text-ink-400">{modelNames}</span>
+          {winnerShortName && (
+            <>
+              <span className="text-[10px] text-ink-200">·</span>
+              <span className="inline-flex items-center gap-1 text-[11px] text-clay-600 font-medium">
+                <Trophy className="size-3" />
+                {winnerShortName}
+                {item.winner_reason && ` · ${item.winner_reason}`}
+              </span>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="shrink-0 text-right space-y-0.5">
+        {scoreText && (
+          <div className="text-[11px] font-mono text-ink-400">{scoreText}</div>
+        )}
+        <div className="text-[11px] text-ink-300">{formatRelativeDate(item.created_at)}</div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Badges ────────────────────────────────────────────────────────────────
 
 function ScoreBadge({ score }: { score: number }) {
   return (
@@ -510,4 +787,17 @@ function MetaBadge({ icon, label }: { icon: React.ReactNode; label: string }) {
       {label}
     </div>
   );
+}
+
+// ─── Date helper ───────────────────────────────────────────────────────────
+
+function formatRelativeDate(iso: string): string {
+  const d = new Date(iso);
+  const diffMs = Date.now() - d.getTime();
+  const diffHours = diffMs / (1000 * 60 * 60);
+  if (diffHours < 1) return "just now";
+  if (diffHours < 24) return `${Math.floor(diffHours)}h ago`;
+  const diffDays = diffHours / 24;
+  if (diffDays < 7) return `${Math.floor(diffDays)}d ago`;
+  return d.toLocaleDateString();
 }
