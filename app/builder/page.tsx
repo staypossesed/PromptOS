@@ -18,7 +18,7 @@ import { EXAMPLE_IDEAS, type ToolId } from "@/lib/mock-data";
 import type { PromptRecord } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
-import type { PackType, PromptPack } from "@/types/prompt-pack";
+import type { PackType, PromptPack, PromptPackRecord } from "@/types/prompt-pack";
 import { Suspense } from "react";
 import { track } from "@/lib/analytics";
 import { TEMPLATES } from "@/lib/templates";
@@ -31,6 +31,7 @@ function BuilderInner() {
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
   const templateId = searchParams.get("template");
+  const packId = searchParams.get("pack");
 
   // ── Mode ────────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<"single" | "pack">("single");
@@ -43,6 +44,10 @@ function BuilderInner() {
   const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+
+  // ── Pack save state ─────────────────────────────────────────────────────
+  const [savedPackId, setSavedPackId] = useState<string | null>(null);
+  const [isPackSaved, setIsPackSaved] = useState(false);
 
   // ── Pack state ──────────────────────────────────────────────────────────
   const [packType, setPackType] = useState<PackType>("build_an_app");
@@ -62,6 +67,8 @@ function BuilderInner() {
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [isSaving, startSaveTransition] = useTransition();
   const [isDeleting, startDeleteTransition] = useTransition();
+  const [isSavingPack, startSavingPackTransition] = useTransition();
+  const [isDeletingPack, startDeletingPackTransition] = useTransition();
 
   // ── Toast feedback ──────────────────────────────────────────────────────
   const [toast, setToast] = useState<{
@@ -114,6 +121,37 @@ function BuilderInner() {
     if (template.context) setContext(template.context);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [templateId]);
+
+  // ── Load existing pack when ?pack= is present ─────────────────────────────
+  useEffect(() => {
+    if (!packId) return;
+    setIsLoading(true);
+    fetch(`/api/prompt-packs/${packId}`)
+      .then((r) => r.json())
+      .then(({ data, error }: { data?: PromptPackRecord; error?: string }) => {
+        if (error || !data) {
+          showToast("error", error ?? "Failed to load pack.");
+          return;
+        }
+        setMode("pack");
+        setIdea(data.idea);
+        setPackType(data.pack_type);
+        setContext(data.context ?? {});
+        setPackResult({ title: data.title, pack_type: data.pack_type, prompts: data.prompts });
+        setSavedPackId(data.id);
+        setIsPackSaved(true);
+        track("prompt_pack_reopened", { pack_type: data.pack_type });
+      })
+      .catch(() => showToast("error", "Failed to load pack."))
+      .finally(() => setIsLoading(false));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [packId]);
+
+  // ── Mark pack as "unsaved" whenever the user edits after loading ──────────
+  useEffect(() => {
+    if (savedPackId) setIsPackSaved(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [idea, packType, context]);
 
   // ── Mark as "unsaved" whenever the user edits after loading ─────────────
   useEffect(() => {
@@ -232,13 +270,14 @@ function BuilderInner() {
         return;
       }
       setPackResult(json.data);
+      if (savedPackId) setIsPackSaved(false);
       track("prompt_pack_generated", { pack_type: packType });
     } catch {
       setPackError("Pack generation failed. Check your connection and try again.");
     } finally {
       setIsGeneratingPack(false);
     }
-  }, [idea, packType, context, isGeneratingPack]);
+  }, [idea, packType, context, isGeneratingPack, savedPackId]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async () => {
@@ -377,6 +416,75 @@ function BuilderInner() {
     });
   }, [savedId, router]);
 
+  // ── Save Pack ─────────────────────────────────────────────────────────────
+  const handleSavePack = useCallback(() => {
+    if (!idea.trim() || !packResult) {
+      showToast("error", "Generate a pack before saving.");
+      return;
+    }
+
+    startSavingPackTransition(async () => {
+      const body = {
+        idea,
+        pack_type: packType,
+        context,
+        prompts: packResult.prompts,
+        title: generateTitleFromIdea(idea),
+      };
+
+      try {
+        if (savedPackId) {
+          const res = await fetch(`/api/prompt-packs/${savedPackId}`, {
+            method: "PATCH",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error ?? "Update failed.");
+          setIsPackSaved(true);
+          showToast("success", "Pack updated.");
+          track("prompt_pack_saved", { pack_type: packType, action_type: "update" });
+        } else {
+          const res = await fetch("/api/prompt-packs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          });
+          const json = await res.json();
+          if (!res.ok) throw new Error(json.error ?? "Save failed.");
+          setSavedPackId(json.data.id);
+          setIsPackSaved(true);
+          showToast("success", "Pack saved.");
+          track("prompt_pack_saved", { pack_type: packType, action_type: "create" });
+        }
+      } catch (err) {
+        showToast("error", err instanceof Error ? err.message : "Save failed.");
+      }
+    });
+  }, [idea, packType, context, packResult, savedPackId]);
+
+  // ── Delete Pack ───────────────────────────────────────────────────────────
+  const handleDeletePack = useCallback(() => {
+    if (!savedPackId) return;
+    if (!window.confirm("Delete this pack? This cannot be undone.")) return;
+
+    startDeletingPackTransition(async () => {
+      try {
+        const res = await fetch(`/api/prompt-packs/${savedPackId}`, { method: "DELETE" });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error ?? "Delete failed.");
+        setPackResult(null);
+        setSavedPackId(null);
+        setIsPackSaved(false);
+        router.replace("/builder", { scroll: false });
+        showToast("success", "Pack deleted.");
+        track("prompt_pack_deleted", { pack_type: packType });
+      } catch (err) {
+        showToast("error", err instanceof Error ? err.message : "Delete failed.");
+      }
+    });
+  }, [savedPackId, packType, router]);
+
   // ── Title for breadcrumb ──────────────────────────────────────────────────
   const breadcrumbTitle = idea.trim()
     ? generateTitleFromIdea(idea)
@@ -392,35 +500,71 @@ function BuilderInner() {
         ]}
         actions={
           <div className="hidden md:flex items-center gap-2">
-            {savedId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={handleDelete}
-                disabled={isDeleting}
-                className="text-destructive hover:text-destructive hover:bg-destructive/5"
-              >
-                {isDeleting ? (
-                  <Loader2 className="size-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="size-3.5" />
+            {mode === "pack" ? (
+              <>
+                {savedPackId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDeletePack}
+                    disabled={isDeletingPack}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/5"
+                  >
+                    {isDeletingPack ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-3.5" />
+                    )}
+                    Delete
+                  </Button>
                 )}
-                Delete
-              </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSavePack}
+                  disabled={isSavingPack || isLoading || isGeneratingPack || !packResult}
+                >
+                  {isSavingPack ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                  {isPackSaved ? "Saved" : savedPackId ? "Update pack" : "Save pack"}
+                </Button>
+              </>
+            ) : (
+              <>
+                {savedId && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="text-destructive hover:text-destructive hover:bg-destructive/5"
+                  >
+                    {isDeleting ? (
+                      <Loader2 className="size-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="size-3.5" />
+                    )}
+                    Delete
+                  </Button>
+                )}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSave}
+                  disabled={isSaving || isLoading || isGenerating || isScoring || isOptimizing || !generatedPrompt}
+                >
+                  {isSaving ? (
+                    <Loader2 className="size-3.5 animate-spin" />
+                  ) : (
+                    <Save className="size-3.5" />
+                  )}
+                  {isSaved ? "Saved" : savedId ? "Update" : "Save draft"}
+                </Button>
+              </>
             )}
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleSave}
-              disabled={isSaving || isLoading || isGenerating || isScoring || isOptimizing || !generatedPrompt}
-            >
-              {isSaving ? (
-                <Loader2 className="size-3.5 animate-spin" />
-              ) : (
-                <Save className="size-3.5" />
-              )}
-              {isSaved ? "Saved" : savedId ? "Update" : "Save draft"}
-            </Button>
           </div>
         }
       />
@@ -516,6 +660,20 @@ function BuilderInner() {
                 ) : (
                   <><Layers className="size-4" />{packResult ? "Regenerate pack" : "Generate pack"}</>
                 )}
+              </Button>
+              <Button
+                size="lg"
+                variant="outline"
+                className="w-full md:hidden"
+                onClick={handleSavePack}
+                disabled={isSavingPack || isGeneratingPack || !packResult}
+              >
+                {isSavingPack ? (
+                  <Loader2 className="size-4 animate-spin" />
+                ) : (
+                  <Save className="size-4" />
+                )}
+                {isPackSaved ? "Saved" : savedPackId ? "Update pack" : "Save pack"}
               </Button>
             </div>
             <div className="lg:col-span-8">

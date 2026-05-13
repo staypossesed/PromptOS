@@ -31,7 +31,10 @@ export type AnalyticsEvent =
   | "template_used"
   | "onboarding_option_selected"
   | "prompt_pack_generated"
-  | "prompt_pack_copied";
+  | "prompt_pack_copied"
+  | "prompt_pack_saved"
+  | "prompt_pack_reopened"
+  | "prompt_pack_deleted";
 
 export interface EventProperties {
   target_tool?: string;
