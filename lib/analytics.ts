@@ -38,7 +38,9 @@ export type AnalyticsEvent =
   | "model_lab_opened"
   | "model_comparison_run"
   | "model_output_used"
-  | "model_winner_selected";
+  | "model_winner_selected"
+  | "google_signin_started"
+  | "github_signin_started";
 
 export interface EventProperties {
   target_tool?: string;
