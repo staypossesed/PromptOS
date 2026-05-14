@@ -56,7 +56,7 @@ export function TemplateGrid() {
         {filtered.map((template) => (
           <div
             key={template.id}
-            className="group rounded-2xl border border-ink-100/70 bg-white card-soft p-5 flex flex-col gap-3 hover:border-ink-200/80 transition-colors"
+            className="group rounded-2xl border border-ink-100/70 bg-card card-soft p-5 flex flex-col gap-3 hover:border-ink-200/80 transition-colors"
           >
             {/* Badges */}
             <div className="flex items-center gap-2 flex-wrap">

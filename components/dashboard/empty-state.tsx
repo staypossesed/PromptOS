@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 
 export function EmptyState() {
   return (
-    <div className="relative rounded-3xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+    <div className="relative rounded-3xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       {/* Decorative dot grid */}
       <div className="absolute inset-0 bg-dotgrid opacity-40 pointer-events-none" />
       {/* Soft clay glow */}

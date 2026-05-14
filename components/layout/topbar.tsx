@@ -146,7 +146,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -6 }}
                   transition={{ duration: 0.14, ease: "easeOut" }}
-                  className="absolute right-0 top-11 z-50 w-60 rounded-2xl border border-ink-100/70 bg-white card-soft-lg overflow-hidden"
+                  className="absolute right-0 top-11 z-50 w-60 rounded-2xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden"
                 >
                   {/* User info */}
                   <div className="px-4 py-3.5 border-b border-ink-100/60">

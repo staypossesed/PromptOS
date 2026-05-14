@@ -14,7 +14,7 @@ export function LandingHeroDemo() {
       {/* Soft drop shadow plate */}
       <div className="absolute inset-x-8 -bottom-6 h-12 rounded-full bg-clay-300/30 blur-2xl pointer-events-none" />
 
-      <div className="relative rounded-2xl border border-ink-100/70 bg-white card-soft-lg overflow-hidden">
+      <div className="relative rounded-2xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden">
         {/* Window chrome */}
         <div className="flex items-center gap-2 px-4 py-3 border-b border-ink-100/60 bg-cream-50/60">
           <div className="flex gap-1.5">

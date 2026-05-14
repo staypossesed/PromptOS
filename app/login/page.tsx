@@ -38,7 +38,7 @@ export default function LoginPage() {
 function LoginSkeleton() {
   return (
     <div className="w-full max-w-md">
-      <div className="rounded-3xl border border-ink-100/70 bg-white card-soft-lg overflow-hidden">
+      <div className="rounded-3xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden">
         <div className="h-1 bg-gradient-to-r from-clay-400 via-clay-500 to-clay-600" />
         <div className="p-8 md:p-10 space-y-5 animate-pulse">
           <div className="h-4 w-24 rounded-full bg-cream-200" />

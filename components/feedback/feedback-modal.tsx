@@ -96,7 +96,7 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
 
               {done ? (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
-                  <CheckCircle2 className="size-8 text-clay-500" />
+                  <CheckCircle2 className="size-8 text-sage-600" />
                   <p className="text-sm font-medium text-ink-800">
                     Thanks for your feedback!
                   </p>

@@ -633,12 +633,12 @@ function BuilderInner() {
           className={cn(
             "fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-sm transition-all",
             toast.kind === "success"
-              ? "border-clay-200/60 bg-white text-ink-800"
-              : "border-destructive/20 bg-white text-destructive"
+              ? "border-sage-200 bg-card text-ink-800"
+              : "border-destructive/20 bg-card text-destructive"
           )}
         >
           {toast.kind === "success" ? (
-            <CheckCircle2 className="size-4 text-clay-500 shrink-0" />
+            <CheckCircle2 className="size-4 text-sage-600 shrink-0" />
           ) : (
             <AlertCircle className="size-4 shrink-0" />
           )}
@@ -702,7 +702,7 @@ function BuilderInner() {
           /* ── Pack mode layout ─────────────────────────────────────────── */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             <div className="lg:col-span-4 space-y-5">
-              <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 space-y-5">
+              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 space-y-5">
                 <IdeaInput value={idea} onChange={setIdea} />
                 <ContextPanel value={context} onChange={setContext} />
                 <PackTypeSelector value={packType} onChange={setPackType} />
@@ -743,7 +743,7 @@ function BuilderInner() {
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
             {/* Left: input column */}
             <div className="lg:col-span-4 space-y-5">
-              <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 space-y-5">
+              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 space-y-5">
                 <IdeaInput value={idea} onChange={setIdea} />
 
                 {/* Example chips */}

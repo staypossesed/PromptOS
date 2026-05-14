@@ -138,7 +138,7 @@ export function Sidebar() {
         />
 
         {/* Plan card */}
-        <div className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-white p-3.5 card-soft">
+        <div className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft">
           <div className="flex items-center gap-2">
             <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center">
               <Sparkles className="size-3.5 text-clay-600" />
@@ -229,7 +229,7 @@ function NavLink({
         {item.label}
       </span>
       {item.badge && (
-        <span className="text-[10px] uppercase tracking-wider text-ink-300 border border-ink-200/60 rounded-full px-1.5 py-0.5">
+        <span className="text-[10px] uppercase tracking-wider text-[#7A520E] bg-[#D9952F]/10 border border-[#D9952F]/30 rounded-full px-1.5 py-0.5">
           {item.badge}
         </span>
       )}

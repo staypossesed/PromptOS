@@ -25,8 +25,8 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
               className={cn(
                 "relative group flex flex-col items-start gap-1.5 rounded-xl border p-3.5 text-left transition-all",
                 isActive
-                  ? "border-clay-400/70 bg-white card-soft"
-                  : "border-ink-200/50 bg-white/60 hover:border-ink-300/70 hover:bg-white"
+                  ? "border-clay-400/70 bg-card card-soft"
+                  : "border-ink-200/50 bg-white/60 hover:border-ink-300/70 hover:bg-card"
               )}
             >
               <div className="flex w-full items-center justify-between">

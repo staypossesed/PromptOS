@@ -93,7 +93,7 @@ export function LoginForm() {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-md"
     >
-      <div className="rounded-3xl border border-ink-100/70 bg-white card-soft-lg overflow-hidden">
+      <div className="rounded-3xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden">
         {/* Top accent stripe */}
         <div className="h-1 bg-gradient-to-r from-clay-400 via-clay-500 to-clay-600" />
 
@@ -299,7 +299,7 @@ function SentState({ email }: { email: string }) {
         transition={{ type: "spring", stiffness: 280, damping: 22, delay: 0.08 }}
         className="mx-auto mb-6 size-16 rounded-2xl bg-clay-500/10 flex items-center justify-center"
       >
-        <CheckCircle2 className="size-8 text-clay-600" />
+        <CheckCircle2 className="size-8 text-sage-600" />
       </motion.div>
 
       <h2 className="font-serif text-2xl font-medium text-ink-900 mb-2">

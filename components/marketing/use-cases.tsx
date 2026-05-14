@@ -55,7 +55,7 @@ export function UseCasesDeep() {
       {USE_CASES.map((uc) => (
         <div
           key={uc.title}
-          className="rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden"
+          className="rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden"
         >
           <div className="grid md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-ink-100/60">
             {/* Left: rough input */}

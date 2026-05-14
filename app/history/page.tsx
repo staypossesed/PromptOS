@@ -163,7 +163,7 @@ export default async function HistoryPage({
                 {prompts.length === 0 && !q && !toolFilter ? (
                   <EmptyState />
                 ) : prompts.length === 0 ? (
-                  <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-10 text-center">
+                  <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
                     <p className="text-sm text-ink-500">No prompts match your filter.</p>
                     <Link href="/history" className="text-sm text-clay-600 hover:underline mt-2 inline-block">
                       Clear filters
@@ -193,7 +193,7 @@ export default async function HistoryPage({
             {!packsError && (
               <>
                 {packs.length === 0 ? (
-                  <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-10 text-center">
+                  <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
                     <Layers className="size-8 text-ink-300 mx-auto mb-3" />
                     <p className="text-sm font-medium text-ink-700 mb-1">No packs saved yet</p>
                     <p className="text-sm text-ink-400 mb-4">

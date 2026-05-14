@@ -4,26 +4,49 @@
 
 @layer base {
   :root {
-    --background: 36 38% 97%;
-    --foreground: 35 16% 12%;
-    --card: 0 0% 100%;
-    --card-foreground: 35 16% 12%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 35 16% 12%;
-    --primary: 19 61% 46%;
-    --primary-foreground: 36 38% 97%;
-    --secondary: 36 33% 92%;
-    --secondary-foreground: 35 16% 18%;
-    --muted: 36 30% 94%;
-    --muted-foreground: 35 11% 36%;
+    /* ── Base surfaces ───────────────────────────────────────── */
+    --background: 37 46% 94%;       /* #F7F2EA — warm cream */
+    --foreground: 30 17% 9%;        /* #1C1814 — dark ink */
+    --card: 43 100% 99%;            /* #FFFDF8 — soft warm surface */
+    --card-foreground: 30 17% 9%;   /* #1C1814 */
+    --popover: 43 100% 99%;         /* #FFFDF8 */
+    --popover-foreground: 30 17% 9%;
+
+    /* ── Brand primary ───────────────────────────────────────── */
+    --primary: 19 62% 46%;          /* #BD5A2C — clay */
+    --primary-foreground: 37 46% 94%;
+
+    /* ── Secondary / muted ───────────────────────────────────── */
+    --secondary: 33 28% 92%;
+    --secondary-foreground: 30 17% 18%;
+    --muted: 33 25% 95%;
+    --muted-foreground: 29 7% 41%;  /* #6F6760 — muted text */
     --accent: 22 64% 90%;
-    --accent-foreground: 35 16% 12%;
-    --destructive: 0 65% 45%;
-    --destructive-foreground: 36 38% 97%;
-    --border: 35 22% 88%;
-    --input: 35 22% 88%;
-    --ring: 19 61% 46%;
+    --accent-foreground: 30 17% 9%;
+
+    /* ── Status ──────────────────────────────────────────────── */
+    --destructive: 7 57% 51%;       /* #C94A3A — error red */
+    --destructive-foreground: 37 46% 94%;
+    --success: 111 11% 52%;         /* #7C9278 — sage green */
+    --success-foreground: 37 46% 94%;
+    --warning: 36 69% 52%;          /* #D9952F — amber */
+    --warning-foreground: 37 46% 94%;
+    --info: 217 91% 60%;            /* #3B82F6 — blue */
+    --info-foreground: 37 46% 94%;
+
+    /* ── Borders & inputs ────────────────────────────────────── */
+    --border: 33 28% 86%;           /* #E6DDD2 — soft border */
+    --input: 33 28% 86%;
+    --ring: 19 62% 46%;             /* clay focus ring */
     --radius: 0.875rem;
+
+    /* ── Named convenience tokens (hex) ─────────────────────── */
+    --surface: #FFFDF8;
+    --primary-hover: #A84E26;
+    --text-main: #1C1814;
+    --text-muted: #6F6760;
+    --border-soft: #E6DDD2;
+
     --font-fraunces: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
   }
 

@@ -315,12 +315,12 @@ export default function ModelLabPage() {
           className={cn(
             "fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-sm transition-all",
             toast.kind === "success"
-              ? "border-clay-200/60 bg-white text-ink-800"
-              : "border-destructive/20 bg-white text-destructive"
+              ? "border-sage-200 bg-card text-ink-800"
+              : "border-destructive/20 bg-card text-destructive"
           )}
         >
           {toast.kind === "success" ? (
-            <CheckCircle2 className="size-4 text-clay-500 shrink-0" />
+            <CheckCircle2 className="size-4 text-sage-600 shrink-0" />
           ) : (
             <AlertCircle className="size-4 shrink-0" />
           )}
@@ -368,7 +368,7 @@ export default function ModelLabPage() {
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
           {/* ── Left: input panel ──────────────────────────────────────── */}
           <div className="lg:col-span-4 space-y-5">
-            <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 space-y-5">
+            <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 space-y-5">
               <IdeaInput value={idea} onChange={setIdea} />
               <ToolSelector value={tool} onChange={setTool} />
 
@@ -406,7 +406,7 @@ export default function ModelLabPage() {
                           <div className="flex items-center gap-1.5">
                             <div className="text-sm font-medium text-ink-800">{m.label}</div>
                             {m.experimental && (
-                              <span className="text-[10px] font-medium bg-amber-50 text-amber-600 border border-amber-200/60 rounded-full px-1.5 py-0.5 leading-none">
+                              <span className="text-[10px] font-medium bg-[#D9952F]/10 text-[#7A520E] border border-[#D9952F]/30 rounded-full px-1.5 py-0.5 leading-none">
                                 Experimental
                               </span>
                             )}
@@ -466,7 +466,7 @@ export default function ModelLabPage() {
                 {selectedModels.map((id) => (
                   <div
                     key={id}
-                    className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 animate-pulse"
+                    className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 animate-pulse"
                   >
                     <div className="h-4 bg-cream-200 rounded w-1/2 mb-3" />
                     <div className="space-y-2">
@@ -516,7 +516,7 @@ export default function ModelLabPage() {
 
             {/* Empty state */}
             {!isComparing && !results && !compareError && (
-              <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-10 h-full min-h-[300px] flex flex-col items-center justify-center text-center">
+              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 h-full min-h-[300px] flex flex-col items-center justify-center text-center">
                 <FlaskConical className="size-10 text-ink-200 mb-4" />
                 <p className="text-sm font-medium text-ink-600 mb-1">Ready to compare</p>
                 <p className="text-sm text-ink-400 max-w-xs">
@@ -539,7 +539,7 @@ export default function ModelLabPage() {
           )}
 
           {history !== null && history.length > 0 && (
-            <div className="rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+            <div className="rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
               {history.map((item, i) => (
                 <HistoryRow
                   key={item.id}
@@ -602,7 +602,7 @@ function ResultCard({
   return (
     <div
       className={cn(
-        "rounded-2xl border bg-white card-soft flex flex-col overflow-hidden transition-colors",
+        "rounded-2xl border bg-card card-soft flex flex-col overflow-hidden transition-colors",
         isWinner ? "border-clay-300/70" : "border-ink-100/70"
       )}
     >

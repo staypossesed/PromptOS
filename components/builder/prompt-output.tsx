@@ -54,7 +54,7 @@ export function PromptOutput({
   const showStreamingPlaceholder = isGenerating && isEmpty;
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+    <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-3.5 border-b border-ink-100/60 bg-cream-50/60">
         <div className="flex items-center gap-2">

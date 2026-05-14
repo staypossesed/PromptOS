@@ -126,7 +126,7 @@ export default async function DashboardPage({
             {totalPrompts === 0 ? (
               <EmptyState />
             ) : prompts.length === 0 ? (
-              <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-10 text-center">
+              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
                 <p className="text-sm text-ink-500">No prompts match your filter.</p>
                 <Link href="/dashboard" className="text-sm text-clay-600 hover:underline mt-2 inline-block">
                   Clear filters
@@ -165,7 +165,7 @@ function StatCard({
   accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-ink-100/70 bg-white p-4 card-soft">
+    <div className="rounded-xl border border-ink-100/70 bg-card p-4 card-soft">
       <div className="flex items-center justify-between mb-2.5">
         <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400">
           {label}

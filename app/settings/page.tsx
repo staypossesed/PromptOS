@@ -108,7 +108,7 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5">
+    <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5">
       <div className="flex items-center gap-2 mb-4">
         <Icon className="size-4 text-ink-400" />
         <h2 className="text-sm font-semibold text-ink-700 uppercase tracking-[0.1em]">{title}</h2>

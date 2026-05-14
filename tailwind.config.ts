@@ -23,38 +23,49 @@ const config: Config = {
       colors: {
         // Cream / off-white surfaces
         cream: {
-          50: "#FBF8F3",
-          100: "#F7F2EA",
+          50: "#FFFDF8",   // soft warm surface (#FFFDF8)
+          100: "#F7F2EA",  // background cream (#F7F2EA)
           200: "#EFE7D9",
           300: "#E4D8C4",
         },
-        // Warm clay accent — the signature color
+        // Warm clay — primary brand color
         clay: {
           50: "#FBF1EC",
           100: "#F5DDD0",
           200: "#EBBBA1",
           300: "#DC9670",
           400: "#CC7849",
-          500: "#BD5D2E", // primary
-          600: "#A24A22",
-          700: "#823A1B",
+          500: "#BD5A2C",  // primary clay (#BD5A2C)
+          600: "#A84E26",  // hover clay (#A84E26)
+          700: "#843E1C",
           800: "#612B14",
           900: "#421D0E",
         },
-        // Charcoal text
+        // Charcoal ink — text
         ink: {
           50: "#F5F3EF",
-          100: "#E5E2DC",
+          100: "#E6DDD2",  // soft border (#E6DDD2)
           200: "#C7C2B8",
           300: "#9B958A",
-          400: "#6E685D",
+          400: "#6F6760",  // muted text (#6F6760)
           500: "#4A453C",
           600: "#332F28",
           700: "#26231D",
-          800: "#1C1A15",
+          800: "#1C1814",  // dark ink (#1C1814)
           900: "#13110D",
         },
-        // shadcn semantic tokens mapped to our palette
+        // Sage — success / saved states
+        sage: {
+          50: "#EEF3ED",
+          100: "#D8E9D6",
+          200: "#B3D0B0",
+          300: "#8DB88A",
+          400: "#7CA878",
+          500: "#7C9278",  // primary sage (#7C9278)
+          600: "#697F66",
+          700: "#556653",
+        },
+        // shadcn semantic tokens
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
@@ -83,6 +94,18 @@ const config: Config = {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        success: {
+          DEFAULT: "hsl(var(--success))",
+          foreground: "hsl(var(--success-foreground))",
+        },
+        warning: {
+          DEFAULT: "hsl(var(--warning))",
+          foreground: "hsl(var(--warning-foreground))",
+        },
+        info: {
+          DEFAULT: "hsl(var(--info))",
+          foreground: "hsl(var(--info-foreground))",
         },
       },
       borderRadius: {

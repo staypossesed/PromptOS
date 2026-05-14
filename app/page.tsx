@@ -105,7 +105,7 @@ export default function LandingPage() {
       <section className="max-w-6xl mx-auto px-5 lg:px-8 py-16 md:py-20">
         <div className="grid md:grid-cols-3 gap-6">
           {VALUE_PROPS.map((vp) => (
-            <div key={vp.headline} className="rounded-2xl border border-ink-100/60 bg-white card-soft p-7">
+            <div key={vp.headline} className="rounded-2xl border border-ink-100/60 bg-card card-soft p-7">
               <h3 className="font-serif text-xl font-medium text-ink-900 mb-2">{vp.headline}</h3>
               <p className="text-[14px] text-ink-500 leading-relaxed">{vp.body}</p>
             </div>
@@ -133,7 +133,7 @@ export default function LandingPage() {
 
       {/* How it works */}
       <section id="how" className="max-w-6xl mx-auto px-5 lg:px-8 pb-20 md:pb-28">
-        <div className="rounded-3xl border border-ink-100/70 bg-white card-soft-lg overflow-hidden">
+        <div className="rounded-3xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden">
           <div className="p-8 md:p-14">
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
               How it works
@@ -179,7 +179,7 @@ export default function LandingPage() {
 
       {/* Feedback CTA */}
       <section className="max-w-6xl mx-auto px-5 lg:px-8 pb-12">
-        <div className="rounded-2xl border border-ink-100/70 bg-white card-soft px-7 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="rounded-2xl border border-ink-100/70 bg-card card-soft px-7 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <MessageSquare className="size-4 text-clay-600 shrink-0" />
             <p className="text-[14px] text-ink-700">

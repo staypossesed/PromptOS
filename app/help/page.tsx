@@ -96,7 +96,7 @@ export default async function HelpPage() {
             {STEPS.map(({ icon: Icon, title, body }) => (
               <div
                 key={title}
-                className="flex gap-4 rounded-2xl border border-ink-100/70 bg-white card-soft p-4"
+                className="flex gap-4 rounded-2xl border border-ink-100/70 bg-card card-soft p-4"
               >
                 <div className="size-9 rounded-xl bg-clay-500/10 flex items-center justify-center shrink-0">
                   <Icon className="size-4 text-clay-600" />
@@ -119,7 +119,7 @@ export default async function HelpPage() {
             {FAQS.map(({ q, a }) => (
               <details
                 key={q}
-                className="group rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden"
+                className="group rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden"
               >
                 <summary className="flex items-center justify-between px-5 py-4 cursor-pointer list-none text-sm font-medium text-ink-800 hover:text-ink-900 transition-colors">
                   {q}
@@ -147,7 +147,7 @@ export default async function HelpPage() {
         </div>
 
         {/* Feedback CTA */}
-        <div className="rounded-2xl border border-ink-100/70 bg-white card-soft p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-ink-600">
             Something missing from these docs? Have a suggestion?
           </p>

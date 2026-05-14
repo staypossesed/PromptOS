@@ -29,7 +29,7 @@ export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
     >
       <Link
         href={`/builder?id=${prompt.id}`}
-        className="group block rounded-2xl border border-ink-100/70 bg-white p-5 card-soft hover:border-clay-300/50 hover:card-soft-lg transition-all"
+        className="group block rounded-2xl border border-ink-100/70 bg-card p-5 card-soft hover:border-clay-300/50 hover:card-soft-lg transition-all"
       >
         <div className="flex items-start justify-between gap-3 mb-2">
           <div className="flex items-center gap-2 min-w-0">

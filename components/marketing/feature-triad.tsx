@@ -27,7 +27,7 @@ export function FeatureTriad() {
       {FEATURES.map((feature) => (
         <article
           key={feature.title}
-          className="group relative rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden p-7 hover:card-soft-lg transition-all"
+          className="group relative rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden p-7 hover:card-soft-lg transition-all"
         >
           <div className={`absolute inset-0 bg-gradient-to-br ${feature.accent} opacity-50 pointer-events-none`} />
 

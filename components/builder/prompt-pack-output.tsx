@@ -21,7 +21,7 @@ interface PromptPackOutputProps {
 export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutputProps) {
   if (isGenerating) {
     return (
-      <div className="rounded-2xl border border-ink-100/70 bg-white card-soft flex flex-col items-center justify-center py-20 gap-3">
+      <div className="rounded-2xl border border-ink-100/70 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3">
         <Loader2 className="size-6 text-clay-500 animate-spin" />
         <p className="text-sm text-ink-400">Generating your prompt pack…</p>
         <p className="text-[11px] text-ink-300">Building 5 coordinated prompts. This takes ~15s.</p>
@@ -31,7 +31,7 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-destructive/20 bg-white card-soft p-6 text-center">
+      <div className="rounded-2xl border border-destructive/20 bg-card card-soft p-6 text-center">
         <p className="text-sm text-destructive">{error}</p>
       </div>
     );
@@ -81,7 +81,7 @@ function PromptCard({
   }
 
   return (
-    <div className="rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+    <div className="rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-ink-100/60">
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="size-5 rounded-full bg-clay-500/10 text-clay-700 text-[10px] font-bold flex items-center justify-center shrink-0">

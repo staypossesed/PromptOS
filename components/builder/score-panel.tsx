@@ -27,7 +27,7 @@ export function ScorePanel({
 }: ScorePanelProps) {
   if (!score) {
     return (
-      <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+      <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
         <div className="flex-1 flex flex-col items-center justify-center px-6 py-10">
           {isScoring ? (
             <div className="w-full space-y-4 animate-pulse">
@@ -82,7 +82,7 @@ export function ScorePanel({
   const { overall, dimensions } = score;
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-white card-soft overflow-hidden">
+    <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       {/* Header with overall score */}
       <div className="relative px-5 pt-5 pb-4 border-b border-ink-100/60 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-br from-clay-50 via-cream-50 to-cream-100 opacity-60 pointer-events-none" />
