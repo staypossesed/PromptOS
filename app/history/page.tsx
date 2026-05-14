@@ -86,7 +86,7 @@ export default async function HistoryPage({
         <div className="mb-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
             <HistoryIcon className="size-3.5" />
-            All prompts
+            Your workspace
           </div>
           <h1 className="font-serif text-3xl md:text-[36px] tracking-tight text-ink-900 leading-tight mb-1">
             Prompt history

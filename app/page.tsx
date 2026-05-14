@@ -78,7 +78,7 @@ export default function LandingPage() {
                 </Link>
               </Button>
               <Button asChild size="lg" variant="outline" className="w-full sm:w-auto">
-                <Link href="/dashboard">View example workspace</Link>
+                <Link href="/demo">See it in action</Link>
               </Button>
             </div>
 

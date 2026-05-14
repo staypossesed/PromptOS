@@ -3,9 +3,9 @@ import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const STARTER_ACTIONS = [
-  { label: "Build with Cursor", tool: "cursor", href: "/builder?template=cursor-feature" },
-  { label: "Write with ChatGPT", tool: "chatgpt", href: "/builder?template=chatgpt-email" },
-  { label: "Research with Claude", tool: "claude", href: "/builder?template=claude-research" },
+  { label: "Build with Cursor", tool: "cursor", href: "/builder?template=cursor-auth-flow" },
+  { label: "Write with ChatGPT", tool: "chatgpt", href: "/builder?template=chatgpt-cold-email" },
+  { label: "Research with Claude", tool: "claude", href: "/builder?template=claude-competitor-analysis" },
 ];
 
 export function EmptyState() {
@@ -30,7 +30,7 @@ export function EmptyState() {
         <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-5">
           {STARTER_ACTIONS.map((action) => (
             <Button key={action.label} asChild variant="outline" size="sm">
-              <Link href="/builder">{action.label}</Link>
+              <Link href={action.href}>{action.label}</Link>
             </Button>
           ))}
         </div>
