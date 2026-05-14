@@ -1,6 +1,12 @@
 import Link from "next/link";
-import { Plus, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+const STARTER_ACTIONS = [
+  { label: "Build with Cursor", tool: "cursor", href: "/builder?template=cursor-feature" },
+  { label: "Write with ChatGPT", tool: "chatgpt", href: "/builder?template=chatgpt-email" },
+  { label: "Research with Claude", tool: "claude", href: "/builder?template=claude-research" },
+];
 
 export function EmptyState() {
   return (
@@ -10,22 +16,31 @@ export function EmptyState() {
       {/* Soft clay glow */}
       <div className="absolute -top-32 -right-32 size-64 rounded-full bg-clay-200/40 blur-3xl pointer-events-none" />
 
-      <div className="relative p-10 md:p-14 text-center max-w-md mx-auto">
+      <div className="relative p-10 md:p-14 text-center max-w-lg mx-auto">
         <div className="size-12 rounded-2xl bg-clay-500/10 mx-auto mb-5 flex items-center justify-center">
           <Sparkles className="size-5 text-clay-600" />
         </div>
         <h3 className="font-serif text-2xl font-medium text-ink-900 mb-2">
-          No prompts yet
+          Your prompt workspace is empty.
         </h3>
-        <p className="text-sm text-ink-500 leading-relaxed mb-6 text-pretty">
-          Describe what you want, pick your tool, and Umprompt turns it into an execution-ready prompt — scored across 6 dimensions.
+        <p className="text-sm text-ink-500 leading-relaxed mb-7 text-pretty max-w-sm mx-auto">
+          Start with a rough idea — Umprompt turns it into a scored, optimized prompt ready to paste into Claude, Cursor, or ChatGPT.
         </p>
-        <Button asChild size="lg">
-          <Link href="/builder">
-            <Plus className="size-4" />
-            Create your first prompt
+
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-2 mb-5">
+          {STARTER_ACTIONS.map((action) => (
+            <Button key={action.label} asChild variant="outline" size="sm">
+              <Link href="/builder">{action.label}</Link>
+            </Button>
+          ))}
+        </div>
+
+        <p className="text-[11px] text-ink-400">
+          Or{" "}
+          <Link href="/builder" className="text-clay-600 hover:underline font-medium">
+            start from scratch
           </Link>
-        </Button>
+        </p>
       </div>
     </div>
   );

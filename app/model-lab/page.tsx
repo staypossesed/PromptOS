@@ -518,9 +518,9 @@ export default function ModelLabPage() {
             {!isComparing && !results && !compareError && (
               <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 h-full min-h-[300px] flex flex-col items-center justify-center text-center">
                 <FlaskConical className="size-10 text-ink-200 mb-4" />
-                <p className="text-sm font-medium text-ink-600 mb-1">Ready to compare</p>
-                <p className="text-sm text-ink-400 max-w-xs">
-                  Enter an idea, pick your tool, select models, and click &ldquo;Generate comparison&rdquo;.
+                <p className="text-sm font-medium text-ink-600 mb-1">Ready to compare models</p>
+                <p className="text-[13px] text-ink-400 max-w-xs leading-relaxed">
+                  Same idea, different models. See which output you&apos;d actually ship — and mark the winner.
                 </p>
               </div>
             )}

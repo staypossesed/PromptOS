@@ -7,9 +7,9 @@ import type { PromptPack } from "@/types/prompt-pack";
 import { track } from "@/lib/analytics";
 
 const TOOL_LABELS: Record<string, { label: string; color: string }> = {
-  claude:  { label: "Claude",  color: "bg-orange-50 text-orange-700 border-orange-200/70" },
-  cursor:  { label: "Cursor",  color: "bg-purple-50 text-purple-700 border-purple-200/70" },
-  chatgpt: { label: "ChatGPT", color: "bg-green-50  text-green-700  border-green-200/70"  },
+  claude:  { label: "Claude",  color: "bg-clay-50 text-clay-700 border-clay-200/60" },
+  cursor:  { label: "Cursor",  color: "bg-cream-100 text-ink-700 border-ink-200/70" },
+  chatgpt: { label: "ChatGPT", color: "bg-white text-ink-600 border-ink-200" },
 };
 
 interface PromptPackOutputProps {
@@ -21,10 +21,10 @@ interface PromptPackOutputProps {
 export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutputProps) {
   if (isGenerating) {
     return (
-      <div className="rounded-2xl border border-ink-100/70 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3">
+      <div className="rounded-2xl border border-ink-100/70 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3 text-center">
         <Loader2 className="size-6 text-clay-500 animate-spin" />
-        <p className="text-sm text-ink-400">Generating your prompt pack…</p>
-        <p className="text-[11px] text-ink-300">Building 5 coordinated prompts. This takes ~15s.</p>
+        <p className="text-sm font-medium text-ink-600">Building your prompt pack…</p>
+        <p className="text-[12px] text-ink-400 max-w-[220px] leading-relaxed">5 coordinated prompts. Takes about 15 seconds.</p>
       </div>
     );
   }
@@ -39,18 +39,29 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
 
   if (!pack) {
     return (
-      <div className="rounded-2xl border border-ink-100/70 bg-cream-50/60 card-soft flex flex-col items-center justify-center py-20 gap-2">
-        <p className="text-sm text-ink-400">Your prompt pack will appear here.</p>
-        <p className="text-[11px] text-ink-300">5 coordinated, execution-ready prompts.</p>
+      <div className="rounded-2xl border border-ink-100/70 bg-cream-50/60 card-soft flex flex-col items-center justify-center py-20 gap-2 text-center px-6">
+        <div className="size-10 rounded-xl bg-cream-100 flex items-center justify-center mb-1">
+          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" className="text-ink-300">
+            <rect x="2" y="3" width="16" height="3" rx="1.5" fill="currentColor" opacity=".5"/>
+            <rect x="2" y="8.5" width="16" height="3" rx="1.5" fill="currentColor" opacity=".35"/>
+            <rect x="2" y="14" width="10" height="3" rx="1.5" fill="currentColor" opacity=".2"/>
+          </svg>
+        </div>
+        <p className="text-sm font-medium text-ink-600">Your 5-prompt pack appears here</p>
+        <p className="text-[12px] text-ink-400 max-w-[240px] leading-relaxed">
+          Each prompt hands off cleanly to the next — no context lost, no repetition.
+        </p>
       </div>
     );
   }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-baseline justify-between gap-4">
+      <div className="flex items-start justify-between gap-4">
         <h2 className="font-serif text-xl text-ink-900 leading-snug">{pack.title}</h2>
-        <span className="shrink-0 text-[11px] text-ink-400 font-medium">{pack.prompts.length} prompts</span>
+        <span className="shrink-0 text-[11px] font-medium text-ink-500 bg-cream-100 border border-ink-100 rounded-full px-2.5 py-0.5">
+          {pack.prompts.length} prompts
+        </span>
       </div>
 
       {pack.prompts.map((prompt, i) => (
@@ -99,18 +110,18 @@ function PromptCard({
           <button
             type="button"
             onClick={handleCopy}
-            className="flex items-center gap-1.5 text-[11px] text-ink-400 hover:text-ink-700 transition-colors rounded-lg px-2 py-1 hover:bg-cream-100"
+            className="flex items-center gap-1.5 text-[11px] font-medium text-ink-500 hover:text-ink-800 transition-colors rounded-lg px-2.5 py-1.5 hover:bg-cream-100 border border-transparent hover:border-ink-100"
           >
             {copied ? (
-              <><Check className="size-3.5 text-clay-500" />Copied</>
+              <><Check className="size-3.5 text-clay-500" /><span className="text-clay-600">Copied</span></>
             ) : (
               <><Copy className="size-3.5" />Copy</>
             )}
           </button>
         </div>
       </div>
-      <div className="px-4 py-3 max-h-60 overflow-y-auto">
-        <pre className="text-[12px] text-ink-700 leading-relaxed whitespace-pre-wrap font-sans">
+      <div className="px-4 py-3 max-h-56 overflow-y-auto">
+        <pre className="text-[12px] text-ink-700 leading-[1.7] whitespace-pre-wrap font-mono">
           {prompt.prompt_text}
         </pre>
       </div>

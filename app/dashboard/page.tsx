@@ -38,6 +38,10 @@ export default async function DashboardPage({
           allPrompts.reduce((sum, p) => sum + (p.score?.overall ?? 0), 0) / totalPrompts
         )
       : 0;
+  const bestScore =
+    totalPrompts > 0
+      ? Math.max(...allPrompts.map((p) => p.score?.overall ?? 0))
+      : 0;
 
   // Filter for display
   const lq = q.toLowerCase().trim();
@@ -79,21 +83,25 @@ export default async function DashboardPage({
             What will you ship today?
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed max-w-xl">
-            Pick up where you left off, or start a new prompt. Your last 30 days of work lives here.
+            Pick up where you left off, or start fresh. Every prompt you save lives here — scored, optimized, and ready to reopen.
           </p>
         </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          <StatCard label="Prompts created" value={String(totalPrompts)} icon={Sparkles} />
+          <StatCard label="Prompts saved" value={String(totalPrompts)} icon={Sparkles} />
           <StatCard
             label="Average score"
             value={totalPrompts > 0 ? String(avgScore) : "—"}
             icon={TrendingUp}
             accent
           />
-          <StatCard label="This week" value={String(thisWeekCount(prompts))} icon={Clock} />
-          <StatCard label="Saved" value={String(totalPrompts)} icon={Clock} />
+          <StatCard label="This week" value={String(thisWeekCount(allPrompts))} icon={Clock} />
+          <StatCard
+            label="Best score"
+            value={totalPrompts > 0 ? String(bestScore) : "—"}
+            icon={TrendingUp}
+          />
         </div>
 
         {/* Error banner */}
@@ -112,7 +120,7 @@ export default async function DashboardPage({
                   <h2 className="font-serif text-2xl font-medium text-ink-900 mb-0.5">
                     Recent prompts
                   </h2>
-                  <p className="text-sm text-ink-400">Your work, sorted by last edit</p>
+                  <p className="text-sm text-ink-400">Sorted by last edit. Click any card to reopen.</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <FilterChip href="/dashboard" active={!toolFilter}>All</FilterChip>

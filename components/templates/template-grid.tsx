@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { TEMPLATES, TEMPLATE_CATEGORIES, type TemplateCategory } from "@/lib/templates";
-import { Button } from "@/components/ui/button";
 import { track } from "@/lib/analytics";
 
 const TOOL_LABEL: Record<string, string> = {
@@ -54,9 +53,11 @@ export function TemplateGrid() {
       {/* Cards grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((template) => (
-          <div
+          <Link
             key={template.id}
-            className="group rounded-2xl border border-ink-100/70 bg-card card-soft p-5 flex flex-col gap-3 hover:border-ink-200/80 transition-colors"
+            href={`/builder?template=${template.id}`}
+            onClick={() => track("template_used", { template_id: template.id })}
+            className="group rounded-2xl border border-ink-100/70 bg-card card-soft p-5 flex flex-col gap-3 hover:border-clay-300/50 hover:card-soft-lg transition-all"
           >
             {/* Badges */}
             <div className="flex items-center gap-2 flex-wrap">
@@ -72,7 +73,7 @@ export function TemplateGrid() {
 
             {/* Content */}
             <div className="flex-1">
-              <h3 className="font-serif text-base font-medium text-ink-900 leading-snug mb-1.5">
+              <h3 className="font-serif text-base font-medium text-ink-900 leading-snug mb-1.5 group-hover:text-clay-700 transition-colors">
                 {template.title}
               </h3>
               <p className="text-[13px] text-ink-500 leading-relaxed">
@@ -80,22 +81,17 @@ export function TemplateGrid() {
               </p>
             </div>
 
-            {/* CTA */}
-            <Button
-              asChild
-              size="sm"
-              variant="outline"
-              className="w-full mt-1"
-              onClick={() =>
-                track("template_used", { template_id: template.id })
-              }
-            >
-              <Link href={`/builder?template=${template.id}`}>
+            {/* CTA row */}
+            <div className="flex items-center justify-between pt-1">
+              <span className="text-[12px] font-medium text-clay-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
                 Use template
-                <ArrowRight className="size-3.5" />
-              </Link>
-            </Button>
-          </div>
+                <ArrowRight className="size-3" />
+              </span>
+              <span className="text-[11px] text-ink-300 group-hover:text-ink-400 transition-colors">
+                {TOOL_LABEL[template.target_tool]}
+              </span>
+            </div>
+          </Link>
         ))}
       </div>
 

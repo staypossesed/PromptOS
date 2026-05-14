@@ -69,8 +69,9 @@ export function ScorePanel({
               <div className="size-12 rounded-2xl bg-cream-100 flex items-center justify-center mb-4">
                 <TrendingUp className="size-5 text-ink-300" />
               </div>
-              <p className="text-sm text-ink-400 leading-relaxed max-w-[200px]">
-                Generate a prompt to see the quality score across 6 dimensions.
+              <p className="text-sm font-medium text-ink-600 mb-1">Score appears here</p>
+              <p className="text-[13px] text-ink-400 leading-relaxed max-w-[210px]">
+                Generate once. Umprompt scores across 6 dimensions and shows exactly what to improve.
               </p>
             </div>
           )}
@@ -103,12 +104,12 @@ export function ScorePanel({
           </div>
           <div className="text-xs text-ink-500 mt-1.5">
             {overall >= 90
-              ? "Excellent execution prompt."
+              ? "Excellent. This prompt is ready to ship."
               : overall >= 80
-              ? "Strong prompt — minor optimizations available."
+              ? "Strong. Small tweaks available — or ship as-is."
               : overall >= 65
-              ? "Decent prompt — several improvements possible."
-              : "Needs work — review the tips below."}
+              ? "Decent start. Auto-fix the weak dimensions below."
+              : "Needs work. Hit optimize to improve the low scores."}
           </div>
         </div>
       </div>
@@ -131,7 +132,7 @@ export function ScorePanel({
           {isOptimizing ? (
             <><Loader2 className="size-3.5 animate-spin" />Optimizing…</>
           ) : (
-            <><Wand2 className="size-3.5" />Optimize weak dimensions</>
+            <><Wand2 className="size-3.5" />Auto-fix weak dimensions</>
           )}
         </Button>
         {optimizeError && (

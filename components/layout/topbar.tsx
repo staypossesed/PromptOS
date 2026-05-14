@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Bell, Menu, LogOut, Settings, User } from "lucide-react";
+import { Search, Menu, LogOut, Settings, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -122,10 +122,6 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
           </form>
 
           {actions}
-
-          <Button variant="ghost" size="icon" aria-label="Notifications">
-            <Bell className="size-[18px]" />
-          </Button>
 
           {/* Avatar + dropdown */}
           <div className="relative ml-1" ref={menuRef}>

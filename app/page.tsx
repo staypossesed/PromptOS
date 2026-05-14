@@ -66,8 +66,8 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-ink-500 leading-relaxed max-w-2xl mx-auto text-pretty">
-              Umprompt turns rough ideas into execution-ready prompts for Claude, Cursor, and ChatGPT
-              — scored, optimized, and saved to your workspace.
+              Turn a rough idea into an execution-ready prompt — scored across 6 dimensions, auto-optimized, and saved to your workspace.
+              Built for Claude, Cursor, and ChatGPT.
             </p>
 
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -82,9 +82,19 @@ export default function LandingPage() {
               </Button>
             </div>
 
-            <p className="mt-5 text-xs text-ink-400 flex items-center justify-center gap-1.5">
-              <CheckCircle2 className="size-3.5 text-clay-500" />
-              No credit card. Built for Claude, Cursor, and ChatGPT.
+            <p className="mt-5 text-xs text-ink-400 flex items-center justify-center gap-3 flex-wrap">
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-clay-500" />
+                No credit card
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-clay-500" />
+                Free to start
+              </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-clay-500" />
+                20 prompts/day
+              </span>
             </p>
           </div>
 

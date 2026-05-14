@@ -97,4 +97,11 @@
     background-image: radial-gradient(circle at 1px 1px, hsl(35 22% 80%) 1px, transparent 0);
     background-size: 18px 18px;
   }
+
+  /* Smooth tap target on mobile */
+  @media (max-width: 768px) {
+    button, a, [role="button"] {
+      -webkit-tap-highlight-color: transparent;
+    }
+  }
 }

@@ -92,7 +92,7 @@ export default async function HistoryPage({
             Prompt history
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed">
-            Every prompt you&apos;ve built, sorted by last edit.
+            Every prompt and pack you&apos;ve saved — reopen, iterate, or start over.
           </p>
         </div>
 
@@ -193,18 +193,26 @@ export default async function HistoryPage({
             {!packsError && (
               <>
                 {packs.length === 0 ? (
-                  <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
-                    <Layers className="size-8 text-ink-300 mx-auto mb-3" />
-                    <p className="text-sm font-medium text-ink-700 mb-1">No packs saved yet</p>
-                    <p className="text-sm text-ink-400 mb-4">
-                      Generate a Prompt Pack in the builder and save it to see it here.
-                    </p>
-                    <Button asChild size="sm">
-                      <Link href="/builder">
-                        <Plus className="size-3.5" />
-                        New Pack
-                      </Link>
-                    </Button>
+                  <div className="relative rounded-3xl border border-ink-100/70 bg-card card-soft overflow-hidden">
+                    <div className="absolute inset-0 bg-dotgrid opacity-40 pointer-events-none" />
+                    <div className="absolute -top-32 -right-32 size-64 rounded-full bg-clay-200/40 blur-3xl pointer-events-none" />
+                    <div className="relative p-10 md:p-14 text-center max-w-lg mx-auto">
+                      <div className="size-12 rounded-2xl bg-clay-500/10 mx-auto mb-5 flex items-center justify-center">
+                        <Layers className="size-5 text-clay-600" />
+                      </div>
+                      <h3 className="font-serif text-2xl font-medium text-ink-900 mb-2">
+                        No saved packs yet.
+                      </h3>
+                      <p className="text-sm text-ink-500 leading-relaxed mb-7 text-pretty max-w-sm mx-auto">
+                        A Prompt Pack is 5 coordinated prompts that execute a complete project — end to end, no gaps.
+                      </p>
+                      <Button asChild size="lg">
+                        <Link href="/builder">
+                          <Plus className="size-4" />
+                          Create your first pack
+                        </Link>
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">

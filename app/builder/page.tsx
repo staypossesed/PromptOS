@@ -654,19 +654,19 @@ function BuilderInner() {
             </h1>
             <p className="text-sm text-ink-400 mt-1">
               {mode === "pack"
-                ? "Generate 5 coordinated prompts that execute a complete project end to end."
-                : "Describe what you want — pick your tool — get an execution-ready prompt."}
+                ? "5 coordinated prompts. One project. Each one hands off cleanly to the next."
+                : "Rough idea in. Scored, optimized prompt out. Takes under a minute."}
             </p>
           </div>
 
           {/* Mode toggle */}
-          <div className="flex p-1 bg-cream-100 rounded-full border border-ink-100/60 shrink-0">
+          <div className="flex p-1 bg-cream-100 rounded-full border border-ink-100/60 shrink-0 gap-0.5">
             <button
               type="button"
               onClick={() => setMode("single")}
               className={cn(
-                "flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all",
-                mode === "single" ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
+                "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
+                mode === "single" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
               )}
             >
               <Wand2 className="size-3.5" />
@@ -676,8 +676,8 @@ function BuilderInner() {
               type="button"
               onClick={() => setMode("pack")}
               className={cn(
-                "flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all",
-                mode === "pack" ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
+                "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
+                mode === "pack" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
               )}
             >
               <Layers className="size-3.5" />
@@ -812,7 +812,7 @@ function BuilderInner() {
                   Score{score ? ` · ${score.overall}` : ""}
                 </TabButton>
               </div>
-              <div className="h-[600px]">
+              <div className="min-h-[500px] h-[65vh]">
                 {activeTab === "prompt" ? (
                   <PromptOutput
                     prompt={generatedPrompt}

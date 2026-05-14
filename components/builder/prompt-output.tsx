@@ -64,8 +64,7 @@ export function PromptOutput({
           <div>
             <div className="text-sm font-semibold text-ink-900">Generated prompt</div>
             <div className="text-[11px] text-ink-400">
-              Optimized for {TOOL_LABELS[targetTool]}
-              {!isEmpty && ` · ${prompt.split(/\s+/).filter(Boolean).length} words`}
+              {isEmpty ? `For ${TOOL_LABELS[targetTool]}` : `For ${TOOL_LABELS[targetTool]} · ${prompt.split(/\s+/).filter(Boolean).length} words`}
             </div>
           </div>
         </div>
@@ -81,7 +80,7 @@ export function PromptOutput({
               Optimizing
             </Badge>
           ) : (
-            <Badge variant="soft">{isSaved ? "Saved" : "Draft"}</Badge>
+            <Badge variant={isSaved ? "success" : "soft"}>{isSaved ? "Saved" : "Draft"}</Badge>
           )}
         </div>
       </div>
@@ -95,9 +94,10 @@ export function PromptOutput({
             <div className="size-10 rounded-xl bg-cream-100 flex items-center justify-center mb-3">
               <Sparkles className="size-5 text-ink-300" />
             </div>
-            <p className="text-sm text-ink-400 max-w-xs">
-              Fill in your idea, pick a tool, and click{" "}
-              <span className="font-medium text-ink-600">Generate prompt</span> to see the result here.
+            <p className="text-sm font-medium text-ink-600 mb-1">Your prompt appears here</p>
+            <p className="text-[13px] text-ink-400 max-w-[220px] leading-relaxed">
+              Describe your idea, pick a tool, and hit{" "}
+              <span className="font-medium text-ink-600">Generate</span>. It streams in real time.
             </p>
           </div>
         ) : (

@@ -7,46 +7,42 @@ interface LogoProps {
 
 export function Logo({ className, showWordmark = true }: LogoProps) {
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      <div className="relative">
+    <div className={cn("flex items-center gap-2.5", className)}>
+      <div className="relative shrink-0">
         <svg
-          width="28"
-          height="28"
-          viewBox="0 0 28 28"
+          width="30"
+          height="30"
+          viewBox="0 0 30 30"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
           aria-label="Umprompt"
         >
-          {/* Warm clay rounded-square base */}
-          <rect width="28" height="28" rx="8" fill="#BD5D2E" />
-          {/* Inner highlight */}
-          <rect
-            x="0.5"
-            y="0.5"
-            width="27"
-            height="27"
-            rx="7.5"
-            stroke="white"
-            strokeOpacity="0.18"
-          />
-          {/* Bracket-prompt glyph: > with a stacked bar — represents "prompt + structure" */}
+          <defs>
+            <linearGradient id="logo-bg" x1="0" y1="0" x2="30" y2="30" gradientUnits="userSpaceOnUse">
+              <stop offset="0%" stopColor="#CC7849" />
+              <stop offset="100%" stopColor="#A84E26" />
+            </linearGradient>
+          </defs>
+          {/* Base with subtle gradient */}
+          <rect width="30" height="30" rx="8" fill="url(#logo-bg)" />
+          {/* Top-edge highlight for depth */}
+          <rect x="1" y="1" width="28" height="13" rx="7" fill="white" fillOpacity="0.1" />
+          {/* Inner border */}
+          <rect x="0.5" y="0.5" width="29" height="29" rx="7.5" stroke="white" strokeOpacity="0.16" />
+          {/* Chevron prompt cursor */}
           <path
-            d="M9 9.5L13 14L9 18.5"
+            d="M8.5 10L13.5 15L8.5 20"
             stroke="#FBF1EC"
-            strokeWidth="2"
+            strokeWidth="2.2"
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <path
-            d="M16 18.5H20"
-            stroke="#FBF1EC"
-            strokeWidth="2"
-            strokeLinecap="round"
-          />
+          {/* Cursor underscore */}
+          <rect x="16" y="18.5" width="5.5" height="2" rx="1" fill="#FBF1EC" fillOpacity="0.88" />
         </svg>
       </div>
       {showWordmark && (
-        <span className="font-serif text-lg font-medium tracking-tight text-ink-900">
+        <span className="font-serif text-[17px] font-medium tracking-tight text-ink-900 leading-none">
           <span className="text-clay-600">Um</span>prompt
         </span>
       )}

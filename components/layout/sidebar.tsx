@@ -140,15 +140,17 @@ export function Sidebar() {
         {/* Plan card */}
         <div className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft">
           <div className="flex items-center gap-2">
-            <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center">
+            <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center shrink-0">
               <Sparkles className="size-3.5 text-clay-600" />
             </div>
-            <div className="text-xs font-medium text-ink-800 truncate">
-              {user?.email ?? "Free plan"}
+            <div className="min-w-0">
+              <div className="text-[11px] font-medium text-ink-800 truncate">
+                {user?.email ?? "Workspace"}
+              </div>
+              <div className="text-[10px] text-ink-400 leading-snug">
+                Free plan · 20 prompts/day
+              </div>
             </div>
-          </div>
-          <div className="mt-2 text-[11px] leading-relaxed text-ink-400">
-            Free plan · 20 gen/day
           </div>
         </div>
 

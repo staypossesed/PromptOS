@@ -119,7 +119,24 @@ export function LoginForm() {
         </div>
       </div>
 
-      <p className="mt-5 text-center text-xs text-ink-400">
+      <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-ink-400">
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="size-3 text-clay-500" />
+          No credit card
+        </span>
+        <span className="text-ink-200">·</span>
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="size-3 text-clay-500" />
+          Free to start
+        </span>
+        <span className="text-ink-200">·</span>
+        <span className="flex items-center gap-1">
+          <CheckCircle2 className="size-3 text-clay-500" />
+          20 prompts/day
+        </span>
+      </div>
+
+      <p className="mt-3 text-center text-xs text-ink-400">
         By continuing, you agree to our{" "}
         <Link href="/terms" className="underline hover:text-ink-700 transition-colors">
           Terms of Service

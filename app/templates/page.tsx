@@ -32,8 +32,7 @@ export default async function TemplatesPage() {
             Templates
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed max-w-xl">
-            Start from a high-quality example. Edit the idea, pick your context,
-            and hit generate.
+            Start from a proven starting point. Click any template to open it in the builder — edit, refine, and generate in seconds.
           </p>
         </div>
 
