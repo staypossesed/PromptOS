@@ -38,7 +38,7 @@
     --border: 33 28% 86%;           /* #E6DDD2 — soft border */
     --input: 33 28% 86%;
     --ring: 19 62% 46%;             /* clay focus ring */
-    --radius: 0.875rem;
+    --radius: 0.75rem;
 
     /* ── Named convenience tokens (hex) ─────────────────────── */
     --surface: #FFFDF8;
@@ -47,7 +47,7 @@
     --text-muted: #6F6760;
     --border-soft: #E6DDD2;
 
-    --font-fraunces: "Fraunces Variable", "Fraunces", ui-serif, Georgia, serif;
+    --font-bricolage: "Bricolage Grotesque Variable", "Bricolage Grotesque", ui-sans-serif, system-ui, sans-serif;
   }
 
   * { @apply border-border; }
@@ -61,6 +61,13 @@
   body {
     @apply bg-background text-foreground font-sans;
     font-feature-settings: "rlig" 1, "calt" 1, "ss01" 1;
+  }
+
+  /* Bricolage Grotesque headings — tighter, bolder feel */
+  .font-serif {
+    font-feature-settings: "ss01" 1, "calt" 1;
+    font-variation-settings: "wdth" 100;
+    letter-spacing: -0.02em;
   }
 
   ::selection { @apply bg-clay-200 text-ink-900; }

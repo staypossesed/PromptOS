@@ -79,7 +79,7 @@ export default async function DashboardPage({
             <Sparkles className="size-3.5" />
             {t("dashboard.eyebrow", { name: displayName })}
           </div>
-          <h1 className="font-serif text-3xl md:text-[40px] tracking-tight text-ink-900 leading-[1.05] mb-2">
+          <h1 className="font-serif text-3xl md:text-[40px] font-semibold tracking-tight text-ink-900 leading-[1.05] mb-2">
             {t("dashboard.title")}
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed max-w-xl">

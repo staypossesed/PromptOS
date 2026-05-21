@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { GeistSans } from "geist/font/sans";
 import { GeistMono } from "geist/font/mono";
 // Self-hosted via @fontsource-variable — no external network request at build time
-import "@fontsource-variable/fraunces";
+import "@fontsource-variable/bricolage-grotesque";
 import "./globals.css";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
 import { LanguageProvider } from "@/lib/i18n/language-provider";

@@ -59,7 +59,7 @@ export default function LandingPage() {
               Built for developers, automation builders, and AI power users
             </div>
 
-            <h1 className="font-serif text-[44px] md:text-[68px] leading-[1.02] tracking-[-0.02em] text-ink-900 text-balance">
+            <h1 className="font-serif text-[44px] md:text-[72px] leading-[1.0] tracking-[-0.03em] font-bold text-ink-900 text-balance">
               From <span className="italic text-clay-600">&ldquo;um…&rdquo;</span>
               <br />
               to the perfect prompt.
@@ -129,8 +129,8 @@ export default function LandingPage() {
           <div className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
             What it does
           </div>
-          <h2 className="font-serif text-4xl md:text-5xl tracking-tight text-ink-900 leading-[1.05]">
-            A workspace built around <span className="italic">how</span> AI tools actually work.
+          <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-ink-900 leading-[1.05]">
+            A workspace built around how AI tools actually work.
           </h2>
           <p className="mt-5 text-lg text-ink-500 leading-relaxed text-pretty">
             Generic prompt generators give you generic output. Umprompt is tuned per-tool,
@@ -148,7 +148,7 @@ export default function LandingPage() {
             <div className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
               How it works
             </div>
-            <h2 className="font-serif text-3xl md:text-4xl tracking-tight text-ink-900 mb-10 max-w-xl">
+            <h2 className="font-serif text-3xl md:text-4xl font-bold tracking-tight text-ink-900 mb-10 max-w-xl">
               From idea to a prompt that actually performs.
             </h2>
 
