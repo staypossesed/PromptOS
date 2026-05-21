@@ -1,12 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Clock, Layers } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { PACK_TYPES } from "@/types/prompt-pack";
+import { ArrowUpRight, Clock, ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import type { PromptPackSummary } from "@/types/prompt-pack";
+import { PACK_TYPES } from "@/types/prompt-pack";
 
 interface PromptPackCardProps {
   pack: PromptPackSummary;
@@ -15,8 +14,7 @@ interface PromptPackCardProps {
 
 export function PromptPackCard({ pack, index = 0 }: PromptPackCardProps) {
   const packTypeInfo = PACK_TYPES.find((p) => p.id === pack.pack_type);
-  const firstPrompt = pack.prompts[0];
-  const preview = firstPrompt?.title ?? firstPrompt?.prompt_text?.slice(0, 120) ?? "No prompts";
+  const stepTitles = pack.prompts.slice(0, 3).map((p) => p.title).filter(Boolean);
   const relativeTime = formatRelativeTime(pack.updated_at);
 
   return (
@@ -27,35 +25,46 @@ export function PromptPackCard({ pack, index = 0 }: PromptPackCardProps) {
     >
       <Link
         href={`/builder?pack=${pack.id}`}
-        className="group block rounded-2xl border border-ink-100/70 bg-card p-5 card-soft hover:border-clay-300/50 hover:card-soft-lg transition-all"
+        className="group block rounded-2xl border border-ink-100/70 bg-card p-5 card-soft hover:border-clay-300/50 hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all"
       >
-        <div className="flex items-start justify-between gap-3 mb-2">
+        {/* Top row */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="secondary" className="shrink-0">
-              {packTypeInfo?.emoji} {packTypeInfo?.label ?? pack.pack_type}
-            </Badge>
-            <span
-              className={cn(
-                "inline-flex items-center gap-1 text-[11px] font-mono font-medium rounded-full px-2 py-0.5",
-                "bg-cream-200 text-ink-600"
-              )}
-            >
-              <Layers className="size-2.5" />
-              {pack.prompts.length} prompts
-            </span>
+            {packTypeInfo && (
+              <div className="flex items-center gap-1.5 rounded-full border border-ink-100/60 bg-cream-50 px-2 py-0.5 shrink-0">
+                <span className="text-[11px]">{packTypeInfo.emoji}</span>
+                <span className="text-[10.5px] font-medium text-ink-600">{packTypeInfo.label}</span>
+              </div>
+            )}
+            <div className="flex items-center gap-1 rounded-full bg-clay-500/8 border border-clay-200/40 px-2 py-0.5 shrink-0">
+              <span className="text-[10.5px] font-medium text-clay-700">{pack.prompts.length} steps</span>
+            </div>
           </div>
-          <ArrowUpRight className="size-4 text-ink-300 group-hover:text-clay-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all shrink-0" />
+          <ArrowUpRight className="size-4 text-ink-200 group-hover:text-clay-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all shrink-0" />
         </div>
 
-        <h3 className="font-serif text-[17px] font-medium text-ink-900 leading-tight mb-1.5 group-hover:text-clay-700 transition-colors line-clamp-2">
+        {/* Title */}
+        <h3 className="font-serif text-[16px] font-medium text-ink-900 leading-snug mb-2.5 group-hover:text-clay-700 transition-colors line-clamp-2">
           {pack.title}
         </h3>
 
-        <p className="text-[13px] text-ink-500 line-clamp-2 leading-relaxed mb-4">
-          {preview}
-        </p>
+        {/* Step preview — show first 3 step titles as a mini-flow */}
+        {stepTitles.length > 0 && (
+          <div className="flex items-center gap-1 mb-4 flex-wrap">
+            {stepTitles.map((title, i) => (
+              <span key={i} className="flex items-center gap-1">
+                <span className="text-[11px] text-ink-400 truncate max-w-[80px]">{title}</span>
+                {i < stepTitles.length - 1 && <ArrowRight className="size-2.5 text-ink-200 shrink-0" />}
+              </span>
+            ))}
+            {pack.prompts.length > 3 && (
+              <span className="text-[11px] text-ink-300">+{pack.prompts.length - 3} more</span>
+            )}
+          </div>
+        )}
 
-        <div className="flex items-center gap-1.5 text-[11px] text-ink-400">
+        {/* Footer */}
+        <div className={cn("flex items-center gap-1.5 text-[11px] text-ink-300", !stepTitles.length && "mt-2")}>
           <Clock className="size-3" />
           <span>{relativeTime}</span>
         </div>

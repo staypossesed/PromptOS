@@ -2,11 +2,15 @@
 
 import Link from "next/link";
 import { ArrowUpRight, Clock } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { TOOLS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import type { PromptSummary } from "@/types/prompt";
+
+const TOOL_META: Record<string, { label: string; dot: string }> = {
+  claude:  { label: "Claude",  dot: "bg-clay-500" },
+  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
+};
 
 interface PromptCardProps {
   prompt: PromptSummary;
@@ -14,12 +18,8 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
-  const tool = TOOLS.find((t) => t.id === prompt.target_tool);
+  const tool = TOOL_META[prompt.target_tool] ?? { label: prompt.target_tool, dot: "bg-ink-300" };
   const score = prompt.score?.overall ?? null;
-  const preview = prompt.generated_prompt.slice(0, 160);
-
-  // Relative time label
-  const relativeTime = formatRelativeTime(prompt.updated_at);
 
   return (
     <motion.div
@@ -29,29 +29,34 @@ export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
     >
       <Link
         href={`/builder?id=${prompt.id}`}
-        className="group block rounded-2xl border border-ink-100/70 bg-card p-5 card-soft hover:border-clay-300/50 hover:card-soft-lg transition-all"
+        className="group block rounded-2xl border border-ink-100/70 bg-card p-5 card-soft hover:border-clay-300/50 hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all"
       >
-        <div className="flex items-start justify-between gap-3 mb-2">
+        {/* Top row: badges + arrow */}
+        <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            <Badge variant="secondary" className="shrink-0">
-              {tool?.name ?? prompt.target_tool}
-            </Badge>
+            <div className="flex items-center gap-1.5 rounded-full border border-ink-100/60 bg-cream-50 px-2 py-0.5 shrink-0">
+              <span className={cn("size-1.5 rounded-full shrink-0", tool.dot)} />
+              <span className="text-[10.5px] font-medium text-ink-600">{tool.label}</span>
+            </div>
             {score !== null && <ScoreChip score={score} />}
           </div>
-          <ArrowUpRight className="size-4 text-ink-300 group-hover:text-clay-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all shrink-0" />
+          <ArrowUpRight className="size-4 text-ink-200 group-hover:text-clay-500 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 transition-all shrink-0" />
         </div>
 
-        <h3 className="font-serif text-[17px] font-medium text-ink-900 leading-tight mb-1.5 group-hover:text-clay-700 transition-colors line-clamp-2">
+        {/* Title */}
+        <h3 className="font-serif text-[16px] font-medium text-ink-900 leading-snug mb-2 group-hover:text-clay-700 transition-colors line-clamp-2">
           {prompt.title}
         </h3>
 
-        <p className="text-[13px] text-ink-500 line-clamp-2 leading-relaxed mb-4 font-mono">
-          {preview}…
+        {/* Idea preview — clean prose, not monospace */}
+        <p className="text-[12.5px] text-ink-400 line-clamp-2 leading-relaxed mb-4">
+          {prompt.idea}
         </p>
 
-        <div className="flex items-center gap-1.5 text-[11px] text-ink-400">
+        {/* Footer */}
+        <div className="flex items-center gap-1.5 text-[11px] text-ink-300">
           <Clock className="size-3" />
-          <span>{relativeTime}</span>
+          <span>{formatRelativeTime(prompt.updated_at)}</span>
         </div>
       </Link>
     </motion.div>
@@ -59,18 +64,18 @@ export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
 }
 
 function ScoreChip({ score }: { score: number }) {
+  const { bg, text } =
+    score >= 85
+      ? { bg: "bg-clay-500/10", text: "text-clay-700" }
+      : score >= 70
+      ? { bg: "bg-cream-200/80", text: "text-ink-600" }
+      : score >= 50
+      ? { bg: "bg-amber-50", text: "text-amber-700" }
+      : { bg: "bg-red-50", text: "text-red-600" };
+
   return (
-    <div
-      className={cn(
-        "inline-flex items-center gap-1 text-[11px] font-mono font-medium rounded-full px-2 py-0.5",
-        score >= 85
-          ? "bg-clay-500/10 text-clay-700"
-          : score >= 70
-          ? "bg-cream-200 text-ink-600"
-          : "bg-ink-100 text-ink-500"
-      )}
-    >
-      <span className="size-1.5 rounded-full bg-current opacity-60" />
+    <div className={cn("inline-flex items-center gap-1 text-[10.5px] font-mono font-semibold rounded-full px-2 py-0.5", bg, text)}>
+      <span className="size-1 rounded-full bg-current opacity-70" />
       {score}
     </div>
   );

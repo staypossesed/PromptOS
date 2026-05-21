@@ -165,12 +165,12 @@ function StatCard({
   label: string; value: string; icon: React.ComponentType<{ className?: string }>; accent?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-ink-100/70 bg-card p-4 card-soft">
-      <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400">{label}</span>
+    <div className={`rounded-xl border p-4 ${accent ? "bg-clay-500/5 border-clay-200/50" : "border-ink-100/70 bg-card card-soft"}`}>
+      <div className="flex items-center justify-between mb-3">
+        <span className="text-[10.5px] font-semibold uppercase tracking-[0.12em] text-ink-400">{label}</span>
         <Icon className={accent ? "size-3.5 text-clay-500" : "size-3.5 text-ink-300"} />
       </div>
-      <div className={`font-serif text-3xl font-medium leading-none tabular-nums ${accent ? "text-clay-700" : "text-ink-900"}`}>
+      <div className={`font-serif text-[32px] font-medium leading-none tabular-nums ${accent ? "text-clay-700" : "text-ink-900"}`}>
         {value}
       </div>
     </div>

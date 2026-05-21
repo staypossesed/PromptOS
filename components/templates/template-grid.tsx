@@ -6,22 +6,35 @@ import { ArrowRight } from "lucide-react";
 import { TEMPLATES, TEMPLATE_CATEGORIES, type TemplateCategory } from "@/lib/templates";
 import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
+import { cn } from "@/lib/utils";
 
-const TOOL_LABEL: Record<string, string> = {
-  claude: "Claude",
-  cursor: "Cursor",
-  chatgpt: "ChatGPT",
+const TOOL_META: Record<string, { label: string; dot: string }> = {
+  claude:  { label: "Claude",  dot: "bg-clay-500" },
+  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
 };
 
-const CATEGORY_COLOR: Record<TemplateCategory, string> = {
-  Cursor: "bg-cream-100 text-ink-700 border-ink-200",
-  Claude: "bg-clay-50 text-clay-700 border-clay-200/60",
-  ChatGPT: "bg-white text-ink-600 border-ink-200",
-  n8n: "bg-cream-100 text-ink-700 border-ink-200",
-  Airtable: "bg-cream-200/60 text-ink-700 border-ink-200",
-  Sales: "bg-clay-50 text-clay-700 border-clay-200/60",
-  Content: "bg-cream-100 text-ink-700 border-ink-200",
-  Research: "bg-clay-50 text-clay-700 border-clay-200/60",
+// Soft accent per category for the card top strip
+const CATEGORY_ACCENT: Record<TemplateCategory, string> = {
+  Cursor:   "bg-blue-50 border-blue-100/60",
+  Claude:   "bg-clay-50 border-clay-100/60",
+  ChatGPT:  "bg-emerald-50 border-emerald-100/60",
+  n8n:      "bg-amber-50 border-amber-100/60",
+  Airtable: "bg-indigo-50 border-indigo-100/60",
+  Sales:    "bg-rose-50 border-rose-100/60",
+  Content:  "bg-purple-50 border-purple-100/60",
+  Research: "bg-teal-50 border-teal-100/60",
+};
+
+const CATEGORY_LABEL_COLOR: Record<TemplateCategory, string> = {
+  Cursor:   "text-blue-700",
+  Claude:   "text-clay-700",
+  ChatGPT:  "text-emerald-700",
+  n8n:      "text-amber-700",
+  Airtable: "text-indigo-700",
+  Sales:    "text-rose-700",
+  Content:  "text-purple-700",
+  Research: "text-teal-700",
 };
 
 export function TemplateGrid() {
@@ -33,14 +46,12 @@ export function TemplateGrid() {
       ? TEMPLATES
       : TEMPLATES.filter((tpl) => tpl.category === activeCategory);
 
-  const categoryAll = t("templates.categoryAll");
-
   return (
     <div>
       {/* Category filter */}
-      <div className="flex flex-wrap gap-2 mb-7">
+      <div className="flex flex-wrap gap-1.5 mb-8">
         <FilterChip
-          label={categoryAll}
+          label={t("templates.categoryAll")}
           active={activeCategory === "All"}
           onClick={() => setActiveCategory("All")}
         />
@@ -56,51 +67,57 @@ export function TemplateGrid() {
 
       {/* Cards grid */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filtered.map((template) => (
-          <Link
-            key={template.id}
-            href={`/builder?template=${template.id}`}
-            onClick={() => track("template_used", { template_id: template.id })}
-            className="group rounded-2xl border border-ink-100/70 bg-card card-soft p-5 flex flex-col gap-3 hover:border-clay-300/50 hover:card-soft-lg transition-all"
-          >
-            {/* Badges */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${CATEGORY_COLOR[template.category]}`}>
-                {template.category}
-              </span>
-              <span className="text-[11px] font-medium text-ink-400 border border-ink-100 bg-cream-50 rounded-full px-2.5 py-0.5">
-                {TOOL_LABEL[template.target_tool]}
-              </span>
-            </div>
+        {filtered.map((template) => {
+          const tool = TOOL_META[template.target_tool] ?? { label: template.target_tool, dot: "bg-ink-300" };
+          const accentClass = CATEGORY_ACCENT[template.category] ?? "bg-cream-100 border-ink-100/60";
+          const labelColor = CATEGORY_LABEL_COLOR[template.category] ?? "text-ink-600";
 
-            {/* Content */}
-            <div className="flex-1">
-              <h3 className="font-serif text-base font-medium text-ink-900 leading-snug mb-1.5 group-hover:text-clay-700 transition-colors">
-                {template.title}
-              </h3>
-              <p className="text-[13px] text-ink-500 leading-relaxed">
-                {template.description}
-              </p>
-            </div>
+          return (
+            <Link
+              key={template.id}
+              href={`/builder?template=${template.id}`}
+              onClick={() => track("template_used", { template_id: template.id })}
+              className="group rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden hover:border-clay-300/50 hover:shadow-[0_4px_24px_rgba(0,0,0,0.06)] transition-all flex flex-col"
+            >
+              {/* Color accent strip */}
+              <div className={cn("px-4 pt-4 pb-3 border-b", accentClass)}>
+                <div className="flex items-center justify-between">
+                  <span className={cn("text-[10.5px] font-bold uppercase tracking-[0.14em]", labelColor)}>
+                    {template.category}
+                  </span>
+                  <div className="flex items-center gap-1.5">
+                    <span className={cn("size-1.5 rounded-full", tool.dot)} />
+                    <span className="text-[10.5px] font-medium text-ink-500">{tool.label}</span>
+                  </div>
+                </div>
+              </div>
 
-            {/* CTA row */}
-            <div className="flex items-center justify-between pt-1">
-              <span className="text-[12px] font-medium text-clay-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                {t("templates.useTemplate")}
-                <ArrowRight className="size-3" />
-              </span>
-              <span className="text-[11px] text-ink-300 group-hover:text-ink-400 transition-colors">
-                {TOOL_LABEL[template.target_tool]}
-              </span>
-            </div>
-          </Link>
-        ))}
+              {/* Content */}
+              <div className="flex-1 flex flex-col gap-2 p-4">
+                <h3 className="font-serif text-[15.5px] font-medium text-ink-900 leading-snug group-hover:text-clay-700 transition-colors">
+                  {template.title}
+                </h3>
+                <p className="text-[12.5px] text-ink-500 leading-relaxed flex-1">
+                  {template.description}
+                </p>
+              </div>
+
+              {/* CTA footer */}
+              <div className="px-4 pb-4 flex items-center justify-between">
+                <span className="text-[12px] font-medium text-clay-600 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  {t("templates.useTemplate")}
+                  <ArrowRight className="size-3 group-hover:translate-x-0.5 transition-transform" />
+                </span>
+              </div>
+            </Link>
+          );
+        })}
       </div>
 
       {filtered.length === 0 && (
-        <p className="text-sm text-ink-400 text-center py-12">
-          {t("templates.noTemplates")}
-        </p>
+        <div className="text-center py-16">
+          <p className="text-sm text-ink-400">{t("templates.noTemplates")}</p>
+        </div>
       )}
     </div>
   );
@@ -110,11 +127,12 @@ function FilterChip({ label, active, onClick }: { label: string; active: boolean
   return (
     <button
       onClick={onClick}
-      className={`text-xs font-medium rounded-full px-3 py-1.5 border transition-all ${
+      className={cn(
+        "text-[11.5px] font-medium rounded-full px-3 py-1.5 border transition-all",
         active
-          ? "bg-clay-500 text-white border-clay-500"
-          : "bg-white text-ink-600 border-ink-200 hover:border-ink-300 hover:text-ink-800"
-      }`}
+          ? "bg-clay-500 text-white border-clay-500 shadow-sm"
+          : "bg-white text-ink-600 border-ink-200/70 hover:border-ink-300 hover:text-ink-800"
+      )}
     >
       {label}
     </button>

@@ -1,6 +1,5 @@
 "use client";
 
-import { Check } from "lucide-react";
 import { TOOLS, ToolId } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
@@ -44,12 +43,10 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
                 <ToolIcon id={tool.id} active={isActive} />
                 {isActive && (
                   <motion.div
-                    initial={{ scale: 0, rotate: -90 }}
-                    animate={{ scale: 1, rotate: 0 }}
-                    className="size-5 rounded-full bg-clay-500 flex items-center justify-center"
-                  >
-                    <Check className="size-3 text-white" strokeWidth={3} />
-                  </motion.div>
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className={cn("size-2 rounded-full", TOOL_DOT[tool.id as ToolId])}
+                  />
                 )}
               </div>
               <div className="space-y-0.5">
@@ -71,41 +68,40 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
   );
 }
 
+const TOOL_DOT: Record<ToolId, string> = {
+  claude:  "bg-clay-500",
+  cursor:  "bg-blue-400",
+  chatgpt: "bg-emerald-500",
+};
+
 function ToolIcon({ id, active }: { id: ToolId; active: boolean }) {
   const base = "size-7 rounded-lg flex items-center justify-center transition-colors";
+  const stroke = active ? "#A24A22" : "#6E685D";
+  const bg = active ? "bg-clay-500/12" : "bg-cream-100";
+
   if (id === "claude") {
     return (
-      <div className={cn(base, active ? "bg-clay-500/15" : "bg-cream-100")}>
+      <div className={cn(base, bg)}>
         <svg viewBox="0 0 16 16" className="size-4" fill="none">
-          <path
-            d="M3 4.5C3 3.67 3.67 3 4.5 3h7c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5H8l-3 2.5V11H4.5C3.67 11 3 10.33 3 9.5v-5z"
-            stroke={active ? "#A24A22" : "#6E685D"}
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
+          <path d="M3 4.5C3 3.67 3.67 3 4.5 3h7c.83 0 1.5.67 1.5 1.5v5c0 .83-.67 1.5-1.5 1.5H8l-3 2.5V11H4.5C3.67 11 3 10.33 3 9.5v-5z" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" />
         </svg>
       </div>
     );
   }
   if (id === "cursor") {
     return (
-      <div className={cn(base, active ? "bg-clay-500/15" : "bg-cream-100")}>
+      <div className={cn(base, bg)}>
         <svg viewBox="0 0 16 16" className="size-4" fill="none">
-          <path
-            d="M3 2.5L13 8L8.5 9.5L7 14L3 2.5Z"
-            stroke={active ? "#A24A22" : "#6E685D"}
-            strokeWidth="1.5"
-            strokeLinejoin="round"
-          />
+          <path d="M3 2.5L13 8L8.5 9.5L7 14L3 2.5Z" stroke={stroke} strokeWidth="1.5" strokeLinejoin="round" />
         </svg>
       </div>
     );
   }
   return (
-    <div className={cn(base, active ? "bg-clay-500/15" : "bg-cream-100")}>
+    <div className={cn(base, bg)}>
       <svg viewBox="0 0 16 16" className="size-4" fill="none">
-        <circle cx="8" cy="8" r="5" stroke={active ? "#A24A22" : "#6E685D"} strokeWidth="1.5" />
-        <circle cx="8" cy="8" r="1.5" fill={active ? "#A24A22" : "#6E685D"} />
+        <circle cx="8" cy="8" r="5" stroke={stroke} strokeWidth="1.5" />
+        <circle cx="8" cy="8" r="1.5" fill={stroke} />
       </svg>
     </div>
   );
