@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { AlertTriangle, Lightbulb, Loader2, RefreshCw, TrendingUp, Wand2 } from "lucide-react";
+import { AlertTriangle, Loader2, RefreshCw, TrendingUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PromptScore } from "@/types/prompt";
@@ -156,24 +156,21 @@ function ScoreDimensionRow({
 }) {
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between">
-        <span className="text-[13px] font-medium text-ink-800">{dim.label}</span>
-        <span className={cn("text-xs font-mono tabular-nums", scoreColor(dim.score))}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="text-[12.5px] font-medium text-ink-800 truncate">{dim.label}</span>
+        <span className={cn("text-[11px] font-mono tabular-nums font-semibold shrink-0", scoreColor(dim.score))}>
           {dim.score}
         </span>
       </div>
-      <div className="h-1.5 w-full rounded-full bg-cream-200/80 overflow-hidden">
+      <div className="h-1 w-full rounded-full bg-cream-200/80 overflow-hidden">
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${dim.score}%` }}
-          transition={{ duration: 0.7, delay, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
           className={cn("h-full rounded-full", scoreBar(dim.score))}
         />
       </div>
-      <div className="flex items-start gap-1.5 pt-0.5">
-        <Lightbulb className="size-3 text-clay-500 mt-0.5 shrink-0" />
-        <span className="text-[11px] leading-snug text-ink-400">{dim.tip}</span>
-      </div>
+      <p className="text-[11px] leading-snug text-ink-400">{dim.tip}</p>
     </div>
   );
 }
@@ -188,20 +185,22 @@ function Grade({ score, t }: { score: number; t: (key: string) => string }) {
 }
 
 function gradeInfo(score: number, t: (key: string) => string) {
-  if (score >= 90) return { label: t("score.excellent"), classes: "bg-clay-500/15 text-clay-700" };
-  if (score >= 80) return { label: t("score.strong"), classes: "bg-clay-500/10 text-clay-600" };
-  if (score >= 65) return { label: t("score.decent"), classes: "bg-cream-200 text-ink-600" };
-  return { label: t("score.needsWork"), classes: "bg-ink-100 text-ink-600" };
+  if (score >= 90) return { label: t("score.excellent"), classes: "bg-clay-500/15 text-clay-700 border border-clay-200/50" };
+  if (score >= 80) return { label: t("score.strong"), classes: "bg-clay-500/8 text-clay-600 border border-clay-200/30" };
+  if (score >= 65) return { label: t("score.decent"), classes: "bg-amber-50 text-amber-700 border border-amber-200/50" };
+  return { label: t("score.needsWork"), classes: "bg-red-50 text-red-600 border border-red-200/50" };
 }
 
 function scoreColor(score: number) {
   if (score >= 85) return "text-clay-700";
-  if (score >= 70) return "text-ink-700";
-  return "text-ink-500";
+  if (score >= 70) return "text-ink-600";
+  if (score >= 50) return "text-amber-700";
+  return "text-red-500";
 }
 
 function scoreBar(score: number) {
   if (score >= 85) return "bg-clay-500";
-  if (score >= 70) return "bg-clay-400";
-  return "bg-ink-300";
+  if (score >= 70) return "bg-clay-400/70";
+  if (score >= 50) return "bg-amber-400";
+  return "bg-red-400";
 }
