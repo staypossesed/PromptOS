@@ -43,7 +43,10 @@ export type AnalyticsEvent =
   | "github_signin_started"
   | "language_detected"
   | "language_changed"
-  | "prompt_language_detected";
+  | "prompt_language_detected"
+  | "account_menu_opened"
+  | "account_opened"
+  | "signout_clicked";
 
 export interface EventProperties {
   target_tool?: string;

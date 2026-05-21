@@ -157,21 +157,22 @@ export function Sidebar() {
         />
 
         {/* Plan card */}
-        <div className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft">
-          <div className="flex items-center gap-2">
-            <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center shrink-0">
-              <Sparkles className="size-3.5 text-clay-600" />
+        <Link
+          href="/account"
+          className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft flex items-center gap-2 hover:border-ink-200/80 hover:bg-cream-100/60 transition-colors"
+        >
+          <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center shrink-0">
+            <Sparkles className="size-3.5 text-clay-600" />
+          </div>
+          <div className="min-w-0">
+            <div className="text-[11px] font-medium text-ink-800 truncate">
+              {user?.email ?? t("nav.workspace")}
             </div>
-            <div className="min-w-0">
-              <div className="text-[11px] font-medium text-ink-800 truncate">
-                {user?.email ?? t("nav.workspace")}
-              </div>
-              <div className="text-[10px] text-ink-400 leading-snug">
-                {t("plan.free")}
-              </div>
+            <div className="text-[10px] text-ink-400 leading-snug">
+              {t("plan.free")}
             </div>
           </div>
-        </div>
+        </Link>
 
         {/* Legal links */}
         <div className="mt-3 flex items-center justify-center gap-3 pb-1">

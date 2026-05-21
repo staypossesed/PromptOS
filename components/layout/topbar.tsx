@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Menu, LogOut, Settings, User } from "lucide-react";
+import { Search, Menu, LogOut, Settings, User, Zap, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -11,6 +11,8 @@ import { signOut } from "@/app/actions/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useTranslations } from "@/lib/i18n/use-translations";
+import { FeedbackModal } from "@/components/feedback/feedback-modal";
+import { track } from "@/lib/analytics";
 
 interface TopbarProps {
   title?: string;
@@ -24,6 +26,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [searchValue, setSearchValue] = useState("");
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -121,7 +124,11 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
           {/* Avatar + dropdown */}
           <div className="relative ml-1" ref={menuRef}>
             <button
-              onClick={() => setMenuOpen((o) => !o)}
+              onClick={() => {
+                const next = !menuOpen;
+                setMenuOpen(next);
+                if (next) track("account_menu_opened");
+              }}
               className="size-9 rounded-full bg-gradient-to-br from-clay-300 to-clay-500 text-white text-xs font-semibold flex items-center justify-center ring-2 ring-white/60 hover:ring-clay-200 transition-all focus-visible:outline-none focus-visible:ring-clay-400"
               aria-label={t("topbar.accountMenu")}
               aria-expanded={menuOpen}
@@ -156,14 +163,39 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
 
                   {/* Menu items */}
                   <div className="p-1.5">
-                    <UserMenuLink href="/settings" icon={User} label={t("topbar.account")} onClick={() => setMenuOpen(false)} />
-                    <UserMenuLink href="/settings" icon={Settings} label={t("nav.settings")} onClick={() => setMenuOpen(false)} />
+                    <UserMenuLink
+                      href="/account"
+                      icon={User}
+                      label={t("nav.account")}
+                      onClick={() => { setMenuOpen(false); track("account_opened"); }}
+                    />
+                    <UserMenuLink
+                      href="/settings"
+                      icon={Settings}
+                      label={t("nav.settings")}
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <UserMenuLink
+                      href="/account"
+                      icon={Zap}
+                      label={t("nav.plan")}
+                      onClick={() => setMenuOpen(false)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); setFeedbackOpen(true); }}
+                      className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-700 hover:bg-cream-100 transition-colors"
+                    >
+                      <MessageSquare className="size-4 shrink-0 text-ink-400" />
+                      {t("nav.feedback")}
+                    </button>
                   </div>
 
                   <div className="border-t border-ink-100/60 p-1.5">
                     <form action={signOut}>
                       <button
                         type="submit"
+                        onClick={() => track("signout_clicked")}
                         className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors"
                       >
                         <LogOut className="size-4 shrink-0" />
@@ -179,6 +211,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
       </header>
 
       <MobileNav open={mobileOpen} onClose={() => setMobileOpen(false)} />
+      <FeedbackModal open={feedbackOpen} onClose={() => setFeedbackOpen(false)} />
     </>
   );
 }

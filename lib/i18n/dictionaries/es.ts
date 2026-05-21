@@ -16,6 +16,8 @@ export const es: Dictionary = {
     workspace: "Espacio de trabajo",
     library: "Biblioteca",
     newPrompt: "Nuevo prompt",
+    account: "Cuenta",
+    plan: "Plan",
   },
 
   plan: {
@@ -296,6 +298,24 @@ export const es: Dictionary = {
     en: "English",
     ru: "Русский",
     es: "Español",
+  },
+
+  account: {
+    title: "Cuenta",
+    subtitle: "Tu perfil y detalles del plan.",
+    profileSection: "Perfil",
+    planSection: "Plan y uso",
+    quickLinksSection: "Accesos rápidos",
+    email: "Correo",
+    memberSince: "Miembro desde",
+    signedInWith: "Sesión iniciada con",
+    freePlan: "Gratuito",
+    promptsThisMonth: "Prompts este mes",
+    promptsRemaining: "{n} prompts restantes hoy",
+    goToBuilder: "Crear nuevo prompt",
+    goToHistory: "Ver historial",
+    goToSettings: "Configuración e idioma",
+    signOut: "Cerrar sesión",
   },
 
   modelLab: {

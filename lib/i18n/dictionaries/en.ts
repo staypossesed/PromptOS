@@ -14,6 +14,8 @@ export const en = {
     workspace: "Workspace",
     library: "Library",
     newPrompt: "New Prompt",
+    account: "Account",
+    plan: "Plan",
   },
 
   plan: {
@@ -294,6 +296,24 @@ export const en = {
     en: "English",
     ru: "Русский",
     es: "Español",
+  },
+
+  account: {
+    title: "Account",
+    subtitle: "Your profile and plan details.",
+    profileSection: "Profile",
+    planSection: "Plan & usage",
+    quickLinksSection: "Quick links",
+    email: "Email",
+    memberSince: "Member since",
+    signedInWith: "Signed in with",
+    freePlan: "Free",
+    promptsThisMonth: "Prompts this month",
+    promptsRemaining: "{n} prompts remaining today",
+    goToBuilder: "Start a new prompt",
+    goToHistory: "View prompt history",
+    goToSettings: "App settings & language",
+    signOut: "Sign out",
   },
 
   modelLab: {

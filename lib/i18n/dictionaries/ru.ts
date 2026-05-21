@@ -16,6 +16,8 @@ export const ru: Dictionary = {
     workspace: "Рабочее пространство",
     library: "Библиотека",
     newPrompt: "Новый промпт",
+    account: "Аккаунт",
+    plan: "Тариф",
   },
 
   plan: {
@@ -296,6 +298,24 @@ export const ru: Dictionary = {
     en: "English",
     ru: "Русский",
     es: "Español",
+  },
+
+  account: {
+    title: "Аккаунт",
+    subtitle: "Ваш профиль и данные тарифа.",
+    profileSection: "Профиль",
+    planSection: "Тариф и использование",
+    quickLinksSection: "Быстрые ссылки",
+    email: "Email",
+    memberSince: "С нами с",
+    signedInWith: "Вход через",
+    freePlan: "Бесплатный",
+    promptsThisMonth: "Промптов в этом месяце",
+    promptsRemaining: "Осталось {n} промптов сегодня",
+    goToBuilder: "Создать новый промпт",
+    goToHistory: "История промптов",
+    goToSettings: "Настройки приложения",
+    signOut: "Выйти",
   },
 
   modelLab: {
