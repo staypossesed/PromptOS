@@ -1,11 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, Clock, ArrowRight } from "lucide-react";
+import { ArrowUpRight, Clock, ArrowRight, Code2, Rocket, Mail, Bot, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
-import type { PromptPackSummary } from "@/types/prompt-pack";
+import type { PromptPackSummary, PackType } from "@/types/prompt-pack";
 import { PACK_TYPES } from "@/types/prompt-pack";
+
+const PACK_ICONS: Record<PackType, React.ComponentType<{ className?: string }>> = {
+  build_an_app: Code2,
+  launch_a_saas: Rocket,
+  sales_outreach_campaign: Mail,
+  automation_workflow: Bot,
+  research_report: Search,
+};
 
 interface PromptPackCardProps {
   pack: PromptPackSummary;
@@ -30,12 +38,15 @@ export function PromptPackCard({ pack, index = 0 }: PromptPackCardProps) {
         {/* Top row */}
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 min-w-0">
-            {packTypeInfo && (
-              <div className="flex items-center gap-1.5 rounded-full border border-ink-100/60 bg-cream-50 px-2 py-0.5 shrink-0">
-                <span className="text-[11px]">{packTypeInfo.emoji}</span>
-                <span className="text-[10.5px] font-medium text-ink-600">{packTypeInfo.label}</span>
-              </div>
-            )}
+            {packTypeInfo && (() => {
+              const Icon = PACK_ICONS[pack.pack_type];
+              return (
+                <div className="flex items-center gap-1.5 rounded-full border border-ink-100/60 bg-cream-50 px-2 py-0.5 shrink-0">
+                  <Icon className="size-3 text-ink-500" />
+                  <span className="text-[10.5px] font-medium text-ink-600">{packTypeInfo.label}</span>
+                </div>
+              );
+            })()}
             <div className="flex items-center gap-1 rounded-full bg-clay-500/8 border border-clay-200/40 px-2 py-0.5 shrink-0">
               <span className="text-[10.5px] font-medium text-clay-700">{pack.prompts.length} steps</span>
             </div>

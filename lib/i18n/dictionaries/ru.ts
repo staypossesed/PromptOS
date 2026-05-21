@@ -24,6 +24,7 @@ export const ru: Dictionary = {
     free: "Бесплатный план · 20 промптов/день",
     freePlanLabel: "Бесплатный план",
     badge: "бета",
+    promptsLeftToday: "Осталось {count} промптов сегодня",
   },
 
   common: {
@@ -242,8 +243,8 @@ export const ru: Dictionary = {
     planSection: "Тариф",
     currentPlan: "Текущий тариф",
     freePlan: "Бесплатный",
-    promptsThisMonth: "Промптов в этом месяце",
-    promptsRemaining: "{n} промптов осталось в этом месяце",
+    promptsToday: "Промптов сегодня",
+    promptsRemaining: "Осталось {n} промптов сегодня",
     securitySection: "Безопасность",
     authentication: "Аутентификация",
     authValue: "Магическая ссылка (без пароля)",
@@ -310,7 +311,7 @@ export const ru: Dictionary = {
     memberSince: "С нами с",
     signedInWith: "Вход через",
     freePlan: "Бесплатный",
-    promptsThisMonth: "Промптов в этом месяце",
+    promptsToday: "Промптов сегодня",
     promptsRemaining: "Осталось {n} промптов сегодня",
     goToBuilder: "Создать новый промпт",
     goToHistory: "История промптов",

@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { usePromptUsage } from "@/hooks/usePromptUsage";
 import {
   Home,
   Wand2,
@@ -36,6 +37,7 @@ export function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { t } = useTranslations();
+  const { remainingToday, dailyLimit, isLoading: usageLoading } = usePromptUsage();
 
   useEffect(() => {
     const supabase = createClient();
@@ -159,17 +161,32 @@ export function Sidebar() {
         {/* Plan card */}
         <Link
           href="/account"
-          className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft flex items-center gap-2 hover:border-ink-200/80 hover:bg-cream-100/60 transition-colors"
+          className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft hover:border-ink-200/80 hover:bg-cream-100/60 transition-colors block"
         >
-          <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center shrink-0">
-            <Sparkles className="size-3.5 text-clay-600" />
-          </div>
-          <div className="min-w-0">
-            <div className="text-[11px] font-medium text-ink-800 truncate">
-              {user?.email ?? t("nav.workspace")}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="size-7 rounded-full bg-clay-500/10 flex items-center justify-center shrink-0">
+              <Sparkles className="size-3.5 text-clay-600" />
             </div>
-            <div className="text-[10px] text-ink-400 leading-snug">
-              {t("plan.free")}
+            <div className="min-w-0 flex-1">
+              <div className="text-[11px] font-medium text-ink-800 truncate">
+                {user?.email ?? t("nav.workspace")}
+              </div>
+              <div className="text-[10px] text-ink-400 leading-snug">
+                {t("plan.freePlanLabel")}
+              </div>
+            </div>
+          </div>
+          <div className="space-y-1">
+            <div className="h-1.5 w-full rounded-full bg-cream-200 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-clay-500 transition-all"
+                style={{ width: usageLoading ? "0%" : `${Math.min(((dailyLimit - remainingToday) / dailyLimit) * 100, 100)}%` }}
+              />
+            </div>
+            <div className="text-[10px] text-ink-400">
+              {usageLoading
+                ? t("plan.free")
+                : t("plan.promptsLeftToday", { count: remainingToday })}
             </div>
           </div>
         </Link>

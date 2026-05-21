@@ -20,9 +20,10 @@ export default async function AccountPage() {
   if (!user) redirect("/login");
 
   const { data: prompts } = await listPrompts(200);
-  const totalPrompts = prompts.length;
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayPrompts = prompts.filter(p => new Date(p.created_at).getTime() >= todayStart.getTime()).length;
   const DAILY_LIMIT = 20;
-  const usagePercent = Math.min((totalPrompts / DAILY_LIMIT) * 100, 100);
+  const usagePercent = Math.min((todayPrompts / DAILY_LIMIT) * 100, 100);
   const { t } = await getServerTranslations();
 
   const provider = (user.app_metadata?.provider as string | undefined) ?? "email";
@@ -64,9 +65,9 @@ export default async function AccountPage() {
                 <span className="text-sm font-semibold text-ink-900">{t("account.freePlan")}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">{t("account.promptsThisMonth")}</span>
+                <span className="text-sm text-ink-600">{t("account.promptsToday")}</span>
                 <span className="text-sm font-mono text-ink-700">
-                  {totalPrompts} / {DAILY_LIMIT}
+                  {todayPrompts} / {DAILY_LIMIT}
                 </span>
               </div>
               <div className="space-y-1.5">
@@ -77,7 +78,7 @@ export default async function AccountPage() {
                   />
                 </div>
                 <p className="text-xs text-ink-400">
-                  {t("account.promptsRemaining", { n: DAILY_LIMIT - totalPrompts })}
+                  {t("account.promptsRemaining", { n: DAILY_LIMIT - todayPrompts })}
                 </p>
               </div>
             </div>

@@ -20,9 +20,10 @@ export default async function SettingsPage() {
   if (!user) redirect("/login");
 
   const { data: prompts } = await listPrompts(200);
-  const totalPrompts = prompts.length;
-  const MONTHLY_LIMIT = 20;
-  const usagePercent = Math.min((totalPrompts / MONTHLY_LIMIT) * 100, 100);
+  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
+  const todayPrompts = prompts.filter(p => new Date(p.created_at).getTime() >= todayStart.getTime()).length;
+  const DAILY_LIMIT = 20;
+  const usagePercent = Math.min((todayPrompts / DAILY_LIMIT) * 100, 100);
   const { t } = await getServerTranslations();
 
   return (
@@ -61,9 +62,9 @@ export default async function SettingsPage() {
                 <span className="text-sm font-semibold text-ink-900">{t("settings.freePlan")}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">{t("settings.promptsThisMonth")}</span>
+                <span className="text-sm text-ink-600">{t("settings.promptsToday")}</span>
                 <span className="text-sm font-mono text-ink-700">
-                  {totalPrompts} / {MONTHLY_LIMIT}
+                  {todayPrompts} / {DAILY_LIMIT}
                 </span>
               </div>
               <div className="space-y-1.5">
@@ -74,7 +75,7 @@ export default async function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-ink-400">
-                  {t("settings.promptsRemaining", { n: MONTHLY_LIMIT - totalPrompts })}
+                  {t("settings.promptsRemaining", { n: DAILY_LIMIT - todayPrompts })}
                 </p>
               </div>
             </div>

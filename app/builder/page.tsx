@@ -451,6 +451,7 @@ function BuilderInner() {
           router.replace(`/builder?id=${json.data.id}`, { scroll: false });
           showToast("success", t("builder.promptSaved"));
           track("prompt_saved", { target_tool: tool, action_type: "create" });
+          window.dispatchEvent(new Event("prompt_usage_refresh"));
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
@@ -523,6 +524,7 @@ function BuilderInner() {
           setIsPackSaved(true);
           showToast("success", t("builder.packSaved"));
           track("prompt_pack_saved", { pack_type: packType, action_type: "create" });
+          window.dispatchEvent(new Event("prompt_usage_refresh"));
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");

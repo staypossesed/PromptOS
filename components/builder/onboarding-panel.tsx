@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Sparkles, X } from "lucide-react";
+import { Sparkles, X, Zap, PenLine, Search, Bot, Mail, FileText } from "lucide-react";
 import { track } from "@/lib/analytics";
 import type { ToolId } from "@/lib/mock-data";
 import type { PromptContext } from "@/types/prompt";
@@ -11,7 +11,7 @@ const STORAGE_KEY = "umprompt_onboarding_seen";
 
 interface OnboardingOption {
   labelKey: string;
-  emoji: string;
+  icon: React.ComponentType<{ className?: string }>;
   tool: ToolId;
   idea: string;
   context?: PromptContext;
@@ -23,42 +23,42 @@ interface OnboardingOption {
 const OPTIONS: OnboardingOption[] = [
   {
     labelKey: "onboarding.buildWithCursor",
-    emoji: "⚡",
+    icon: Zap,
     tool: "cursor",
     idea: "Build a user settings page for a Next.js SaaS — allow users to update their profile, email, and notification preferences",
     context: { projectType: "Next.js 15 App Router", constraints: "TypeScript strict mode" },
   },
   {
     labelKey: "onboarding.writeWithChatGPT",
-    emoji: "✍️",
+    icon: PenLine,
     tool: "chatgpt",
     idea: "Write a 3-email cold outreach sequence for [your product] targeting [your audience]",
     context: { outputFormat: "3 emails with subject lines and CTAs" },
   },
   {
     labelKey: "onboarding.researchWithClaude",
-    emoji: "🔍",
+    icon: Search,
     tool: "claude",
     idea: "Research and analyze the top 5 competitors in [your market] — pricing, positioning, strengths, and strategic gaps",
     context: { outputFormat: "Structured report with executive summary and competitor deep-dives" },
   },
   {
     labelKey: "onboarding.automateWithN8n",
-    emoji: "🤖",
+    icon: Bot,
     tool: "chatgpt",
     idea: "Build an n8n automation that captures new leads from a Typeform, enriches them with Clearbit, and adds them to HubSpot",
     context: { projectType: "n8n automation workflow" },
   },
   {
     labelKey: "onboarding.salesCopy",
-    emoji: "📧",
+    icon: Mail,
     tool: "chatgpt",
     idea: "Write a follow-up email sequence for sales prospects who attended a demo but haven't replied in 5 days",
     context: { outputFormat: "3 emails with subject lines. Short, direct, no filler." },
   },
   {
     labelKey: "onboarding.createContent",
-    emoji: "📝",
+    icon: FileText,
     tool: "claude",
     idea: "Create a landing page for [your product] — hero headline, 3 benefit sections, social proof, and CTA",
     context: { outputFormat: "Full page copy with labeled sections and brackets for customization" },
@@ -117,16 +117,19 @@ export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-        {OPTIONS.map((opt) => (
-          <button
-            key={opt.labelKey}
-            onClick={() => handleSelect(opt)}
-            className="flex items-center gap-2 rounded-xl border border-ink-100/70 bg-white/80 px-3 py-2.5 text-left text-xs font-medium text-ink-700 hover:border-clay-300/60 hover:bg-white hover:text-ink-900 hover:card-soft transition-all"
-          >
-            <span className="text-base leading-none shrink-0">{opt.emoji}</span>
-            <span className="leading-snug">{t(opt.labelKey)}</span>
-          </button>
-        ))}
+        {OPTIONS.map((opt) => {
+          const Icon = opt.icon;
+          return (
+            <button
+              key={opt.labelKey}
+              onClick={() => handleSelect(opt)}
+              className="flex items-center gap-2 rounded-xl border border-ink-100/70 bg-white/80 px-3 py-2.5 text-left text-xs font-medium text-ink-700 hover:border-clay-300/60 hover:bg-white hover:text-ink-900 hover:card-soft transition-all"
+            >
+              <Icon className="size-3.5 shrink-0 text-ink-400" />
+              <span className="leading-snug">{t(opt.labelKey)}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );

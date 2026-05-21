@@ -24,6 +24,7 @@ export const es: Dictionary = {
     free: "Plan gratuito · 20 prompts/día",
     freePlanLabel: "Plan gratuito",
     badge: "beta",
+    promptsLeftToday: "Quedan {count} prompts hoy",
   },
 
   common: {
@@ -242,8 +243,8 @@ export const es: Dictionary = {
     planSection: "Plan",
     currentPlan: "Plan actual",
     freePlan: "Gratuito",
-    promptsThisMonth: "Prompts este mes",
-    promptsRemaining: "{n} prompts restantes este mes",
+    promptsToday: "Prompts hoy",
+    promptsRemaining: "{n} prompts restantes hoy",
     securitySection: "Seguridad",
     authentication: "Autenticación",
     authValue: "Enlace mágico (sin contraseña)",
@@ -310,7 +311,7 @@ export const es: Dictionary = {
     memberSince: "Miembro desde",
     signedInWith: "Sesión iniciada con",
     freePlan: "Gratuito",
-    promptsThisMonth: "Prompts este mes",
+    promptsToday: "Prompts hoy",
     promptsRemaining: "{n} prompts restantes hoy",
     goToBuilder: "Crear nuevo prompt",
     goToHistory: "Ver historial",

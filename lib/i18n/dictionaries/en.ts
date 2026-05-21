@@ -22,6 +22,7 @@ export const en = {
     free: "Free plan · 20 prompts/day",
     freePlanLabel: "Free plan",
     badge: "beta",
+    promptsLeftToday: "{count} prompts left today",
   },
 
   common: {
@@ -240,8 +241,8 @@ export const en = {
     planSection: "Plan",
     currentPlan: "Current plan",
     freePlan: "Free",
-    promptsThisMonth: "Prompts this month",
-    promptsRemaining: "{n} prompts remaining this month",
+    promptsToday: "Prompts today",
+    promptsRemaining: "{n} prompts remaining today",
     securitySection: "Security",
     authentication: "Authentication",
     authValue: "Magic link (passwordless)",
@@ -308,7 +309,7 @@ export const en = {
     memberSince: "Member since",
     signedInWith: "Signed in with",
     freePlan: "Free",
-    promptsThisMonth: "Prompts this month",
+    promptsToday: "Prompts today",
     promptsRemaining: "{n} prompts remaining today",
     goToBuilder: "Start a new prompt",
     goToHistory: "View prompt history",
