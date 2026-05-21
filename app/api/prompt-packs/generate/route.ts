@@ -28,7 +28,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid JSON." }, { status: 400 });
   }
 
-  const { idea, pack_type, context } = body as Record<string, unknown>;
+  const { idea, pack_type, context, outputLanguage } = body as Record<string, unknown>;
 
   if (!idea || typeof idea !== "string" || !idea.trim()) {
     return NextResponse.json({ error: "idea is required." }, { status: 400 });
@@ -43,6 +43,7 @@ export async function POST(req: NextRequest) {
       idea: idea.trim(),
       pack_type,
       context: (context as Record<string, string> | undefined) ?? {},
+      outputLanguage: typeof outputLanguage === "string" ? outputLanguage : undefined,
     });
 
     console.info("[pack:generate]", { timestamp: new Date().toISOString(), userId: user.id, pack_type, prompt_count: pack.prompts.length });

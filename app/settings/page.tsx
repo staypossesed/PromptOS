@@ -7,6 +7,8 @@ import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
 import { listPrompts } from "@/lib/prompts";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { LanguageSelector } from "@/components/settings/language-selector";
+import { getServerTranslations } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -21,27 +23,28 @@ export default async function SettingsPage() {
   const totalPrompts = prompts.length;
   const MONTHLY_LIMIT = 20;
   const usagePercent = Math.min((totalPrompts / MONTHLY_LIMIT) * 100, 100);
+  const { t } = await getServerTranslations();
 
   return (
     <AppShell>
       <PageViewTracker event="settings_opened" />
-      <Topbar breadcrumb={[{ label: "Workspace" }, { label: "Settings" }]} />
+      <Topbar breadcrumb={[{ label: t("nav.workspace") }, { label: t("nav.settings") }]} />
 
       <main className="flex-1 px-4 md:px-8 lg:px-10 py-8 md:py-10 max-w-2xl">
         <div className="mb-8">
           <h1 className="font-serif text-3xl md:text-[36px] tracking-tight text-ink-900 leading-tight mb-1">
-            Settings
+            {t("settings.title")}
           </h1>
-          <p className="text-ink-500 text-[15px]">Manage your account and preferences.</p>
+          <p className="text-ink-500 text-[15px]">{t("settings.subtitle")}</p>
         </div>
 
         <div className="space-y-4">
           {/* Account section */}
-          <Section title="Account" icon={Mail}>
-            <Row label="Email" value={user.email ?? "—"} />
-            <Row label="User ID" value={user.id.slice(0, 8) + "…"} mono />
+          <Section title={t("settings.accountSection")} icon={Mail}>
+            <Row label={t("settings.email")} value={user.email ?? "—"} />
+            <Row label={t("settings.userId")} value={user.id.slice(0, 8) + "…"} mono />
             <Row
-              label="Member since"
+              label={t("settings.memberSince")}
               value={new Date(user.created_at).toLocaleDateString("en-US", {
                 month: "long",
                 day: "numeric",
@@ -51,14 +54,14 @@ export default async function SettingsPage() {
           </Section>
 
           {/* Plan section */}
-          <Section title="Plan" icon={Zap}>
+          <Section title={t("settings.planSection")} icon={Zap}>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">Current plan</span>
-                <span className="text-sm font-semibold text-ink-900">Free</span>
+                <span className="text-sm text-ink-600">{t("settings.currentPlan")}</span>
+                <span className="text-sm font-semibold text-ink-900">{t("settings.freePlan")}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">Prompts this month</span>
+                <span className="text-sm text-ink-600">{t("settings.promptsThisMonth")}</span>
                 <span className="text-sm font-mono text-ink-700">
                   {totalPrompts} / {MONTHLY_LIMIT}
                 </span>
@@ -71,24 +74,27 @@ export default async function SettingsPage() {
                   />
                 </div>
                 <p className="text-xs text-ink-400">
-                  {MONTHLY_LIMIT - totalPrompts} prompts remaining this month
+                  {t("settings.promptsRemaining", { n: MONTHLY_LIMIT - totalPrompts })}
                 </p>
               </div>
             </div>
           </Section>
 
           {/* Security section */}
-          <Section title="Security" icon={Shield}>
-            <Row label="Authentication" value="Magic link (passwordless)" />
-            <Row label="Session" value="Active" />
+          <Section title={t("settings.securitySection")} icon={Shield}>
+            <Row label={t("settings.authentication")} value={t("settings.authValue")} />
+            <Row label={t("settings.session")} value={t("settings.sessionActive")} />
           </Section>
+
+          {/* Language selector (client component) */}
+          <LanguageSelector />
 
           {/* Sign out */}
           <div className="pt-2">
             <form action={signOut}>
               <Button type="submit" variant="outline" className="text-destructive hover:text-destructive hover:bg-destructive/5 border-destructive/20">
                 <LogOut className="size-4" />
-                Sign out
+                {t("settings.signOut")}
               </Button>
             </form>
           </div>

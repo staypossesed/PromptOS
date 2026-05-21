@@ -111,8 +111,13 @@ export async function generatePromptPack(input: GeneratePackInput): Promise<Prom
   if (ctx.outputFormat) contextLines.push(`Output format preference: ${ctx.outputFormat}`);
   if (ctx.examples) contextLines.push(`Examples/references: ${ctx.examples}`);
 
-  const system = `You are Umprompt, a professional prompt engineering system that creates Prompt Packs — coordinated sets of execution-ready AI prompts that together execute a complete project or workflow.
+  const langInstruction =
+    input.outputLanguage && input.outputLanguage !== "en"
+      ? `\nLanguage: Write every prompt_text in language code "${input.outputLanguage}". Keep code identifiers, API names, file paths, and technical terms in English.\n`
+      : "";
 
+  const system = `You are Umprompt, a professional prompt engineering system that creates Prompt Packs — coordinated sets of execution-ready AI prompts that together execute a complete project or workflow.
+${langInstruction}
 Each prompt in the pack must:
 - Be complete and paste-ready — no placeholders, no commentary, just the prompt
 - Be specifically tailored to its target tool:

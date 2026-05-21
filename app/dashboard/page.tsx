@@ -8,9 +8,10 @@ import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { listPrompts } from "@/lib/prompts";
+import { getServerTranslations } from "@/lib/i18n/server";
 import type { PromptSummary } from "@/types/prompt";
 
-export const dynamic = "force-dynamic"; // always fresh — never cache this page
+export const dynamic = "force-dynamic";
 
 const TOOLS = ["claude", "cursor", "chatgpt"] as const;
 
@@ -28,8 +29,8 @@ export default async function DashboardPage({
   const { q = "", tool: toolFilter = "" } = await searchParams;
   const displayName = user.email?.split("@")[0] ?? "there";
 
-  // Load real prompts from DB (RLS enforces user scope automatically)
   const { data: allPrompts, error: promptsError } = await listPrompts();
+  const { t } = await getServerTranslations();
 
   const totalPrompts = allPrompts.length;
   const avgScore =
@@ -43,7 +44,6 @@ export default async function DashboardPage({
       ? Math.max(...allPrompts.map((p) => p.score?.overall ?? 0))
       : 0;
 
-  // Filter for display
   const lq = q.toLowerCase().trim();
   let prompts: PromptSummary[] = allPrompts;
   if (lq) {
@@ -61,12 +61,12 @@ export default async function DashboardPage({
   return (
     <AppShell>
       <Topbar
-        breadcrumb={[{ label: "Workspace" }, { label: "Dashboard" }]}
+        breadcrumb={[{ label: t("nav.workspace") }, { label: t("nav.dashboard") }]}
         actions={
           <Button asChild size="sm" className="hidden md:inline-flex">
             <Link href="/builder">
               <Plus className="size-3.5" />
-              New Prompt
+              {t("nav.newPrompt")}
             </Link>
           </Button>
         }
@@ -77,28 +77,28 @@ export default async function DashboardPage({
         <div className="mb-10">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
             <Sparkles className="size-3.5" />
-            Welcome back, {displayName}
+            {t("dashboard.eyebrow", { name: displayName })}
           </div>
           <h1 className="font-serif text-3xl md:text-[40px] tracking-tight text-ink-900 leading-[1.05] mb-2">
-            What will you ship today?
+            {t("dashboard.title")}
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed max-w-xl">
-            Pick up where you left off, or start fresh. Every prompt you save lives here — scored, optimized, and ready to reopen.
+            {t("dashboard.subtitle")}
           </p>
         </div>
 
         {/* Stats row */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-10">
-          <StatCard label="Prompts saved" value={String(totalPrompts)} icon={Sparkles} />
+          <StatCard label={t("dashboard.promptsSaved")} value={String(totalPrompts)} icon={Sparkles} />
           <StatCard
-            label="Average score"
+            label={t("dashboard.averageScore")}
             value={totalPrompts > 0 ? String(avgScore) : "—"}
             icon={TrendingUp}
             accent
           />
-          <StatCard label="This week" value={String(thisWeekCount(allPrompts))} icon={Clock} />
+          <StatCard label={t("dashboard.thisWeek")} value={String(thisWeekCount(allPrompts))} icon={Clock} />
           <StatCard
-            label="Best score"
+            label={t("dashboard.bestScore")}
             value={totalPrompts > 0 ? String(bestScore) : "—"}
             icon={TrendingUp}
           />
@@ -107,7 +107,7 @@ export default async function DashboardPage({
         {/* Error banner */}
         {promptsError && (
           <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            Failed to load prompts: {promptsError}. Try refreshing.
+            {t("dashboard.loadError", { error: promptsError })} {t("common.tryRefreshing")}
           </div>
         )}
 
@@ -118,12 +118,12 @@ export default async function DashboardPage({
               <div className="mb-5 flex flex-col sm:flex-row sm:items-end gap-3 sm:gap-0 sm:justify-between">
                 <div>
                   <h2 className="font-serif text-2xl font-medium text-ink-900 mb-0.5">
-                    Recent prompts
+                    {t("dashboard.recentPrompts")}
                   </h2>
-                  <p className="text-sm text-ink-400">Sorted by last edit. Click any card to reopen.</p>
+                  <p className="text-sm text-ink-400">{t("dashboard.recentSubtitle")}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  <FilterChip href="/dashboard" active={!toolFilter}>All</FilterChip>
+                  <FilterChip href="/dashboard" active={!toolFilter}>{t("common.all")}</FilterChip>
                   <FilterChip href="/dashboard?tool=claude" active={toolFilter === "claude"}>Claude</FilterChip>
                   <FilterChip href="/dashboard?tool=cursor" active={toolFilter === "cursor"}>Cursor</FilterChip>
                   <FilterChip href="/dashboard?tool=chatgpt" active={toolFilter === "chatgpt"}>ChatGPT</FilterChip>
@@ -135,9 +135,9 @@ export default async function DashboardPage({
               <EmptyState />
             ) : prompts.length === 0 ? (
               <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
-                <p className="text-sm text-ink-500">No prompts match your filter.</p>
+                <p className="text-sm text-ink-500">{t("dashboard.noPromptsMatch")}</p>
                 <Link href="/dashboard" className="text-sm text-clay-600 hover:underline mt-2 inline-block">
-                  Clear filters
+                  {t("common.clearFilters")}
                 </Link>
               </div>
             ) : (
@@ -154,59 +154,35 @@ export default async function DashboardPage({
   );
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
-
 function thisWeekCount(prompts: PromptSummary[]): number {
   const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000;
   return prompts.filter((p) => new Date(p.created_at).getTime() > weekAgo).length;
 }
 
 function StatCard({
-  label,
-  value,
-  icon: Icon,
-  accent,
+  label, value, icon: Icon, accent,
 }: {
-  label: string;
-  value: string;
-  icon: React.ComponentType<{ className?: string }>;
-  accent?: boolean;
+  label: string; value: string; icon: React.ComponentType<{ className?: string }>; accent?: boolean;
 }) {
   return (
     <div className="rounded-xl border border-ink-100/70 bg-card p-4 card-soft">
       <div className="flex items-center justify-between mb-2.5">
-        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400">
-          {label}
-        </span>
+        <span className="text-[11px] font-medium uppercase tracking-wider text-ink-400">{label}</span>
         <Icon className={accent ? "size-3.5 text-clay-500" : "size-3.5 text-ink-300"} />
       </div>
-      <div
-        className={`font-serif text-3xl font-medium leading-none tabular-nums ${
-          accent ? "text-clay-700" : "text-ink-900"
-        }`}
-      >
+      <div className={`font-serif text-3xl font-medium leading-none tabular-nums ${accent ? "text-clay-700" : "text-ink-900"}`}>
         {value}
       </div>
     </div>
   );
 }
 
-function FilterChip({
-  children,
-  href,
-  active,
-}: {
-  children: React.ReactNode;
-  href: string;
-  active?: boolean;
-}) {
+function FilterChip({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
   return (
     <Link
       href={href}
       className={`text-xs font-medium rounded-full px-3 py-1.5 transition-colors hidden sm:inline-flex ${
-        active
-          ? "bg-ink-900 text-cream-50"
-          : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
+        active ? "bg-ink-900 text-cream-50" : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
       }`}
     >
       {children}

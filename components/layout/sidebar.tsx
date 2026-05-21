@@ -22,33 +22,20 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { FeedbackModal } from "@/components/feedback/feedback-modal";
 import type { User } from "@supabase/supabase-js";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface NavItem {
   href: string;
-  label: string;
+  labelKey: string;
   icon: React.ComponentType<{ className?: string }>;
   badge?: string;
 }
-
-const PRIMARY_NAV: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/history", label: "History", icon: History },
-];
-
-const SECONDARY_NAV: NavItem[] = [
-  { href: "/templates", label: "Templates", icon: Sparkles },
-  { href: "/model-lab", label: "Model Lab", icon: FlaskConical, badge: "beta" },
-];
-
-const FOOTER_NAV: NavItem[] = [
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/help", label: "Help & Docs", icon: HelpCircle },
-];
 
 export function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const { t } = useTranslations();
 
   useEffect(() => {
     const supabase = createClient();
@@ -58,6 +45,21 @@ export function Sidebar() {
     });
     return () => listener.subscription.unsubscribe();
   }, []);
+
+  const PRIMARY_NAV: NavItem[] = [
+    { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
+    { href: "/history", labelKey: "nav.history", icon: History },
+  ];
+
+  const SECONDARY_NAV: NavItem[] = [
+    { href: "/templates", labelKey: "nav.templates", icon: Sparkles },
+    { href: "/model-lab", labelKey: "nav.modelLab", icon: FlaskConical, badge: t("plan.badge") },
+  ];
+
+  const FOOTER_NAV: NavItem[] = [
+    { href: "/settings", labelKey: "nav.settings", icon: Settings },
+    { href: "/help", labelKey: "nav.help", icon: HelpCircle },
+  ];
 
   return (
     <aside className="hidden lg:flex h-screen w-64 shrink-0 flex-col border-r border-ink-100/70 bg-cream-50/60 backdrop-blur-sm sticky top-0">
@@ -73,31 +75,41 @@ export function Sidebar() {
         <Button asChild className="w-full" size="default">
           <Link href="/builder">
             <Plus className="size-4" />
-            New Prompt
+            {t("nav.newPrompt")}
           </Link>
         </Button>
       </div>
 
       {/* Primary nav */}
       <nav className="flex-1 px-3 py-5 overflow-y-auto">
-        <NavGroup label="Workspace">
+        <NavGroup label={t("nav.workspace")}>
           {PRIMARY_NAV.map((item) => (
             <NavLink
-              key={item.label}
-              item={item}
+              key={item.labelKey}
+              label={t(item.labelKey)}
+              href={item.href}
+              icon={item.icon}
               active={pathname === item.href.split("?")[0]}
             />
           ))}
-          {/* Builder gets its own active check */}
           <NavLink
-            item={{ href: "/builder", label: "Builder", icon: Wand2 }}
+            label={t("nav.builder")}
+            href="/builder"
+            icon={Wand2}
             active={pathname.startsWith("/builder")}
           />
         </NavGroup>
 
-        <NavGroup label="Library" className="mt-6">
+        <NavGroup label={t("nav.library")} className="mt-6">
           {SECONDARY_NAV.map((item) => (
-            <NavLink key={item.label} item={item} active={pathname === item.href} />
+            <NavLink
+              key={item.labelKey}
+              label={t(item.labelKey)}
+              href={item.href}
+              icon={item.icon}
+              active={pathname === item.href}
+              badge={item.badge}
+            />
           ))}
         </NavGroup>
       </nav>
@@ -106,7 +118,14 @@ export function Sidebar() {
       <div className="border-t border-ink-100/60 px-3 py-3">
         <NavGroup>
           {FOOTER_NAV.map((item) => (
-            <NavLink key={item.label} item={item} active={pathname === item.href} muted />
+            <NavLink
+              key={item.labelKey}
+              label={t(item.labelKey)}
+              href={item.href}
+              icon={item.icon}
+              active={pathname === item.href}
+              muted
+            />
           ))}
         </NavGroup>
 
@@ -117,7 +136,7 @@ export function Sidebar() {
           className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-400 hover:bg-cream-100 hover:text-ink-700 transition-colors"
         >
           <MessageSquare className="size-[15px]" />
-          Feedback
+          {t("nav.feedback")}
         </button>
 
         {/* Sign out */}
@@ -127,7 +146,7 @@ export function Sidebar() {
             className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-400 hover:bg-cream-100 hover:text-destructive transition-colors mt-0.5"
           >
             <LogOut className="size-[15px]" />
-            Sign out
+            {t("nav.signOut")}
           </button>
         </form>
 
@@ -145,10 +164,10 @@ export function Sidebar() {
             </div>
             <div className="min-w-0">
               <div className="text-[11px] font-medium text-ink-800 truncate">
-                {user?.email ?? "Workspace"}
+                {user?.email ?? t("nav.workspace")}
               </div>
               <div className="text-[10px] text-ink-400 leading-snug">
-                Free plan · 20 prompts/day
+                {t("plan.free")}
               </div>
             </div>
           </div>
@@ -157,15 +176,15 @@ export function Sidebar() {
         {/* Legal links */}
         <div className="mt-3 flex items-center justify-center gap-3 pb-1">
           <Link href="/privacy" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
-            Privacy
+            {t("nav.privacy")}
           </Link>
           <span className="text-[10px] text-ink-200">·</span>
           <Link href="/terms" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
-            Terms
+            {t("nav.terms")}
           </Link>
           <span className="text-[10px] text-ink-200">·</span>
           <Link href="/help" className="text-[10px] text-ink-300 hover:text-ink-500 transition-colors">
-            Help
+            {t("nav.help")}
           </Link>
         </div>
       </div>
@@ -195,20 +214,25 @@ function NavGroup({
 }
 
 function NavLink({
-  item,
+  label,
+  href,
+  icon: Icon,
   active,
   disabled,
   muted,
+  badge,
 }: {
-  item: NavItem;
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
   active: boolean;
   disabled?: boolean;
   muted?: boolean;
+  badge?: string;
 }) {
-  const Icon = item.icon;
   return (
     <Link
-      href={disabled ? "#" : item.href}
+      href={disabled ? "#" : href}
       aria-disabled={disabled}
       onClick={disabled ? (e) => e.preventDefault() : undefined}
       className={cn(
@@ -228,11 +252,11 @@ function NavLink({
             active ? "text-clay-600" : "text-ink-300 group-hover:text-ink-500"
           )}
         />
-        {item.label}
+        {label}
       </span>
-      {item.badge && (
+      {badge && (
         <span className="text-[10px] uppercase tracking-wider text-[#7A520E] bg-[#D9952F]/10 border border-[#D9952F]/30 rounded-full px-1.5 py-0.5">
-          {item.badge}
+          {badge}
         </span>
       )}
     </Link>

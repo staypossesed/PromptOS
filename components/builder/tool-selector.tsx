@@ -4,6 +4,14 @@ import { Check } from "lucide-react";
 import { TOOLS, ToolId } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useTranslations } from "@/lib/i18n/use-translations";
+
+// Map tool id to the dictionary key for the description
+const TOOL_DESC_KEYS: Record<ToolId, keyof { claude: string; cursor: string; chatgpt: string }> = {
+  claude: "claude",
+  cursor: "cursor",
+  chatgpt: "chatgpt",
+};
 
 interface ToolSelectorProps {
   value: ToolId;
@@ -11,12 +19,15 @@ interface ToolSelectorProps {
 }
 
 export function ToolSelector({ value, onChange }: ToolSelectorProps) {
+  const { t } = useTranslations();
+
   return (
     <div className="space-y-3">
-      <label className="text-sm font-medium text-ink-800">Target tool</label>
+      <label className="text-sm font-medium text-ink-800">{t("toolSelector.label")}</label>
       <div className="grid grid-cols-3 gap-2.5">
         {TOOLS.map((tool) => {
           const isActive = value === tool.id;
+          const descKey = TOOL_DESC_KEYS[tool.id as ToolId];
           return (
             <button
               key={tool.id}
@@ -49,7 +60,7 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
                   {tool.name}
                 </div>
                 <div className="text-[11px] leading-snug text-ink-400 line-clamp-2">
-                  {tool.description}
+                  {t(`toolSelector.${descKey}`)}
                 </div>
               </div>
             </button>

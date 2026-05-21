@@ -25,6 +25,7 @@ export interface GeneratePackInput {
   idea: string;
   pack_type: PackType;
   context?: PromptContext;
+  outputLanguage?: string;
 }
 
 export const PACK_TYPES: {

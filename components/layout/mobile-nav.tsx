@@ -7,32 +7,27 @@ import { X, Home, Wand2, History, Sparkles, Settings, HelpCircle, Plus, Shield, 
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface MobileNavProps {
   open: boolean;
   onClose: () => void;
 }
 
-interface MobileNavItem {
-  href: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  disabled?: boolean;
-}
-
-const NAV: MobileNavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: Home },
-  { href: "/builder", label: "New Prompt", icon: Wand2 },
-  { href: "/history", label: "History", icon: History },
-  { href: "/templates", label: "Templates", icon: Sparkles },
-  { href: "/settings", label: "Settings", icon: Settings },
-  { href: "/help", label: "Help & Docs", icon: HelpCircle },
-  { href: "/privacy", label: "Privacy", icon: Shield },
-  { href: "/terms", label: "Terms", icon: FileText },
-];
-
 export function MobileNav({ open, onClose }: MobileNavProps) {
   const pathname = usePathname();
+  const { t } = useTranslations();
+
+  const NAV = [
+    { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
+    { href: "/builder", labelKey: "nav.newPrompt", icon: Wand2 },
+    { href: "/history", labelKey: "nav.history", icon: History },
+    { href: "/templates", labelKey: "nav.templates", icon: Sparkles },
+    { href: "/settings", labelKey: "nav.settings", icon: Settings },
+    { href: "/help", labelKey: "nav.help", icon: HelpCircle },
+    { href: "/privacy", labelKey: "nav.privacy", icon: Shield },
+    { href: "/terms", labelKey: "nav.terms", icon: FileText },
+  ];
 
   return (
     <AnimatePresence>
@@ -55,7 +50,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
           >
             <div className="flex h-16 items-center justify-between px-5 border-b border-ink-100/60">
               <Logo />
-              <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close">
+              <Button variant="ghost" size="icon" onClick={onClose} aria-label={t("common.close")}>
                 <X className="size-5" />
               </Button>
             </div>
@@ -64,7 +59,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
               <Button asChild className="w-full" onClick={onClose}>
                 <Link href="/builder">
                   <Plus className="size-4" />
-                  New Prompt
+                  {t("nav.newPrompt")}
                 </Link>
               </Button>
             </div>
@@ -75,22 +70,18 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                 const active = pathname === item.href.split("?")[0];
                 return (
                   <Link
-                    key={item.label}
-                    href={item.disabled ? "#" : item.href}
-                    onClick={(e) => {
-                      if (item.disabled) e.preventDefault();
-                      else onClose();
-                    }}
+                    key={item.href}
+                    href={item.href}
+                    onClick={onClose}
                     className={cn(
                       "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors",
                       active
                         ? "bg-clay-500/10 text-clay-700"
-                        : "text-ink-700 hover:bg-cream-100",
-                      item.disabled && "opacity-50 cursor-not-allowed"
+                        : "text-ink-700 hover:bg-cream-100"
                     )}
                   >
                     <Icon className="size-4" />
-                    {item.label}
+                    {t(item.labelKey)}
                   </Link>
                 );
               })}

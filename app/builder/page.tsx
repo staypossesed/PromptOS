@@ -23,6 +23,8 @@ import { Suspense } from "react";
 import { track } from "@/lib/analytics";
 import { TEMPLATES } from "@/lib/templates";
 import { OnboardingPanel } from "@/components/builder/onboarding-panel";
+import { useTranslations } from "@/lib/i18n/use-translations";
+import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
 
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
@@ -81,6 +83,8 @@ function BuilderInner() {
     setTimeout(() => setToast(null), 3000);
   }
 
+  const { t, language } = useTranslations();
+
   // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
     track("builder_opened");
@@ -97,7 +101,7 @@ function BuilderInner() {
     try {
       const {
         idea: i,
-        tool: t,
+        tool: labTool,
         generatedPrompt: p,
         score: s,
       } = JSON.parse(raw) as {
@@ -110,7 +114,7 @@ function BuilderInner() {
       };
       if (i) setIdea(i);
       const parsedTool: ToolId | undefined =
-        t === "claude" || t === "cursor" || t === "chatgpt" ? t : undefined;
+        labTool === "claude" || labTool === "cursor" || labTool === "chatgpt" ? labTool : undefined;
       if (parsedTool) setTool(parsedTool);
       if (p) {
         setGeneratedPrompt(p);
@@ -118,12 +122,12 @@ function BuilderInner() {
         if (s && typeof s === "object") {
           // Score already available from Model Lab — restore it directly.
           setScore(s as import("@/types/prompt").PromptScore);
-          showToast("success", "Model Lab output loaded. Score restored.");
+          showToast("success", t("builder.modelLabLoaded"));
         } else {
           // No score in payload — trigger scoring now.
           // Pass idea/tool explicitly because runScoring's closure still
           // holds the empty initial values at this point in the mount cycle.
-          showToast("success", "Model Lab output loaded. Scoring…");
+          showToast("success", t("builder.modelLabScoring"));
           runScoring(p, { idea: i, tool: parsedTool });
         }
       }
@@ -261,6 +265,7 @@ function BuilderInner() {
     setIsSaved(false);
 
     try {
+      const outputLanguage = detectTextLanguage(idea, language);
       const res = await fetch("/api/prompts/optimize", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -270,6 +275,7 @@ function BuilderInner() {
           context,
           generated_prompt: generatedPrompt,
           score,
+          outputLanguage,
         }),
       });
       const json = await res.json();
@@ -299,12 +305,12 @@ function BuilderInner() {
     } finally {
       setIsOptimizing(false);
     }
-  }, [generatedPrompt, score, idea, tool, context, isOptimizing, isGenerating, isScoring, runScoring]);
+  }, [generatedPrompt, score, idea, tool, context, language, isOptimizing, isGenerating, isScoring, runScoring]);
 
   // ── Generate Pack ────────────────────────────────────────────────────────
   const handleGeneratePack = useCallback(async () => {
     if (!idea.trim()) {
-      showToast("error", "Add your idea first.");
+      showToast("error", t("builder.addIdeaFirst"));
       return;
     }
     if (isGeneratingPack) return;
@@ -313,11 +319,13 @@ function BuilderInner() {
     setPackResult(null);
     setPackError(null);
 
+    const outputLanguage = detectTextLanguage(idea, language);
+
     try {
       const res = await fetch("/api/prompt-packs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, pack_type: packType, context }),
+        body: JSON.stringify({ idea, pack_type: packType, context, outputLanguage }),
       });
       const json = await res.json();
       if (!res.ok) {
@@ -333,15 +341,18 @@ function BuilderInner() {
     } finally {
       setIsGeneratingPack(false);
     }
-  }, [idea, packType, context, isGeneratingPack, savedPackId]);
+  }, [idea, packType, context, language, isGeneratingPack, savedPackId, t]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async () => {
     if (!idea.trim()) {
-      showToast("error", "Add your idea first.");
+      showToast("error", t("builder.addIdeaFirst"));
       return;
     }
     if (isGenerating || isScoring) return;
+
+    const outputLanguage = detectTextLanguage(idea, language);
+    track("prompt_language_detected", { inputLanguage: outputLanguage, outputLanguage } as never);
 
     setIsGenerating(true);
     setGeneratedPrompt("");
@@ -354,7 +365,7 @@ function BuilderInner() {
       const res = await fetch("/api/prompts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, target_tool: tool, context }),
+        body: JSON.stringify({ idea, target_tool: tool, context, outputLanguage }),
       });
 
       if (!res.ok) {
@@ -393,12 +404,12 @@ function BuilderInner() {
     } finally {
       setIsGenerating(false); // safety reset if streaming itself threw
     }
-  }, [idea, tool, context, isGenerating, isScoring, runScoring]);
+  }, [idea, tool, context, language, isGenerating, isScoring, runScoring, t]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = useCallback(() => {
     if (!idea.trim() || !generatedPrompt.trim()) {
-      showToast("error", "Generate a prompt before saving.");
+      showToast("error", t("builder.generateFirst"));
       return;
     }
 
@@ -423,7 +434,7 @@ function BuilderInner() {
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Update failed.");
           setIsSaved(true);
-          showToast("success", "Prompt updated.");
+          showToast("success", t("builder.promptUpdated"));
           track("prompt_saved", { target_tool: tool, action_type: "update" });
         } else {
           // Create new record
@@ -438,19 +449,19 @@ function BuilderInner() {
           setIsSaved(true);
           // Update URL without a full navigation so the page knows its ID
           router.replace(`/builder?id=${json.data.id}`, { scroll: false });
-          showToast("success", "Prompt saved.");
+          showToast("success", t("builder.promptSaved"));
           track("prompt_saved", { target_tool: tool, action_type: "create" });
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
       }
     });
-  }, [idea, tool, context, generatedPrompt, score, savedId, router]);
+  }, [idea, tool, context, generatedPrompt, score, savedId, router, t]);
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
     if (!savedId) return;
-    if (!window.confirm("Delete this prompt? This cannot be undone.")) return;
+    if (!window.confirm(t("builder.deleteConfirm"))) return;
 
     startDeleteTransition(async () => {
       try {
@@ -465,17 +476,17 @@ function BuilderInner() {
         setSavedId(null);
         setIsSaved(false);
         router.replace("/builder", { scroll: false });
-        showToast("success", "Prompt deleted.");
+        showToast("success", t("builder.promptDeleted"));
       } catch (err) {
-        showToast("error", err instanceof Error ? err.message : "Delete failed.");
+        showToast("error", err instanceof Error ? err.message : t("builder.loadFailed"));
       }
     });
-  }, [savedId, router]);
+  }, [savedId, router, t]);
 
   // ── Save Pack ─────────────────────────────────────────────────────────────
   const handleSavePack = useCallback(() => {
     if (!idea.trim() || !packResult) {
-      showToast("error", "Generate a pack before saving.");
+      showToast("error", t("builder.generatePackFirst"));
       return;
     }
 
@@ -498,7 +509,7 @@ function BuilderInner() {
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Update failed.");
           setIsPackSaved(true);
-          showToast("success", "Pack updated.");
+          showToast("success", t("builder.packUpdated"));
           track("prompt_pack_saved", { pack_type: packType, action_type: "update" });
         } else {
           const res = await fetch("/api/prompt-packs", {
@@ -510,19 +521,19 @@ function BuilderInner() {
           if (!res.ok) throw new Error(json.error ?? "Save failed.");
           setSavedPackId(json.data.id);
           setIsPackSaved(true);
-          showToast("success", "Pack saved.");
+          showToast("success", t("builder.packSaved"));
           track("prompt_pack_saved", { pack_type: packType, action_type: "create" });
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
       }
     });
-  }, [idea, packType, context, packResult, savedPackId]);
+  }, [idea, packType, context, packResult, savedPackId, t]);
 
   // ── Delete Pack ───────────────────────────────────────────────────────────
   const handleDeletePack = useCallback(() => {
     if (!savedPackId) return;
-    if (!window.confirm("Delete this pack? This cannot be undone.")) return;
+    if (!window.confirm(t("builder.deletePackConfirm"))) return;
 
     startDeletingPackTransition(async () => {
       try {
@@ -535,25 +546,25 @@ function BuilderInner() {
         setIsPackSaved(false);
         setIsLoading(false);
         router.replace("/builder", { scroll: false });
-        showToast("success", "Pack deleted.");
+        showToast("success", t("builder.packDeleted"));
         track("prompt_pack_deleted", { pack_type: packType });
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Delete failed.");
       }
     });
-  }, [savedPackId, packType, router]);
+  }, [savedPackId, packType, router, t]);
 
   // ── Title for breadcrumb ──────────────────────────────────────────────────
   const breadcrumbTitle = idea.trim()
     ? generateTitleFromIdea(idea)
-    : "Untitled prompt";
+    : t("builder.untitledPrompt");
 
   return (
     <AppShell>
       <Topbar
         breadcrumb={[
-          { label: "Workspace" },
-          { label: "Builder" },
+          { label: t("nav.workspace") },
+          { label: t("nav.builder") },
           { label: breadcrumbTitle },
         ]}
         actions={
@@ -573,7 +584,7 @@ function BuilderInner() {
                     ) : (
                       <Trash2 className="size-3.5" />
                     )}
-                    Delete
+                    {t("builder.delete")}
                   </Button>
                 )}
                 <Button
@@ -587,7 +598,7 @@ function BuilderInner() {
                   ) : (
                     <Save className="size-3.5" />
                   )}
-                  {isPackSaved ? "Saved" : savedPackId ? "Update pack" : "Save pack"}
+                  {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
                 </Button>
               </>
             ) : (
@@ -619,7 +630,7 @@ function BuilderInner() {
                   ) : (
                     <Save className="size-3.5" />
                   )}
-                  {isSaved ? "Saved" : savedId ? "Update" : "Save draft"}
+                  {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
                 </Button>
               </>
             )}
@@ -650,12 +661,12 @@ function BuilderInner() {
         <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
           <div>
             <h1 className="font-serif text-2xl md:text-3xl tracking-tight text-ink-900 leading-tight">
-              {mode === "pack" ? "Prompt Pack" : savedId ? "Edit prompt" : "New prompt"}
+              {mode === "pack" ? t("builder.packTitle") : savedId ? t("builder.editTitle") : t("builder.title")}
             </h1>
             <p className="text-sm text-ink-400 mt-1">
               {mode === "pack"
-                ? "5 coordinated prompts. One project. Each one hands off cleanly to the next."
-                : "Rough idea in. Scored, optimized prompt out. Takes under a minute."}
+                ? t("builder.packSubtitle")
+                : t("builder.subtitle")}
             </p>
           </div>
 
@@ -670,7 +681,7 @@ function BuilderInner() {
               )}
             >
               <Wand2 className="size-3.5" />
-              Single
+              {t("builder.single")}
             </button>
             <button
               type="button"
@@ -681,7 +692,7 @@ function BuilderInner() {
               )}
             >
               <Layers className="size-3.5" />
-              Pack
+              {t("builder.pack")}
             </button>
           </div>
         </div>
@@ -714,9 +725,9 @@ function BuilderInner() {
                 disabled={!idea.trim() || isGeneratingPack}
               >
                 {isGeneratingPack ? (
-                  <><Loader2 className="size-4 animate-spin" />Generating pack…</>
+                  <><Loader2 className="size-4 animate-spin" />{t("builder.generatingPack")}</>
                 ) : (
-                  <><Layers className="size-4" />{packResult ? "Regenerate pack" : "Generate pack"}</>
+                  <><Layers className="size-4" />{packResult ? t("builder.regeneratePack") : t("builder.generatePack")}</>
                 )}
               </Button>
               <Button
@@ -731,7 +742,7 @@ function BuilderInner() {
                 ) : (
                   <Save className="size-4" />
                 )}
-                {isPackSaved ? "Saved" : savedPackId ? "Update pack" : "Save pack"}
+                {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
               </Button>
             </div>
             <div className="lg:col-span-8">
@@ -749,7 +760,7 @@ function BuilderInner() {
                 {/* Example chips */}
                 <div className="space-y-2">
                   <div className="text-[11px] font-medium text-ink-400 uppercase tracking-wider">
-                    Try an example
+                    {t("builder.tryExample")}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {EXAMPLE_IDEAS.map((example) => (
@@ -775,13 +786,13 @@ function BuilderInner() {
                 disabled={!idea.trim() || isGenerating || isScoring || isOptimizing}
               >
                 {isGenerating ? (
-                  <><Loader2 className="size-4 animate-spin" />Generating…</>
+                  <><Loader2 className="size-4 animate-spin" />{t("builder.generating")}</>
                 ) : isScoring ? (
-                  <><Loader2 className="size-4 animate-spin" />Scoring…</>
+                  <><Loader2 className="size-4 animate-spin" />{t("builder.scoring")}</>
                 ) : isOptimizing ? (
-                  <><Loader2 className="size-4 animate-spin" />Optimizing…</>
+                  <><Loader2 className="size-4 animate-spin" />{t("builder.optimizing")}</>
                 ) : (
-                  <><Wand2 className="size-4" />{generatedPrompt ? "Regenerate" : "Generate prompt"}</>
+                  <><Wand2 className="size-4" />{generatedPrompt ? t("builder.regenerate") : t("builder.generatePrompt")}</>
                 )}
               </Button>
 
@@ -798,7 +809,7 @@ function BuilderInner() {
                 ) : (
                   <Save className="size-4" />
                 )}
-                {isSaved ? "Saved" : savedId ? "Update" : "Save draft"}
+                {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
               </Button>
             </div>
 
@@ -806,10 +817,10 @@ function BuilderInner() {
             <div className="lg:hidden">
               <div className="flex p-1 bg-cream-100 rounded-full mb-4 border border-ink-100/60">
                 <TabButton active={activeTab === "prompt"} onClick={() => setActiveTab("prompt")}>
-                  Prompt
+                  {t("builder.tabPrompt")}
                 </TabButton>
                 <TabButton active={activeTab === "score"} onClick={() => setActiveTab("score")}>
-                  Score{score ? ` · ${score.overall}` : ""}
+                  {t("builder.tabScore")}{score ? ` · ${score.overall}` : ""}
                 </TabButton>
               </div>
               <div className="min-h-[500px] h-[65vh]">

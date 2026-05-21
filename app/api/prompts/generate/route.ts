@@ -64,6 +64,7 @@ function validateBody(
           ? (b.context as GenerateInput["context"])
           : undefined,
       modelOverride: hasOverride ? modelOverride : undefined,
+      outputLanguage: typeof b.outputLanguage === "string" ? b.outputLanguage : undefined,
     },
   };
 }

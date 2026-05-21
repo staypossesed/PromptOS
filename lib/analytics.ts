@@ -40,7 +40,10 @@ export type AnalyticsEvent =
   | "model_output_used"
   | "model_winner_selected"
   | "google_signin_started"
-  | "github_signin_started";
+  | "github_signin_started"
+  | "language_detected"
+  | "language_changed"
+  | "prompt_language_detected";
 
 export interface EventProperties {
   target_tool?: string;
@@ -56,6 +59,11 @@ export interface EventProperties {
   reason?: string;
   latencyMs?: number;
   estimatedCostUSD?: number;
+  // i18n
+  language?: string;
+  source?: string;
+  inputLanguage?: string;
+  outputLanguage?: string;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {

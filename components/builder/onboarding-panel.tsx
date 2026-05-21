@@ -5,70 +5,63 @@ import { Sparkles, X } from "lucide-react";
 import { track } from "@/lib/analytics";
 import type { ToolId } from "@/lib/mock-data";
 import type { PromptContext } from "@/types/prompt";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 const STORAGE_KEY = "umprompt_onboarding_seen";
 
 interface OnboardingOption {
-  label: string;
+  labelKey: string;
   emoji: string;
   tool: ToolId;
   idea: string;
   context?: PromptContext;
 }
 
+// Ideas are intentionally kept in English — they are input text that gets
+// passed to the AI, and the AI will generate the prompt in the appropriate
+// output language. Translating the idea text would break the example intent.
 const OPTIONS: OnboardingOption[] = [
   {
-    label: "Build with Cursor",
+    labelKey: "onboarding.buildWithCursor",
     emoji: "⚡",
     tool: "cursor",
     idea: "Build a user settings page for a Next.js SaaS — allow users to update their profile, email, and notification preferences",
-    context: {
-      projectType: "Next.js 15 App Router",
-      constraints: "TypeScript strict mode",
-    },
+    context: { projectType: "Next.js 15 App Router", constraints: "TypeScript strict mode" },
   },
   {
-    label: "Write with ChatGPT",
+    labelKey: "onboarding.writeWithChatGPT",
     emoji: "✍️",
     tool: "chatgpt",
     idea: "Write a 3-email cold outreach sequence for [your product] targeting [your audience]",
     context: { outputFormat: "3 emails with subject lines and CTAs" },
   },
   {
-    label: "Research with Claude",
+    labelKey: "onboarding.researchWithClaude",
     emoji: "🔍",
     tool: "claude",
     idea: "Research and analyze the top 5 competitors in [your market] — pricing, positioning, strengths, and strategic gaps",
-    context: {
-      outputFormat:
-        "Structured report with executive summary and competitor deep-dives",
-    },
+    context: { outputFormat: "Structured report with executive summary and competitor deep-dives" },
   },
   {
-    label: "Automate with n8n",
+    labelKey: "onboarding.automateWithN8n",
     emoji: "🤖",
     tool: "chatgpt",
     idea: "Build an n8n automation that captures new leads from a Typeform, enriches them with Clearbit, and adds them to HubSpot",
     context: { projectType: "n8n automation workflow" },
   },
   {
-    label: "Sales/outreach copy",
+    labelKey: "onboarding.salesCopy",
     emoji: "📧",
     tool: "chatgpt",
     idea: "Write a follow-up email sequence for sales prospects who attended a demo but haven't replied in 5 days",
-    context: {
-      outputFormat: "3 emails with subject lines. Short, direct, no filler.",
-    },
+    context: { outputFormat: "3 emails with subject lines. Short, direct, no filler." },
   },
   {
-    label: "Create content",
+    labelKey: "onboarding.createContent",
     emoji: "📝",
     tool: "claude",
     idea: "Create a landing page for [your product] — hero headline, 3 benefit sections, social proof, and CTA",
-    context: {
-      outputFormat:
-        "Full page copy with labeled sections and brackets for customization",
-    },
+    context: { outputFormat: "Full page copy with labeled sections and brackets for customization" },
   },
 ];
 
@@ -78,15 +71,14 @@ interface OnboardingPanelProps {
 
 export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
   const [visible, setVisible] = useState(false);
+  const { t } = useTranslations();
 
   useEffect(() => {
     try {
       if (!localStorage.getItem(STORAGE_KEY)) {
         setVisible(true);
       }
-    } catch {
-      // localStorage blocked — skip silently
-    }
+    } catch {}
   }, []);
 
   function dismiss() {
@@ -97,7 +89,7 @@ export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
   }
 
   function handleSelect(opt: OnboardingOption) {
-    track("onboarding_option_selected", { option: opt.label });
+    track("onboarding_option_selected", { option: opt.labelKey });
     onSelect(opt.idea, opt.tool, opt.context ?? {});
     dismiss();
   }
@@ -109,7 +101,7 @@ export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
       <button
         onClick={dismiss}
         className="absolute top-3.5 right-3.5 text-ink-300 hover:text-ink-500 transition-colors"
-        aria-label="Dismiss onboarding"
+        aria-label={t("common.close")}
       >
         <X className="size-4" />
       </button>
@@ -117,22 +109,22 @@ export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
       <div className="flex items-center gap-2 mb-1">
         <Sparkles className="size-4 text-clay-500 shrink-0" />
         <span className="text-sm font-semibold text-ink-800">
-          What are you building today?
+          {t("onboarding.title")}
         </span>
       </div>
       <p className="text-[12px] text-ink-500 mb-4 leading-relaxed">
-        Pick a starting point. We&apos;ll fill in the idea and pick the right tool — edit anything before generating.
+        {t("onboarding.subtitle")}
       </p>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
         {OPTIONS.map((opt) => (
           <button
-            key={opt.label}
+            key={opt.labelKey}
             onClick={() => handleSelect(opt)}
             className="flex items-center gap-2 rounded-xl border border-ink-100/70 bg-white/80 px-3 py-2.5 text-left text-xs font-medium text-ink-700 hover:border-clay-300/60 hover:bg-white hover:text-ink-900 hover:card-soft transition-all"
           >
             <span className="text-base leading-none shrink-0">{opt.emoji}</span>
-            <span className="leading-snug">{opt.label}</span>
+            <span className="leading-snug">{t(opt.labelKey)}</span>
           </button>
         ))}
       </div>

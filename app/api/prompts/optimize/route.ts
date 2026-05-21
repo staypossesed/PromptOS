@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
           : undefined,
       generated_prompt: b.generated_prompt,
       score: b.score as PromptScore,
+      outputLanguage: typeof b.outputLanguage === "string" ? b.outputLanguage : undefined,
     });
 
     return NextResponse.json({ data: { improved_prompt } });

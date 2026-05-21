@@ -29,6 +29,8 @@ export interface GenerateInput {
   context?: PromptContext;
   /** Optional explicit model override. If omitted, uses env defaults. */
   modelOverride?: { provider?: string; model?: string };
+  /** BCP-47 language code for the generated prompt output (e.g. "en", "ru", "es"). */
+  outputLanguage?: string;
 }
 
 // ─── Meta-prompt assembly ─────────────────────────────────────────────────
@@ -62,6 +64,9 @@ export function buildMetaPrompt(input: GenerateInput): {
     `# Reference example for ${profile.displayName}`,
     profile.examples[0] ?? "(none)",
     ``,
+    ...(input.outputLanguage && input.outputLanguage !== "en"
+      ? [`# Language`, `- Write the entire prompt in language code: ${input.outputLanguage}. Keep code identifiers, API names, and file paths in English.`, ``]
+      : []),
     `# Output rules`,
     `- Output ONLY the final prompt itself. No preamble, no commentary, no markdown code fences around the whole response.`,
     `- Follow the output template exactly. Use the same section headers and structure.`,

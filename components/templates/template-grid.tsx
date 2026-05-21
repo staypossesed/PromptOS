@@ -5,6 +5,7 @@ import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import { TEMPLATES, TEMPLATE_CATEGORIES, type TemplateCategory } from "@/lib/templates";
 import { track } from "@/lib/analytics";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 const TOOL_LABEL: Record<string, string> = {
   claude: "Claude",
@@ -25,18 +26,21 @@ const CATEGORY_COLOR: Record<TemplateCategory, string> = {
 
 export function TemplateGrid() {
   const [activeCategory, setActiveCategory] = useState<TemplateCategory | "All">("All");
+  const { t } = useTranslations();
 
   const filtered =
     activeCategory === "All"
       ? TEMPLATES
-      : TEMPLATES.filter((t) => t.category === activeCategory);
+      : TEMPLATES.filter((tpl) => tpl.category === activeCategory);
+
+  const categoryAll = t("templates.categoryAll");
 
   return (
     <div>
       {/* Category filter */}
       <div className="flex flex-wrap gap-2 mb-7">
         <FilterChip
-          label="All"
+          label={categoryAll}
           active={activeCategory === "All"}
           onClick={() => setActiveCategory("All")}
         />
@@ -61,9 +65,7 @@ export function TemplateGrid() {
           >
             {/* Badges */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span
-                className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${CATEGORY_COLOR[template.category]}`}
-              >
+              <span className={`text-[11px] font-semibold border rounded-full px-2.5 py-0.5 ${CATEGORY_COLOR[template.category]}`}>
                 {template.category}
               </span>
               <span className="text-[11px] font-medium text-ink-400 border border-ink-100 bg-cream-50 rounded-full px-2.5 py-0.5">
@@ -84,7 +86,7 @@ export function TemplateGrid() {
             {/* CTA row */}
             <div className="flex items-center justify-between pt-1">
               <span className="text-[12px] font-medium text-clay-600 opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-1">
-                Use template
+                {t("templates.useTemplate")}
                 <ArrowRight className="size-3" />
               </span>
               <span className="text-[11px] text-ink-300 group-hover:text-ink-400 transition-colors">
@@ -97,22 +99,14 @@ export function TemplateGrid() {
 
       {filtered.length === 0 && (
         <p className="text-sm text-ink-400 text-center py-12">
-          No templates in this category yet.
+          {t("templates.noTemplates")}
         </p>
       )}
     </div>
   );
 }
 
-function FilterChip({
-  label,
-  active,
-  onClick,
-}: {
-  label: string;
-  active: boolean;
-  onClick: () => void;
-}) {
+function FilterChip({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
   return (
     <button
       onClick={onClick}

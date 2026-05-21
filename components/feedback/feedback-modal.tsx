@@ -7,6 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { track } from "@/lib/analytics";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface FeedbackModalProps {
   open: boolean;
@@ -19,6 +20,7 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { t } = useTranslations();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -41,9 +43,7 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
       setDone(true);
       setMessage("");
     } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Failed to submit. Please try again."
-      );
+      setError(err instanceof Error ? err.message : t("feedback.failed"));
     } finally {
       setLoading(false);
     }
@@ -79,16 +79,14 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-2.5">
                   <MessageSquare className="size-4 text-clay-600" />
-                  <h2 className="text-sm font-semibold text-ink-900">
-                    Send feedback
-                  </h2>
+                  <h2 className="text-sm font-semibold text-ink-900">{t("feedback.title")}</h2>
                 </div>
                 <Button
                   variant="ghost"
                   size="icon"
                   className="size-7 -mr-1 -mt-1"
                   onClick={handleClose}
-                  aria-label="Close"
+                  aria-label={t("common.close")}
                 >
                   <X className="size-4" />
                 </Button>
@@ -97,25 +95,16 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
               {done ? (
                 <div className="flex flex-col items-center gap-3 py-6 text-center">
                   <CheckCircle2 className="size-8 text-sage-600" />
-                  <p className="text-sm font-medium text-ink-800">
-                    Thanks for your feedback!
-                  </p>
-                  <p className="text-xs text-ink-400">
-                    It helps make Umprompt better.
-                  </p>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="mt-2"
-                    onClick={handleClose}
-                  >
-                    Close
+                  <p className="text-sm font-medium text-ink-800">{t("feedback.successTitle")}</p>
+                  <p className="text-xs text-ink-400">{t("feedback.successSubtitle")}</p>
+                  <Button size="sm" variant="outline" className="mt-2" onClick={handleClose}>
+                    {t("feedback.close")}
                   </Button>
                 </div>
               ) : (
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <Textarea
-                    placeholder="What&apos;s working well? What could be better?"
+                    placeholder={t("feedback.placeholder")}
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     rows={4}
@@ -123,32 +112,16 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
                     disabled={loading}
                     autoFocus
                   />
-                  {error && (
-                    <p className="text-xs text-destructive">{error}</p>
-                  )}
+                  {error && <p className="text-xs text-destructive">{error}</p>}
                   <div className="flex items-center justify-between gap-3">
-                    <span className="text-[11px] text-ink-300">
-                      {message.length}/2000
-                    </span>
+                    <span className="text-[11px] text-ink-300">{message.length}/2000</span>
                     <div className="flex gap-2">
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleClose}
-                        disabled={loading}
-                      >
-                        Cancel
+                      <Button type="button" variant="ghost" size="sm" onClick={handleClose} disabled={loading}>
+                        {t("feedback.cancel")}
                       </Button>
-                      <Button
-                        type="submit"
-                        size="sm"
-                        disabled={loading || !message.trim()}
-                      >
-                        {loading && (
-                          <Loader2 className="size-3.5 animate-spin" />
-                        )}
-                        {loading ? "Sending…" : "Send feedback"}
+                      <Button type="submit" size="sm" disabled={loading || !message.trim()}>
+                        {loading && <Loader2 className="size-3.5 animate-spin" />}
+                        {loading ? t("feedback.sending") : t("feedback.send")}
                       </Button>
                     </div>
                   </div>

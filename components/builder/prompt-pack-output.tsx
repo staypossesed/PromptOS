@@ -5,6 +5,7 @@ import { Copy, Check, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { PromptPack } from "@/types/prompt-pack";
 import { track } from "@/lib/analytics";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 const TOOL_LABELS: Record<string, { label: string; color: string }> = {
   claude:  { label: "Claude",  color: "bg-clay-50 text-clay-700 border-clay-200/60" },
@@ -19,12 +20,14 @@ interface PromptPackOutputProps {
 }
 
 export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutputProps) {
+  const { t } = useTranslations();
+
   if (isGenerating) {
     return (
       <div className="rounded-2xl border border-ink-100/70 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3 text-center">
         <Loader2 className="size-6 text-clay-500 animate-spin" />
-        <p className="text-sm font-medium text-ink-600">Building your prompt pack…</p>
-        <p className="text-[12px] text-ink-400 max-w-[220px] leading-relaxed">5 coordinated prompts. Takes about 15 seconds.</p>
+        <p className="text-sm font-medium text-ink-600">{t("promptPack.buildingPack")}</p>
+        <p className="text-[12px] text-ink-400 max-w-[220px] leading-relaxed">{t("promptPack.buildingSubtitle")}</p>
       </div>
     );
   }
@@ -47,10 +50,8 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
             <rect x="2" y="14" width="10" height="3" rx="1.5" fill="currentColor" opacity=".2"/>
           </svg>
         </div>
-        <p className="text-sm font-medium text-ink-600">Your 5-prompt pack appears here</p>
-        <p className="text-[12px] text-ink-400 max-w-[240px] leading-relaxed">
-          Each prompt hands off cleanly to the next — no context lost, no repetition.
-        </p>
+        <p className="text-sm font-medium text-ink-600">{t("promptPack.emptyTitle")}</p>
+        <p className="text-[12px] text-ink-400 max-w-[240px] leading-relaxed">{t("promptPack.emptySubtitle")}</p>
       </div>
     );
   }
@@ -60,7 +61,7 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
       <div className="flex items-start justify-between gap-4">
         <h2 className="font-serif text-xl text-ink-900 leading-snug">{pack.title}</h2>
         <span className="shrink-0 text-[11px] font-medium text-ink-500 bg-cream-100 border border-ink-100 rounded-full px-2.5 py-0.5">
-          {pack.prompts.length} prompts
+          {t("promptPack.prompts", { n: pack.prompts.length })}
         </span>
       </div>
 
@@ -81,6 +82,7 @@ function PromptCard({
   packType: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslations();
   const tool = TOOL_LABELS[prompt.target_tool] ?? { label: prompt.target_tool, color: "bg-cream-100 text-ink-600 border-ink-200" };
 
   function handleCopy() {
@@ -113,9 +115,9 @@ function PromptCard({
             className="flex items-center gap-1.5 text-[11px] font-medium text-ink-500 hover:text-ink-800 transition-colors rounded-lg px-2.5 py-1.5 hover:bg-cream-100 border border-transparent hover:border-ink-100"
           >
             {copied ? (
-              <><Check className="size-3.5 text-clay-500" /><span className="text-clay-600">Copied</span></>
+              <><Check className="size-3.5 text-clay-500" /><span className="text-clay-600">{t("promptPack.copied")}</span></>
             ) : (
-              <><Copy className="size-3.5" />Copy</>
+              <><Copy className="size-3.5" />{t("promptPack.copy")}</>
             )}
           </button>
         </div>

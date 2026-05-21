@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { listPrompts } from "@/lib/prompts";
 import { listPromptPacks } from "@/lib/prompt-packs";
+import { getServerTranslations } from "@/lib/i18n/server";
 import type { PromptSummary } from "@/types/prompt";
 import type { PromptPackSummary } from "@/types/prompt-pack";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
@@ -31,10 +32,10 @@ export default async function HistoryPage({
 
   const { q = "", tool: toolFilter = "", tab = "prompts" } = await searchParams;
   const activeTab = tab === "packs" ? "packs" : "prompts";
+  const { t } = await getServerTranslations();
 
   const toolLabel: Record<string, string> = { claude: "Claude", cursor: "Cursor", chatgpt: "ChatGPT" };
 
-  // ── Prompts tab ──────────────────────────────────────────────────────────
   let prompts: PromptSummary[] = [];
   let promptsError: string | null = null;
 
@@ -57,7 +58,6 @@ export default async function HistoryPage({
     }
   }
 
-  // ── Packs tab ────────────────────────────────────────────────────────────
   let packs: PromptPackSummary[] = [];
   let packsError: string | null = null;
 
@@ -71,12 +71,12 @@ export default async function HistoryPage({
     <AppShell>
       <PageViewTracker event="history_opened" />
       <Topbar
-        breadcrumb={[{ label: "Workspace" }, { label: "History" }]}
+        breadcrumb={[{ label: t("nav.workspace") }, { label: t("nav.history") }]}
         actions={
           <Button asChild size="sm" className="hidden md:inline-flex">
             <Link href="/builder">
               <Plus className="size-3.5" />
-              New Prompt
+              {t("nav.newPrompt")}
             </Link>
           </Button>
         }
@@ -86,30 +86,24 @@ export default async function HistoryPage({
         <div className="mb-8">
           <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
             <HistoryIcon className="size-3.5" />
-            Your workspace
+            {t("history.eyebrow")}
           </div>
           <h1 className="font-serif text-3xl md:text-[36px] tracking-tight text-ink-900 leading-tight mb-1">
-            Prompt history
+            {t("history.title")}
           </h1>
           <p className="text-ink-500 text-[15px] leading-relaxed">
-            Every prompt and pack you&apos;ve saved — reopen, iterate, or start over.
+            {t("history.subtitle")}
           </p>
         </div>
 
         {/* Tab switcher */}
         <div className="mb-6 flex p-1 bg-cream-100 rounded-full border border-ink-100/60 w-fit">
-          <TabButton
-            href="/history?tab=prompts"
-            active={activeTab === "prompts"}
-          >
-            Prompts
+          <TabButton href="/history?tab=prompts" active={activeTab === "prompts"}>
+            {t("history.promptsTab")}
           </TabButton>
-          <TabButton
-            href="/history?tab=packs"
-            active={activeTab === "packs"}
-          >
+          <TabButton href="/history?tab=packs" active={activeTab === "packs"}>
             <Layers className="size-3.5" />
-            Packs
+            {t("history.packsTab")}
           </TabButton>
         </div>
 
@@ -118,7 +112,7 @@ export default async function HistoryPage({
           <>
             {promptsError && (
               <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                Failed to load prompts: {promptsError}. Try refreshing.
+                {t("history.loadPromptsError", { error: promptsError })} {t("common.tryRefreshing")}
               </div>
             )}
 
@@ -127,34 +121,26 @@ export default async function HistoryPage({
                 <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
                   {q && (
                     <p className="text-sm text-ink-500">
-                      Showing{" "}
-                      <span className="font-medium text-ink-800">{prompts.length}</span> results for{" "}
+                      {t("history.showingResults", { n: prompts.length })}{" "}
                       <span className="font-medium text-ink-800">&ldquo;{q}&rdquo;</span>
                       {" — "}
                       <Link href="/history" className="text-clay-600 hover:underline">
-                        Clear
+                        {t("history.clear")}
                       </Link>
                     </p>
                   )}
 
                   <div className="flex items-center gap-1.5 sm:ml-auto">
-                    <FilterChip
-                      href={q ? `/history?q=${encodeURIComponent(q)}` : "/history"}
-                      active={!toolFilter}
-                    >
-                      All
+                    <FilterChip href={q ? `/history?q=${encodeURIComponent(q)}` : "/history"} active={!toolFilter}>
+                      {t("common.all")}
                     </FilterChip>
-                    {TOOLS.map((t) => (
+                    {TOOLS.map((toolId) => (
                       <FilterChip
-                        key={t}
-                        href={
-                          q
-                            ? `/history?q=${encodeURIComponent(q)}&tool=${t}`
-                            : `/history?tool=${t}`
-                        }
-                        active={toolFilter === t}
+                        key={toolId}
+                        href={q ? `/history?q=${encodeURIComponent(q)}&tool=${toolId}` : `/history?tool=${toolId}`}
+                        active={toolFilter === toolId}
                       >
-                        {toolLabel[t]}
+                        {toolLabel[toolId]}
                       </FilterChip>
                     ))}
                   </div>
@@ -164,9 +150,9 @@ export default async function HistoryPage({
                   <EmptyState />
                 ) : prompts.length === 0 ? (
                   <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
-                    <p className="text-sm text-ink-500">No prompts match your filter.</p>
+                    <p className="text-sm text-ink-500">{t("history.noPromptsMatch")}</p>
                     <Link href="/history" className="text-sm text-clay-600 hover:underline mt-2 inline-block">
-                      Clear filters
+                      {t("common.clearFilters")}
                     </Link>
                   </div>
                 ) : (
@@ -186,7 +172,7 @@ export default async function HistoryPage({
           <>
             {packsError && (
               <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                Failed to load packs: {packsError}. Try refreshing.
+                {t("history.loadPacksError", { error: packsError })} {t("common.tryRefreshing")}
               </div>
             )}
 
@@ -201,15 +187,15 @@ export default async function HistoryPage({
                         <Layers className="size-5 text-clay-600" />
                       </div>
                       <h3 className="font-serif text-2xl font-medium text-ink-900 mb-2">
-                        No saved packs yet.
+                        {t("history.noPacksTitle")}
                       </h3>
                       <p className="text-sm text-ink-500 leading-relaxed mb-7 text-pretty max-w-sm mx-auto">
-                        A Prompt Pack is 5 coordinated prompts that execute a complete project — end to end, no gaps.
+                        {t("history.noPacksSubtitle")}
                       </p>
                       <Button asChild size="lg">
                         <Link href="/builder">
                           <Plus className="size-4" />
-                          Create your first pack
+                          {t("history.createFirstPack")}
                         </Link>
                       </Button>
                     </div>
@@ -230,15 +216,7 @@ export default async function HistoryPage({
   );
 }
 
-function TabButton({
-  children,
-  href,
-  active,
-}: {
-  children: React.ReactNode;
-  href: string;
-  active?: boolean;
-}) {
+function TabButton({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
   return (
     <Link
       href={href}
@@ -251,22 +229,12 @@ function TabButton({
   );
 }
 
-function FilterChip({
-  children,
-  href,
-  active,
-}: {
-  children: React.ReactNode;
-  href: string;
-  active?: boolean;
-}) {
+function FilterChip({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
   return (
     <Link
       href={href}
       className={`text-xs font-medium rounded-full px-3 py-1.5 transition-colors ${
-        active
-          ? "bg-ink-900 text-cream-50"
-          : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
+        active ? "bg-ink-900 text-cream-50" : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
       }`}
     >
       {children}

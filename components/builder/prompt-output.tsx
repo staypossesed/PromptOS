@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { useState } from "react";
 import type { ToolId } from "@/lib/mock-data";
 import { track } from "@/lib/analytics";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 const TOOL_LABELS: Record<ToolId, string> = {
   claude: "Claude",
@@ -31,6 +32,7 @@ export function PromptOutput({
   onRegenerate,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslations();
 
   function handleCopy() {
     navigator.clipboard.writeText(prompt);
@@ -51,7 +53,8 @@ export function PromptOutput({
   }
 
   const isEmpty = !prompt.trim();
-  const showStreamingPlaceholder = isGenerating && isEmpty;
+  const toolLabel = TOOL_LABELS[targetTool];
+  const wordCount = prompt.split(/\s+/).filter(Boolean).length;
 
   return (
     <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
@@ -62,9 +65,11 @@ export function PromptOutput({
             <Sparkles className="size-3.5 text-clay-600" />
           </div>
           <div>
-            <div className="text-sm font-semibold text-ink-900">Generated prompt</div>
+            <div className="text-sm font-semibold text-ink-900">{t("promptOutput.title")}</div>
             <div className="text-[11px] text-ink-400">
-              {isEmpty ? `For ${TOOL_LABELS[targetTool]}` : `For ${TOOL_LABELS[targetTool]} · ${prompt.split(/\s+/).filter(Boolean).length} words`}
+              {isEmpty
+                ? t("promptOutput.forTool", { tool: toolLabel })
+                : t("promptOutput.forToolWords", { tool: toolLabel, n: wordCount })}
             </div>
           </div>
         </div>
@@ -72,32 +77,33 @@ export function PromptOutput({
           {isGenerating ? (
             <Badge variant="default" className="gap-1.5">
               <Loader2 className="size-3 animate-spin" />
-              Streaming
+              {t("promptOutput.streaming")}
             </Badge>
           ) : isOptimizing ? (
             <Badge variant="default" className="gap-1.5">
               <Loader2 className="size-3 animate-spin" />
-              Optimizing
+              {t("promptOutput.optimizing")}
             </Badge>
           ) : (
-            <Badge variant={isSaved ? "success" : "soft"}>{isSaved ? "Saved" : "Draft"}</Badge>
+            <Badge variant={isSaved ? "success" : "soft"}>
+              {isSaved ? t("promptOutput.saved") : t("promptOutput.draft")}
+            </Badge>
           )}
         </div>
       </div>
 
       {/* Body */}
       <div className="flex-1 overflow-y-auto p-5">
-        {showStreamingPlaceholder ? (
+        {isGenerating && isEmpty ? (
           <StreamingPlaceholder />
         ) : isEmpty ? (
           <div className="h-full flex flex-col items-center justify-center text-center py-10">
             <div className="size-10 rounded-xl bg-cream-100 flex items-center justify-center mb-3">
               <Sparkles className="size-5 text-ink-300" />
             </div>
-            <p className="text-sm font-medium text-ink-600 mb-1">Your prompt appears here</p>
+            <p className="text-sm font-medium text-ink-600 mb-1">{t("promptOutput.emptyTitle")}</p>
             <p className="text-[13px] text-ink-400 max-w-[220px] leading-relaxed">
-              Describe your idea, pick a tool, and hit{" "}
-              <span className="font-medium text-ink-600">Generate</span>. It streams in real time.
+              {t("promptOutput.emptySubtitle")}
             </p>
           </div>
         ) : (
@@ -119,7 +125,7 @@ export function PromptOutput({
           disabled={isEmpty || isGenerating}
         >
           <RefreshCw className="size-3.5" />
-          Regenerate
+          {t("promptOutput.regenerate")}
         </Button>
         <div className="flex items-center gap-1.5">
           <Button
@@ -137,7 +143,7 @@ export function PromptOutput({
             disabled={isEmpty || isGenerating}
           >
             <Copy className="size-3.5" />
-            {copied ? "Copied" : "Copy"}
+            {copied ? t("promptOutput.copied") : t("promptOutput.copy")}
           </Button>
         </div>
       </div>

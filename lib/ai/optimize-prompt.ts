@@ -21,6 +21,7 @@ export interface OptimizeInput {
   context?: PromptContext;
   generated_prompt: string;
   score: PromptScore;
+  outputLanguage?: string;
 }
 
 // Dimensions scoring below this threshold are considered weak.
@@ -97,7 +98,13 @@ export async function optimizePrompt(input: OptimizeInput): Promise<string> {
 
   // ── System prompt ─────────────────────────────────────────────────────────
 
+  const langInstruction =
+    input.outputLanguage && input.outputLanguage !== "en"
+      ? `\nLanguage: Preserve the language of the original prompt (${input.outputLanguage}). Keep code identifiers, API names, file paths, and technical terms in English.\n`
+      : "";
+
   const system = `You are an expert prompt engineer. Your task is to produce a substantially improved version of a prompt targeting ${profile.displayName}.
+${langInstruction}
 
 The improvement must be visible and meaningful. A reviewer reading both versions should immediately notice concrete additions and clarifications — not just minor rephrasing.
 

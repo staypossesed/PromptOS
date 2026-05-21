@@ -10,6 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { motion, AnimatePresence } from "framer-motion";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface TopbarProps {
   title?: string;
@@ -19,6 +20,7 @@ interface TopbarProps {
 
 export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
   const router = useRouter();
+  const { t } = useTranslations();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -35,19 +37,15 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
     [searchValue, router]
   );
 
-  // Resolve current user on the client
   useEffect(() => {
     const supabase = createClient();
     supabase.auth.getUser().then(({ data }) => setUser(data.user ?? null));
-
-    // Keep in sync if auth state changes (e.g. token refresh, sign-out in another tab)
     const { data: listener } = supabase.auth.onAuthStateChange((_, session) => {
       setUser(session?.user ?? null);
     });
     return () => listener.subscription.unsubscribe();
   }, []);
 
-  // Close menu on outside click
   useEffect(() => {
     function handleOutside(e: MouseEvent) {
       if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
@@ -58,11 +56,8 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
     return () => document.removeEventListener("mousedown", handleOutside);
   }, [menuOpen]);
 
-  // Derive initials and display name from the user object
   const displayEmail = user?.email ?? "";
-  const initials = displayEmail
-    ? displayEmail.slice(0, 2).toUpperCase()
-    : "??";
+  const initials = displayEmail ? displayEmail.slice(0, 2).toUpperCase() : "??";
 
   return (
     <>
@@ -73,7 +68,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
             variant="ghost"
             size="icon"
             className="lg:hidden"
-            aria-label="Open menu"
+            aria-label={t("topbar.openMenu")}
             onClick={() => setMobileOpen(true)}
           >
             <Menu className="size-5" />
@@ -105,7 +100,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
           ) : null}
         </div>
 
-        {/* Right: search · actions · notifications · user menu */}
+        {/* Right: search · actions · user menu */}
         <div className="flex items-center gap-2">
           <form
             onSubmit={handleSearch}
@@ -114,7 +109,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
             <Search className="size-4 shrink-0 text-ink-300" />
             <input
               type="search"
-              placeholder="Search prompts…"
+              placeholder={t("topbar.searchPlaceholder")}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
               className="flex-1 bg-transparent outline-none text-ink-700 placeholder:text-ink-300 text-sm"
@@ -128,7 +123,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
             <button
               onClick={() => setMenuOpen((o) => !o)}
               className="size-9 rounded-full bg-gradient-to-br from-clay-300 to-clay-500 text-white text-xs font-semibold flex items-center justify-center ring-2 ring-white/60 hover:ring-clay-200 transition-all focus-visible:outline-none focus-visible:ring-clay-400"
-              aria-label="Account menu"
+              aria-label={t("topbar.accountMenu")}
               aria-expanded={menuOpen}
               aria-haspopup="true"
             >
@@ -152,28 +147,27 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                       </div>
                       <div className="min-w-0">
                         <div className="text-sm font-medium text-ink-900 truncate">
-                          {displayEmail || "Loading…"}
+                          {displayEmail || t("common.loading")}
                         </div>
-                        <div className="text-[11px] text-ink-400">Free plan</div>
+                        <div className="text-[11px] text-ink-400">{t("plan.freePlanLabel")}</div>
                       </div>
                     </div>
                   </div>
 
                   {/* Menu items */}
                   <div className="p-1.5">
-                    <UserMenuLink href="/settings" icon={User} label="Account" onClick={() => setMenuOpen(false)} />
-                    <UserMenuLink href="/settings" icon={Settings} label="Settings" onClick={() => setMenuOpen(false)} />
+                    <UserMenuLink href="/settings" icon={User} label={t("topbar.account")} onClick={() => setMenuOpen(false)} />
+                    <UserMenuLink href="/settings" icon={Settings} label={t("nav.settings")} onClick={() => setMenuOpen(false)} />
                   </div>
 
                   <div className="border-t border-ink-100/60 p-1.5">
-                    {/* Sign out via server action in a form */}
                     <form action={signOut}>
                       <button
                         type="submit"
                         className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors"
                       >
                         <LogOut className="size-4 shrink-0" />
-                        Sign out
+                        {t("nav.signOut")}
                       </button>
                     </form>
                   </div>

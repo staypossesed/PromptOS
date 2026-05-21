@@ -7,54 +7,38 @@ import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { PromptContext } from "@/types/prompt";
 import { useState } from "react";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface ContextPanelProps {
   value: PromptContext;
   onChange: (next: PromptContext) => void;
 }
 
-const CONTEXT_FIELDS: {
-  key: keyof PromptContext;
-  label: string;
-  placeholder: string;
+type ContextFieldKey = keyof PromptContext;
+
+const CONTEXT_FIELD_KEYS: {
+  key: ContextFieldKey;
+  labelKey: string;
+  placeholderKey: string;
   type: "input" | "textarea";
 }[] = [
-  {
-    key: "projectType",
-    label: "Project type",
-    placeholder: "e.g. Next.js 15 + Supabase SaaS",
-    type: "input",
-  },
-  {
-    key: "audience",
-    label: "Audience",
-    placeholder: "e.g. Series A founders, junior developers",
-    type: "input",
-  },
-  {
-    key: "constraints",
-    label: "Constraints",
-    placeholder: "Must-haves and must-nots. e.g. No external state libraries.",
-    type: "textarea",
-  },
-  {
-    key: "outputFormat",
-    label: "Output format",
-    placeholder: "e.g. Single fenced code block, JSON array, bulleted list",
-    type: "input",
-  },
-  {
-    key: "examples",
-    label: "Examples / reference",
-    placeholder: "e.g. Notion, Linear, Stripe Docs — inspiration or constraints",
-    type: "textarea",
-  },
+  { key: "projectType", labelKey: "contextFields.projectType", placeholderKey: "contextFields.projectTypePlaceholder", type: "input" },
+  { key: "audience", labelKey: "contextFields.audience", placeholderKey: "contextFields.audiencePlaceholder", type: "input" },
+  { key: "constraints", labelKey: "contextFields.constraints", placeholderKey: "contextFields.constraintsPlaceholder", type: "textarea" },
+  { key: "outputFormat", labelKey: "contextFields.outputFormat", placeholderKey: "contextFields.outputFormatPlaceholder", type: "input" },
+  { key: "examples", labelKey: "contextFields.examples", placeholderKey: "contextFields.examplesPlaceholder", type: "textarea" },
 ];
 
 export function ContextPanel({ value, onChange }: ContextPanelProps) {
   const [expanded, setExpanded] = useState(false);
+  const { t } = useTranslations();
 
-  const filledCount = CONTEXT_FIELDS.filter((f) => !!value[f.key]?.trim()).length;
+  const filledCount = CONTEXT_FIELD_KEYS.filter((f) => !!value[f.key]?.trim()).length;
+
+  const filledLabel =
+    filledCount > 0
+      ? t(filledCount === 1 ? "builder.fieldsFilled_one" : "builder.fieldsFilled_other", { n: filledCount })
+      : t("builder.contextHelper");
 
   return (
     <div className="rounded-xl border border-ink-200/50 bg-white/60 overflow-hidden">
@@ -65,25 +49,15 @@ export function ContextPanel({ value, onChange }: ContextPanelProps) {
       >
         <div className="flex items-center gap-2.5">
           <div className="size-7 rounded-lg bg-cream-100 flex items-center justify-center">
-            <Plus className={cn(
-              "size-3.5 text-ink-500 transition-transform",
-              expanded && "rotate-45"
-            )} />
+            <Plus className={cn("size-3.5 text-ink-500 transition-transform", expanded && "rotate-45")} />
           </div>
           <div className="text-left">
-            <div className="text-sm font-medium text-ink-800">Add context</div>
-            <div className="text-[11px] text-ink-400">
-              {filledCount > 0
-                ? `${filledCount} field${filledCount > 1 ? "s" : ""} filled`
-                : "Optional — improves the score"}
-            </div>
+            <div className="text-sm font-medium text-ink-800">{t("builder.addContext")}</div>
+            <div className="text-[11px] text-ink-400">{filledLabel}</div>
           </div>
         </div>
         <ChevronDown
-          className={cn(
-            "size-4 text-ink-400 transition-transform",
-            expanded && "rotate-180"
-          )}
+          className={cn("size-4 text-ink-400 transition-transform", expanded && "rotate-180")}
         />
       </button>
 
@@ -97,14 +71,14 @@ export function ContextPanel({ value, onChange }: ContextPanelProps) {
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-1 space-y-3.5 border-t border-ink-100/60">
-              {CONTEXT_FIELDS.map((field) => (
+              {CONTEXT_FIELD_KEYS.map((field) => (
                 <div key={field.key} className="space-y-1.5">
                   <label className="text-xs font-medium text-ink-600">
-                    {field.label}
+                    {t(field.labelKey)}
                   </label>
                   {field.type === "input" ? (
                     <Input
-                      placeholder={field.placeholder}
+                      placeholder={t(field.placeholderKey)}
                       className="bg-white"
                       value={value[field.key] ?? ""}
                       onChange={(e) =>
@@ -113,7 +87,7 @@ export function ContextPanel({ value, onChange }: ContextPanelProps) {
                     />
                   ) : (
                     <Textarea
-                      placeholder={field.placeholder}
+                      placeholder={t(field.placeholderKey)}
                       className="bg-white min-h-[72px]"
                       value={value[field.key] ?? ""}
                       onChange={(e) =>

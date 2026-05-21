@@ -5,6 +5,7 @@ import { AlertTriangle, Lightbulb, Loader2, RefreshCw, TrendingUp, Wand2 } from 
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PromptScore } from "@/types/prompt";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface ScorePanelProps {
   score: PromptScore | null;
@@ -25,6 +26,8 @@ export function ScorePanel({
   isOptimizing,
   optimizeError,
 }: ScorePanelProps) {
+  const { t } = useTranslations();
+
   if (!score) {
     return (
       <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
@@ -53,14 +56,12 @@ export function ScorePanel({
               <div className="size-12 rounded-2xl bg-cream-100 flex items-center justify-center mb-4">
                 <AlertTriangle className="size-5 text-clay-500" />
               </div>
-              <p className="text-sm font-medium text-ink-700 mb-1">Scoring failed</p>
-              <p className="text-xs text-ink-400 leading-relaxed max-w-[200px] mb-5">
-                {error}
-              </p>
+              <p className="text-sm font-medium text-ink-700 mb-1">{t("score.scoringFailed")}</p>
+              <p className="text-xs text-ink-400 leading-relaxed max-w-[200px] mb-5">{error}</p>
               {onRetry && (
                 <Button size="sm" variant="outline" onClick={onRetry}>
                   <RefreshCw className="size-3.5" />
-                  Retry scoring
+                  {t("score.retryScoring")}
                 </Button>
               )}
             </div>
@@ -69,9 +70,9 @@ export function ScorePanel({
               <div className="size-12 rounded-2xl bg-cream-100 flex items-center justify-center mb-4">
                 <TrendingUp className="size-5 text-ink-300" />
               </div>
-              <p className="text-sm font-medium text-ink-600 mb-1">Score appears here</p>
+              <p className="text-sm font-medium text-ink-600 mb-1">{t("score.emptyTitle")}</p>
               <p className="text-[13px] text-ink-400 leading-relaxed max-w-[210px]">
-                Generate once. Umprompt scores across 6 dimensions and shows exactly what to improve.
+                {t("score.emptySubtitle")}
               </p>
             </div>
           )}
@@ -82,6 +83,15 @@ export function ScorePanel({
 
   const { overall, dimensions } = score;
 
+  const scoreText =
+    overall >= 90
+      ? t("score.excellentText")
+      : overall >= 80
+      ? t("score.strongText")
+      : overall >= 65
+      ? t("score.decentText")
+      : t("score.needsWorkText");
+
   return (
     <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       {/* Header with overall score */}
@@ -91,10 +101,10 @@ export function ScorePanel({
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400">
               <TrendingUp className="size-3" />
-              Prompt Score
+              {t("score.title")}
               {isScoring && <Loader2 className="size-3 animate-spin ml-0.5" />}
             </div>
-            <Grade score={overall} />
+            <Grade score={overall} t={t} />
           </div>
           <div className="flex items-end gap-2">
             <span className="font-serif text-5xl font-medium text-ink-900 tabular-nums leading-none">
@@ -102,15 +112,7 @@ export function ScorePanel({
             </span>
             <span className="text-sm text-ink-400 mb-1">/ 100</span>
           </div>
-          <div className="text-xs text-ink-500 mt-1.5">
-            {overall >= 90
-              ? "Excellent. This prompt is ready to ship."
-              : overall >= 80
-              ? "Strong. Small tweaks available — or ship as-is."
-              : overall >= 65
-              ? "Decent start. Auto-fix the weak dimensions below."
-              : "Needs work. Hit optimize to improve the low scores."}
-          </div>
+          <div className="text-xs text-ink-500 mt-1.5">{scoreText}</div>
         </div>
       </div>
 
@@ -130,9 +132,9 @@ export function ScorePanel({
           disabled={isOptimizing || isScoring}
         >
           {isOptimizing ? (
-            <><Loader2 className="size-3.5 animate-spin" />Optimizing…</>
+            <><Loader2 className="size-3.5 animate-spin" />{t("score.optimizing")}</>
           ) : (
-            <><Wand2 className="size-3.5" />Auto-fix weak dimensions</>
+            <><Wand2 className="size-3.5" />{t("score.autoFix")}</>
           )}
         </Button>
         {optimizeError && (
@@ -176,8 +178,8 @@ function ScoreDimensionRow({
   );
 }
 
-function Grade({ score }: { score: number }) {
-  const { label, classes } = gradeInfo(score);
+function Grade({ score, t }: { score: number; t: (key: string) => string }) {
+  const { label, classes } = gradeInfo(score, t);
   return (
     <span className={cn("text-[10px] font-bold uppercase tracking-wider rounded-full px-2 py-0.5", classes)}>
       {label}
@@ -185,11 +187,11 @@ function Grade({ score }: { score: number }) {
   );
 }
 
-function gradeInfo(score: number) {
-  if (score >= 90) return { label: "Excellent", classes: "bg-clay-500/15 text-clay-700" };
-  if (score >= 80) return { label: "Strong", classes: "bg-clay-500/10 text-clay-600" };
-  if (score >= 65) return { label: "Decent", classes: "bg-cream-200 text-ink-600" };
-  return { label: "Needs work", classes: "bg-ink-100 text-ink-600" };
+function gradeInfo(score: number, t: (key: string) => string) {
+  if (score >= 90) return { label: t("score.excellent"), classes: "bg-clay-500/15 text-clay-700" };
+  if (score >= 80) return { label: t("score.strong"), classes: "bg-clay-500/10 text-clay-600" };
+  if (score >= 65) return { label: t("score.decent"), classes: "bg-cream-200 text-ink-600" };
+  return { label: t("score.needsWork"), classes: "bg-ink-100 text-ink-600" };
 }
 
 function scoreColor(score: number) {
