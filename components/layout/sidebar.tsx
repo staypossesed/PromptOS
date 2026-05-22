@@ -9,7 +9,6 @@ import {
   Wand2,
   History,
   Sparkles,
-  Settings,
   HelpCircle,
   Plus,
   LogOut,
@@ -65,7 +64,6 @@ export function Sidebar() {
   ];
 
   const FOOTER_NAV: NavItem[] = [
-    { href: "/settings", labelKey: "nav.settings", icon: Settings },
     { href: "/help", labelKey: "nav.help", icon: HelpCircle },
   ];
 

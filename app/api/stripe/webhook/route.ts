@@ -24,6 +24,8 @@ export async function POST(request: NextRequest) {
 
   const supabase = createAdminClient();
 
+  console.info("[webhook] received", { type: event.type, id: event.id });
+
   try {
     switch (event.type) {
       case "checkout.session.completed": {
@@ -46,9 +48,11 @@ export async function POST(request: NextRequest) {
         await handlePaymentFailed(supabase, invoice);
         break;
       }
+      default:
+        console.info("[webhook] unhandled event type:", event.type);
     }
   } catch (err) {
-    console.error("[webhook] handler error:", event.type, err);
+    console.error("[webhook] handler error:", { type: event.type, message: err instanceof Error ? err.message : err });
     return NextResponse.json({ error: "Handler failed" }, { status: 500 });
   }
 
@@ -144,10 +148,11 @@ async function handleCheckoutCompleted(
       .eq("stripe_checkout_session_id", session.id);
   }
 
-  console.info("[webhook] checkout.session.completed fulfilled:", {
+  console.info("[webhook] checkout.session.completed fulfilled", {
     userId,
     plan,
     isFounder,
+    mode: session.mode,
     sessionId: session.id,
   });
 }

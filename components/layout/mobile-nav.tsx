@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Home, Wand2, History, Sparkles, Settings, HelpCircle, Plus, Shield, FileText } from "lucide-react";
+import { X, Home, Wand2, History, Sparkles, User, HelpCircle, Plus, Shield, FileText } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -23,7 +23,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
     { href: "/builder", labelKey: "nav.newPrompt", icon: Wand2 },
     { href: "/history", labelKey: "nav.history", icon: History },
     { href: "/templates", labelKey: "nav.templates", icon: Sparkles },
-    { href: "/settings", labelKey: "nav.settings", icon: Settings },
+    { href: "/account", labelKey: "nav.account", icon: User },
     { href: "/help", labelKey: "nav.help", icon: HelpCircle },
     { href: "/privacy", labelKey: "nav.privacy", icon: Shield },
     { href: "/terms", labelKey: "nav.terms", icon: FileText },

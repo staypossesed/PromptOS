@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Mail, Zap, Link2, Wand2, History, Settings, LogOut, Crown, ExternalLink } from "lucide-react";
+import { Mail, Zap, Link2, Wand2, History, LogOut, Crown, Sparkles, Globe } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
@@ -10,6 +10,7 @@ import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { getServerTranslations } from "@/lib/i18n/server";
 import { getBillingStatus, planDisplayName } from "@/lib/billing";
 import { BillingPortalButton } from "@/components/billing/billing-portal-button";
+import { LanguageSelector } from "@/components/settings/language-selector";
 
 export const dynamic = "force-dynamic";
 
@@ -117,13 +118,18 @@ export default async function AccountPage() {
             </div>
           </Section>
 
+          {/* Preferences */}
+          <Section title={t("settings.languageSection")} icon={Globe}>
+            <LanguageSelector embedded />
+          </Section>
+
           {/* Quick links */}
           <Section title={t("account.quickLinksSection")} icon={Link2}>
             <div className="flex flex-col gap-1">
               <QuickLink href="/builder" icon={Wand2} label={t("account.goToBuilder")} />
               <QuickLink href="/history" icon={History} label={t("account.goToHistory")} />
-              <QuickLink href="/settings" icon={Settings} label={t("account.goToSettings")} />
-              <QuickLink href="/plan" icon={ExternalLink} label={t("nav.plan")} />
+              <QuickLink href="/templates" icon={Sparkles} label={t("nav.templates")} />
+              <QuickLink href="/plan" icon={Zap} label={t("nav.plan")} />
             </div>
           </Section>
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search, Menu, LogOut, Settings, User, Zap, MessageSquare } from "lucide-react";
+import { Search, Menu, LogOut, User, Zap, MessageSquare } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
@@ -170,13 +170,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                       onClick={() => { setMenuOpen(false); track("account_opened"); }}
                     />
                     <UserMenuLink
-                      href="/settings"
-                      icon={Settings}
-                      label={t("nav.settings")}
-                      onClick={() => setMenuOpen(false)}
-                    />
-                    <UserMenuLink
-                      href="/account"
+                      href="/plan"
                       icon={Zap}
                       label={t("nav.plan")}
                       onClick={() => setMenuOpen(false)}
