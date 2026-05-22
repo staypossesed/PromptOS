@@ -23,9 +23,9 @@ export default function PlanPage() {
 
   useEffect(() => {
     track("plan_page_viewed");
-    // Fetch current founder count from billing status
-    fetch("/api/billing/status")
+    fetch("/api/billing/founder-count")
       .then((r) => r.json())
+      .then((data) => { if (typeof data?.count === "number") setFounderCount(data.count); })
       .catch(() => null);
   }, []);
 

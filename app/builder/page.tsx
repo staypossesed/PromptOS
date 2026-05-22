@@ -21,6 +21,7 @@ import { generateTitleFromIdea } from "@/types/prompt";
 import type { PackType, PromptPack, PromptPackRecord } from "@/types/prompt-pack";
 import { Suspense } from "react";
 import { track } from "@/lib/analytics";
+import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
 import { TEMPLATES } from "@/lib/templates";
 import { OnboardingPanel } from "@/components/builder/onboarding-panel";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -329,12 +330,18 @@ function BuilderInner() {
       });
       const json = await res.json();
       if (!res.ok) {
+        if (json?.upgradeRequired) {
+          dispatchPaywallOpen();
+          window.dispatchEvent(new Event("prompt_usage_refresh"));
+          return;
+        }
         setPackError(json.error ?? "Pack generation failed. Try again.");
         return;
       }
       setPackResult(json.data);
       if (savedPackId) setIsPackSaved(false);
       track("prompt_pack_generated", { pack_type: packType });
+      window.dispatchEvent(new Event("prompt_usage_refresh"));
     } catch (err) {
       console.error("[handleGeneratePack]", err);
       setPackError("Pack generation failed. Check your connection and try again.");
@@ -369,12 +376,20 @@ function BuilderInner() {
       });
 
       if (!res.ok) {
-        let errMsg = `Generation failed (HTTP ${res.status}).`;
         try {
           const j = await res.json();
-          if (j?.error) errMsg = j.error;
-        } catch { /* use generic message */ }
-        showToast("error", errMsg);
+          if (j?.upgradeRequired) {
+            dispatchPaywallOpen();
+            // Refresh sidebar so it shows 0 remaining
+            window.dispatchEvent(new Event("prompt_usage_refresh"));
+            return;
+          }
+          if (j?.error) {
+            showToast("error", j.error);
+            return;
+          }
+        } catch { /* fall through to generic */ }
+        showToast("error", `Generation failed (HTTP ${res.status}).`);
         return;
       }
 
@@ -397,6 +412,7 @@ function BuilderInner() {
       // Generation done — hand off to scoring (separate phase)
       setIsGenerating(false);
       track("prompt_generated", { target_tool: tool });
+      window.dispatchEvent(new Event("prompt_usage_refresh"));
       await runScoring(accumulated);
     } catch (err) {
       const message = err instanceof Error ? err.message : "Generation failed.";
