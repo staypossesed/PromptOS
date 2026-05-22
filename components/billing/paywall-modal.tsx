@@ -14,6 +14,7 @@ interface PaywallModalProps {
 export function PaywallModal({ open, onClose }: PaywallModalProps) {
   const { t } = useTranslations();
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) track("free_limit_reached");
@@ -23,6 +24,7 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
 
   async function startCheckout(offerType: "monthly" | "lifetime") {
     setLoading(offerType);
+    setCheckoutError(null);
     track("upgrade_clicked", { offer_type: offerType, is_founder: true });
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -31,11 +33,19 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
         body: JSON.stringify({ offerType, promoCode: "UMPROMPT" }),
       });
       const json = await res.json();
+      if (process.env.NODE_ENV === "development" && !res.ok) {
+        console.error("[paywall checkout] API error:", res.status, json);
+      }
       if (json.url) {
         track("checkout_started", { offer_type: offerType, is_founder: true });
         window.location.href = json.url;
+      } else {
+        setCheckoutError(json.error ?? "Checkout could not start. Please try again.");
+        setLoading(null);
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") console.error("[paywall checkout] fetch error:", err);
+      setCheckoutError("Checkout could not start. Please try again.");
       setLoading(null);
     }
   }
@@ -97,7 +107,7 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
               <div className="text-lg font-bold text-clay-600">
                 {loading === "monthly" ? "…" : t("billing.founderMonthlyCtaPrice")}
               </div>
-              <div className="text-xs text-ink-400 line-through">$10/mo</div>
+              <div className="text-xs text-ink-400 line-through">$9.99/mo</div>
             </div>
           </button>
 
@@ -121,10 +131,15 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
               <div className="text-lg font-bold text-ink-900">
                 {loading === "lifetime" ? "…" : t("billing.founderLifetimeCtaPrice")}
               </div>
-              <div className="text-xs text-ink-400 line-through">$100</div>
+              <div className="text-xs text-ink-400 line-through">$99.99</div>
             </div>
           </button>
         </div>
+
+        {/* Checkout error */}
+        {checkoutError && (
+          <p className="mb-3 text-xs text-destructive text-center">{checkoutError}</p>
+        )}
 
         {/* Maybe later */}
         <button

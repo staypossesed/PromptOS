@@ -68,42 +68,54 @@ export async function POST(request: NextRequest) {
 
   if (!priceId) {
     return NextResponse.json(
-      { error: "Price not configured. Contact support." },
+      { error: "Missing Stripe price configuration." },
       { status: 503 }
     );
   }
 
-  const customerId = await getOrCreateStripeCustomer(
-    supabase,
-    user.id,
-    user.email!
-  );
+  let customerId: string;
+  try {
+    customerId = await getOrCreateStripeCustomer(supabase, user.id, user.email!);
+  } catch {
+    return NextResponse.json({ error: "Could not create billing account." }, { status: 500 });
+  }
 
   const mode = offerType === "monthly" ? "subscription" : "payment";
 
-  const session = await stripe.checkout.sessions.create({
-    customer: customerId,
-    mode,
-    line_items: [{ price: priceId, quantity: 1 }],
-    success_url: `${SITE_URL}/plan/success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${SITE_URL}/plan?checkout=cancelled`,
-    metadata: {
-      user_id: user.id,
-      offer_type: offerType,
-      plan,
-      promo_code: normalizedCode ?? "",
-      is_founder: String(isFounder),
-    },
-    ...(mode === "subscription" && {
-      subscription_data: {
-        metadata: {
-          user_id: user.id,
-          plan,
-          is_founder: String(isFounder),
-        },
+  let session: Awaited<ReturnType<typeof stripe.checkout.sessions.create>>;
+  try {
+    session = await stripe.checkout.sessions.create({
+      customer: customerId,
+      mode,
+      line_items: [{ price: priceId, quantity: 1 }],
+      success_url: `${SITE_URL}/plan/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: `${SITE_URL}/plan?checkout=cancelled`,
+      metadata: {
+        user_id: user.id,
+        offer_type: offerType,
+        plan,
+        promo_code: normalizedCode ?? "",
+        is_founder: String(isFounder),
       },
-    }),
-  });
+      ...(mode === "subscription" && {
+        subscription_data: {
+          metadata: {
+            user_id: user.id,
+            plan,
+            is_founder: String(isFounder),
+          },
+        },
+      }),
+    });
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : "Stripe error";
+    console.error("[checkout] stripe.checkout.sessions.create failed:", msg);
+    return NextResponse.json({ error: "Checkout could not start. Please try again." }, { status: 500 });
+  }
+
+  if (!session.url) {
+    return NextResponse.json({ error: "Checkout session missing URL." }, { status: 500 });
+  }
 
   // Record pending promo redemption if applicable
   if (isFounder && normalizedCode) {

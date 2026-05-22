@@ -20,6 +20,7 @@ export default function PlanPage() {
   const [promoError, setPromoError] = useState(false);
   const [founderCount, setFounderCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     track("plan_page_viewed");
@@ -43,6 +44,7 @@ export default function PlanPage() {
 
   async function startCheckout(offerType: "monthly" | "lifetime") {
     setLoading(offerType);
+    setCheckoutError(null);
     track("upgrade_clicked", { offer_type: offerType, is_founder: promoApplied });
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -54,13 +56,19 @@ export default function PlanPage() {
         }),
       });
       const json = await res.json();
+      if (process.env.NODE_ENV === "development" && !res.ok) {
+        console.error("[checkout] API error:", res.status, json);
+      }
       if (json.url) {
         track("checkout_started", { offer_type: offerType, is_founder: promoApplied });
         window.location.href = json.url;
       } else {
+        setCheckoutError(json.error ?? "Checkout could not start. Please try again.");
         setLoading(null);
       }
-    } catch {
+    } catch (err) {
+      if (process.env.NODE_ENV === "development") console.error("[checkout] fetch error:", err);
+      setCheckoutError("Checkout could not start. Please try again.");
       setLoading(null);
     }
   }
@@ -164,9 +172,9 @@ export default function PlanPage() {
           {/* Monthly */}
           <PricingCard
             name={promoApplied ? t("billing.founderMonthlyName") : t("billing.proMonthlyName")}
-            price={promoApplied ? "$5" : "$10"}
+            price={promoApplied ? "$4.99" : "$9.99"}
             period="/mo"
-            originalPrice={promoApplied ? "$10/mo" : undefined}
+            originalPrice={promoApplied ? "$9.99/mo" : undefined}
             description={promoApplied ? t("billing.featureFirstHundred") : "Full access, monthly billing."}
             features={[
               t("billing.featureUnlimited"),
@@ -185,9 +193,9 @@ export default function PlanPage() {
           {/* Lifetime */}
           <PricingCard
             name={promoApplied ? t("billing.founderLifetimeName") : t("billing.lifetimeName")}
-            price={promoApplied ? "$35" : "$100"}
+            price={promoApplied ? "$34.99" : "$99.99"}
             period=""
-            originalPrice={promoApplied ? "$100" : undefined}
+            originalPrice={promoApplied ? "$99.99" : undefined}
             description={promoApplied ? t("billing.featureFirstHundred") : "Pay once, use forever."}
             features={[
               t("billing.featureUnlimited"),
@@ -204,6 +212,14 @@ export default function PlanPage() {
             founderBadge={promoApplied}
           />
         </div>
+
+        {/* Checkout error */}
+        {checkoutError && (
+          <div className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <AlertCircle className="size-4 shrink-0" />
+            {checkoutError}
+          </div>
+        )}
 
         {/* Fine print */}
         <p className="text-center text-xs text-ink-400">
