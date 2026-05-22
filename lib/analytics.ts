@@ -46,7 +46,14 @@ export type AnalyticsEvent =
   | "prompt_language_detected"
   | "account_menu_opened"
   | "account_opened"
-  | "signout_clicked";
+  | "signout_clicked"
+  // Billing
+  | "plan_page_viewed"
+  | "promo_code_applied"
+  | "checkout_started"
+  | "free_limit_reached"
+  | "upgrade_clicked"
+  | "billing_portal_opened";
 
 export interface EventProperties {
   target_tool?: string;
@@ -67,6 +74,10 @@ export interface EventProperties {
   source?: string;
   inputLanguage?: string;
   outputLanguage?: string;
+  // billing (no PII, no card data)
+  plan?: string;
+  offer_type?: string;
+  is_founder?: boolean;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {

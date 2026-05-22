@@ -14,9 +14,9 @@ export async function GET() {
 
   const billing = await getBillingStatus(supabase, user.id);
 
-  // Backward-compatible shape so existing hooks keep working
   return NextResponse.json({
     plan: billing.plan,
+    status: billing.status,
     isPaid: billing.isPaid,
     isFounder: billing.isFounder,
     isLifetime: billing.isLifetime,
@@ -24,11 +24,5 @@ export async function GET() {
     usedThisWeek: billing.usedThisWeek,
     remainingThisWeek: billing.remainingThisWeek,
     fairUseLabel: billing.fairUseLabel,
-    // Legacy fields (used by existing sidebar hook)
-    dailyLimit: billing.isPaid ? 200 : (billing.weeklyLimit ?? 7),
-    usedToday: billing.usedToday,
-    remainingToday: billing.isPaid
-      ? Math.max(0, 200 - billing.usedToday)
-      : Math.max(0, (billing.weeklyLimit ?? 7) - billing.usedThisWeek),
   });
 }

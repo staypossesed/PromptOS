@@ -19,10 +19,14 @@ export const en = {
   },
 
   plan: {
-    free: "Free plan · 20 prompts/day",
+    free: "Free plan · 7 prompts/week",
     freePlanLabel: "Free plan",
     badge: "beta",
     promptsLeftToday: "{count} prompts left today",
+    promptsLeftThisWeek: "{count} prompts left this week",
+    unlimitedFairUse: "Unlimited fair-use",
+    upgradePlan: "Upgrade",
+    managePlan: "Manage plan",
   },
 
   common: {
@@ -315,6 +319,64 @@ export const en = {
     goToHistory: "View prompt history",
     goToSettings: "App settings & language",
     signOut: "Sign out",
+  },
+
+  billing: {
+    // Plan names
+    freePlanName: "Free",
+    founderMonthlyName: "Founder Pro",
+    founderLifetimeName: "Founder Lifetime",
+    proMonthlyName: "Pro",
+    lifetimeName: "Lifetime",
+    founderBadge: "Founder",
+    lifetimeBadge: "Lifetime",
+    proBadge: "Pro",
+    // Paywall modal
+    paywallTitle: "You've used your 7 free prompts this week.",
+    paywallSubtitle: "Upgrade to keep building with unlimited fair-use prompts, Prompt Packs, and Vibe Builder.",
+    paywallFounderMonthly: "Get Founder Pro — $5/mo",
+    paywallFounderLifetime: "Get Founder Lifetime — $35",
+    paywallMaybeLater: "Maybe later",
+    paywallPromoNote: "Promo code UMPROMPT applied",
+    // Plan page
+    planTitle: "Pricing",
+    planSubtitle: "Start free. Upgrade when you're ready.",
+    founderBanner: "Founder offer: first 100 users get Umprompt Pro for $5/month or $35 lifetime.",
+    founderSpotsLeft: "spots left",
+    promoCodeLabel: "Have a promo code?",
+    promoCodePlaceholder: "e.g. UMPROMPT",
+    applyCode: "Apply",
+    codeApplied: "Founder prices unlocked",
+    codeInvalid: "Code not valid or all founder spots are taken",
+    // Features
+    featureFreePrompts: "7 prompts per week",
+    featureUnlimited: "Unlimited fair-use",
+    featureBuilder: "Prompt builder",
+    featurePacks: "Prompt Packs",
+    featureHistory: "Full history",
+    featureTemplates: "Templates",
+    featureLifetime: "Lifetime access",
+    featureBestValue: "Best value",
+    featureFirstHundred: "First 100 users",
+    // CTAs
+    getStartedFree: "Get started free",
+    upgradeMonthly: "Get Pro",
+    upgradeLifetime: "Get Lifetime",
+    founderMonthlyCtaPrice: "$5/mo",
+    founderLifetimeCtaPrice: "$35 once",
+    proCtaPrice: "$10/mo",
+    lifetimeCtaPrice: "$100 once",
+    // Account
+    manageBilling: "Manage billing",
+    upgradeToPro: "Upgrade to Pro",
+    currentPlan: "Current plan",
+    planStatus: "Plan status",
+    planActive: "Active",
+    // Success page
+    successTitle: "You're in.",
+    successSubtitle: "Your plan is now active. Start building with unlimited fair-use prompts.",
+    goToBuilder: "Go to Builder",
+    goToAccount: "View Account",
   },
 
   modelLab: {

@@ -5,10 +5,10 @@ import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
-import { listPrompts } from "@/lib/prompts";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { LanguageSelector } from "@/components/settings/language-selector";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { getBillingStatus, planDisplayName } from "@/lib/billing";
 
 export const dynamic = "force-dynamic";
 
@@ -19,11 +19,11 @@ export default async function SettingsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: prompts } = await listPrompts(200);
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayPrompts = prompts.filter(p => new Date(p.created_at).getTime() >= todayStart.getTime()).length;
-  const DAILY_LIMIT = 20;
-  const usagePercent = Math.min((todayPrompts / DAILY_LIMIT) * 100, 100);
+  const billing = await getBillingStatus(supabase, user.id);
+  const WEEKLY_LIMIT = billing.weeklyLimit ?? 7;
+  const usedThisWeek = billing.usedThisWeek;
+  const usagePercent = billing.isPaid ? 0 : Math.min((usedThisWeek / WEEKLY_LIMIT) * 100, 100);
+  const planName = planDisplayName(billing.plan, billing.isFounder);
   const { t } = await getServerTranslations();
 
   return (
@@ -59,25 +59,34 @@ export default async function SettingsPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-ink-600">{t("settings.currentPlan")}</span>
-                <span className="text-sm font-semibold text-ink-900">{t("settings.freePlan")}</span>
+                <span className="text-sm font-semibold text-ink-900">{planName}</span>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">{t("settings.promptsToday")}</span>
-                <span className="text-sm font-mono text-ink-700">
-                  {todayPrompts} / {DAILY_LIMIT}
-                </span>
-              </div>
-              <div className="space-y-1.5">
-                <div className="h-2 w-full rounded-full bg-cream-200 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-clay-500 transition-all"
-                    style={{ width: `${usagePercent}%` }}
-                  />
+              {billing.isPaid ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-ink-600">{t("plan.unlimitedFairUse")}</span>
+                  <span className="text-sm text-green-700 font-medium">{billing.fairUseLabel}</span>
                 </div>
-                <p className="text-xs text-ink-400">
-                  {t("settings.promptsRemaining", { n: DAILY_LIMIT - todayPrompts })}
-                </p>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-ink-600">{t("settings.promptsToday")}</span>
+                    <span className="text-sm font-mono text-ink-700">
+                      {usedThisWeek} / {WEEKLY_LIMIT}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-full rounded-full bg-cream-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-clay-500 transition-all"
+                        style={{ width: `${usagePercent}%` }}
+                      />
+                    </div>
+                    <p className="text-xs text-ink-400">
+                      {t("settings.promptsRemaining", { n: WEEKLY_LIMIT - usedThisWeek })}
+                    </p>
+                  </div>
+                </>
+              )}
             </div>
           </Section>
 

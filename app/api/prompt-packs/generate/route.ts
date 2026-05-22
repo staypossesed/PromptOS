@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
-import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
+import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
 import { generatePromptPack } from "@/lib/ai/generate-prompt-pack";
 import { isValidPackType } from "@/types/prompt-pack";
 export async function POST(req: NextRequest) {
@@ -11,12 +11,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized." }, { status: 401 });
   }
 
-  // ── Rate limit ──────────────────────────────────────────────────────────
-  const rl = await rateLimit(user.id, "pack");
-  if (!rl.allowed) {
+  // ── Billing & usage check ────────────────────────────────────────────────
+  const billing = await getBillingStatus(supabase, user.id);
+  const usageCheck = checkUsageLimits(billing);
+  if (!usageCheck.allowed) {
     return NextResponse.json(
-      { error: `Pack limit reached. Try again in ${retryAfterMessage(rl.resetAt)}.` },
-      { status: 429 }
+      {
+        error: usageCheck.errorCode,
+        message: usageCheck.message,
+        upgradeRequired: usageCheck.errorCode === "FREE_LIMIT_REACHED",
+        isPaid: billing.isPaid,
+        remainingThisWeek: billing.remainingThisWeek,
+      },
+      { status: usageCheck.status }
     );
   }
 
@@ -47,6 +54,7 @@ export async function POST(req: NextRequest) {
     });
 
     console.info("[pack:generate]", { timestamp: new Date().toISOString(), userId: user.id, pack_type, prompt_count: pack.prompts.length });
+    void recordUsageEvent(supabase, user.id, "generate", "pack");
 
     return NextResponse.json({ data: pack });
   } catch (err) {

@@ -23,7 +23,7 @@ import { createClient } from "@/lib/supabase/server";
 import { streamGeneratedPrompt, type GenerateInput } from "@/lib/ai/generate-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
-import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
+import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
 
 export const runtime = "nodejs";
 
@@ -81,21 +81,19 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Unauthenticated." }, { status: 401 });
   }
 
-  // 2. Rate limit
-  const rate = await rateLimit(user.id, "generate");
-  if (!rate.allowed) {
-    const retryAfter = Math.ceil((rate.resetAt - Date.now()) / 1000);
+  // 2. Billing & usage check
+  const billing = await getBillingStatus(supabase, user.id);
+  const usageCheck = checkUsageLimits(billing);
+  if (!usageCheck.allowed) {
     return NextResponse.json(
-      { error: `Rate limit exceeded. You can generate up to ${rate.limit} prompts per day. Try again in ${retryAfterMessage(rate.resetAt)}.` },
       {
-        status: 429,
-        headers: {
-          "Retry-After": String(retryAfter),
-          "X-RateLimit-Remaining": "0",
-          "X-RateLimit-Reset": String(rate.resetAt),
-          "X-RateLimit-Limit": String(rate.limit),
-        },
-      }
+        error: usageCheck.errorCode,
+        message: usageCheck.message,
+        upgradeRequired: usageCheck.errorCode === "FREE_LIMIT_REACHED",
+        isPaid: billing.isPaid,
+        remainingThisWeek: billing.remainingThisWeek,
+      },
+      { status: usageCheck.status }
     );
   }
 
@@ -118,11 +116,11 @@ export async function POST(request: NextRequest) {
   try {
     const { stream, choice } = streamGeneratedPrompt(validation.data);
 
+    // Record usage event after successfully starting the stream
+    void recordUsageEvent(supabase, user.id, "generate", "prompt");
+
     return stream.toTextStreamResponse({
       headers: {
-        "X-RateLimit-Remaining": String(rate.remaining),
-        "X-RateLimit-Reset": String(rate.resetAt),
-        "X-RateLimit-Limit": String(rate.limit),
         "X-Model-Used": choice.config.shortName,
         "X-Provider-Used": choice.provider,
       },

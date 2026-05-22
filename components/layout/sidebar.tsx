@@ -37,7 +37,13 @@ export function Sidebar() {
   const [user, setUser] = useState<User | null>(null);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { t } = useTranslations();
-  const { remainingToday, dailyLimit, isLoading: usageLoading } = usePromptUsage();
+  const {
+    isPaid,
+    isFounder,
+    weeklyLimit,
+    remainingThisWeek,
+    isLoading: usageLoading,
+  } = usePromptUsage();
 
   useEffect(() => {
     const supabase = createClient();
@@ -160,7 +166,7 @@ export function Sidebar() {
 
         {/* Plan card */}
         <Link
-          href="/account"
+          href={isPaid ? "/account" : "/plan"}
           className="mt-3 mx-1 rounded-xl border border-ink-100/80 bg-card p-3.5 card-soft hover:border-ink-200/80 hover:bg-cream-100/60 transition-colors block"
         >
           <div className="flex items-center gap-2 mb-2">
@@ -172,23 +178,37 @@ export function Sidebar() {
                 {user?.email ?? t("nav.workspace")}
               </div>
               <div className="text-[10px] text-ink-400 leading-snug">
-                {t("plan.freePlanLabel")}
+                {usageLoading
+                  ? t("plan.freePlanLabel")
+                  : isPaid
+                  ? (isFounder ? "Founder Pro" : "Pro")
+                  : t("plan.freePlanLabel")}
               </div>
             </div>
           </div>
-          <div className="space-y-1">
-            <div className="h-1.5 w-full rounded-full bg-cream-200 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-clay-500 transition-all"
-                style={{ width: usageLoading ? "0%" : `${Math.min(((dailyLimit - remainingToday) / dailyLimit) * 100, 100)}%` }}
-              />
+          {isPaid ? (
+            <div className="text-[10px] text-clay-600 font-medium">
+              {t("plan.unlimitedFairUse")}
             </div>
-            <div className="text-[10px] text-ink-400">
-              {usageLoading
-                ? t("plan.free")
-                : t("plan.promptsLeftToday", { count: remainingToday })}
+          ) : (
+            <div className="space-y-1">
+              <div className="h-1.5 w-full rounded-full bg-cream-200 overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-clay-500 transition-all"
+                  style={{
+                    width: usageLoading
+                      ? "0%"
+                      : `${Math.min(((weeklyLimit! - remainingThisWeek!) / weeklyLimit!) * 100, 100)}%`,
+                  }}
+                />
+              </div>
+              <div className="text-[10px] text-ink-400">
+                {usageLoading
+                  ? t("plan.free")
+                  : t("plan.promptsLeftThisWeek", { count: remainingThisWeek ?? 0 })}
+              </div>
             </div>
-          </div>
+          )}
         </Link>
 
         {/* Legal links */}

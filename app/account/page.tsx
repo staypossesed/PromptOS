@@ -1,14 +1,15 @@
 import { redirect } from "next/navigation";
-import { Mail, Zap, Link2, Wand2, History, Settings, LogOut } from "lucide-react";
+import { Mail, Zap, Link2, Wand2, History, Settings, LogOut, Crown, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/server";
 import { signOut } from "@/app/actions/auth";
-import { listPrompts } from "@/lib/prompts";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 import { getServerTranslations } from "@/lib/i18n/server";
+import { getBillingStatus, planDisplayName } from "@/lib/billing";
+import { BillingPortalButton } from "@/components/billing/billing-portal-button";
 
 export const dynamic = "force-dynamic";
 
@@ -19,12 +20,8 @@ export default async function AccountPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: prompts } = await listPrompts(200);
-  const todayStart = new Date(); todayStart.setHours(0, 0, 0, 0);
-  const todayPrompts = prompts.filter(p => new Date(p.created_at).getTime() >= todayStart.getTime()).length;
-  const DAILY_LIMIT = 20;
-  const usagePercent = Math.min((todayPrompts / DAILY_LIMIT) * 100, 100);
   const { t } = await getServerTranslations();
+  const billing = await getBillingStatus(supabase, user.id);
 
   const provider = (user.app_metadata?.provider as string | undefined) ?? "email";
   const providerLabel =
@@ -35,6 +32,8 @@ export default async function AccountPage() {
     day: "numeric",
     year: "numeric",
   });
+
+  const planName = planDisplayName(billing.plan, billing.isFounder);
 
   return (
     <AppShell>
@@ -58,29 +57,63 @@ export default async function AccountPage() {
           </Section>
 
           {/* Plan & usage */}
-          <Section title={t("account.planSection")} icon={Zap}>
+          <Section
+            title={t("account.planSection")}
+            icon={Zap}
+            badge={billing.isFounder ? t("billing.founderBadge") : billing.isLifetime ? t("billing.lifetimeBadge") : undefined}
+          >
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">{t("settings.currentPlan")}</span>
-                <span className="text-sm font-semibold text-ink-900">{t("account.freePlan")}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-ink-600">{t("account.promptsToday")}</span>
-                <span className="text-sm font-mono text-ink-700">
-                  {todayPrompts} / {DAILY_LIMIT}
+                <span className="text-sm text-ink-600">{t("billing.currentPlan")}</span>
+                <span className="text-sm font-semibold text-ink-900 flex items-center gap-1.5">
+                  {billing.isFounder && <Crown className="size-3.5 text-clay-600" />}
+                  {planName}
                 </span>
               </div>
-              <div className="space-y-1.5">
-                <div className="h-2 w-full rounded-full bg-cream-200 overflow-hidden">
-                  <div
-                    className="h-full rounded-full bg-clay-500 transition-all"
-                    style={{ width: `${usagePercent}%` }}
-                  />
+
+              {billing.isPaid ? (
+                <div className="flex items-center justify-between">
+                  <span className="text-sm text-ink-600">{t("billing.planStatus")}</span>
+                  <span className="text-sm font-medium text-green-700">{t("billing.planActive")}</span>
                 </div>
-                <p className="text-xs text-ink-400">
-                  {t("account.promptsRemaining", { n: DAILY_LIMIT - todayPrompts })}
-                </p>
-              </div>
+              ) : (
+                <>
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-ink-600">{t("account.promptsToday")}</span>
+                    <span className="text-sm font-mono text-ink-700">
+                      {billing.usedThisWeek} / {billing.weeklyLimit}
+                    </span>
+                  </div>
+                  <div className="space-y-1.5">
+                    <div className="h-2 w-full rounded-full bg-cream-200 overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-clay-500 transition-all"
+                        style={{
+                          width: `${Math.min((billing.usedThisWeek / (billing.weeklyLimit ?? 7)) * 100, 100)}%`,
+                        }}
+                      />
+                    </div>
+                    <p className="text-xs text-ink-400">
+                      {t("account.promptsRemaining", { n: billing.remainingThisWeek ?? 0 })}
+                    </p>
+                  </div>
+                </>
+              )}
+
+              {billing.isPaid ? (
+                <div className="pt-1 flex gap-2">
+                  <BillingPortalButton label={t("billing.manageBilling")} />
+                </div>
+              ) : (
+                <div className="pt-1">
+                  <Button asChild size="sm" className="text-sm">
+                    <Link href="/plan">
+                      <Zap className="size-3.5" />
+                      {t("billing.upgradeToPro")}
+                    </Link>
+                  </Button>
+                </div>
+              )}
             </div>
           </Section>
 
@@ -90,6 +123,7 @@ export default async function AccountPage() {
               <QuickLink href="/builder" icon={Wand2} label={t("account.goToBuilder")} />
               <QuickLink href="/history" icon={History} label={t("account.goToHistory")} />
               <QuickLink href="/settings" icon={Settings} label={t("account.goToSettings")} />
+              <QuickLink href="/plan" icon={ExternalLink} label={t("nav.plan")} />
             </div>
           </Section>
 
@@ -116,16 +150,23 @@ function Section({
   title,
   icon: Icon,
   children,
+  badge,
 }: {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   children: React.ReactNode;
+  badge?: string;
 }) {
   return (
     <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5">
       <div className="flex items-center gap-2 mb-4">
         <Icon className="size-4 text-ink-400" />
         <h2 className="text-sm font-semibold text-ink-700 uppercase tracking-[0.1em]">{title}</h2>
+        {badge && (
+          <span className="text-[10px] uppercase tracking-wider text-clay-700 bg-clay-500/10 border border-clay-500/20 rounded-full px-1.5 py-0.5 font-medium">
+            {badge}
+          </span>
+        )}
       </div>
       <div className="space-y-3">{children}</div>
     </div>
