@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Crown, Zap, Infinity, ArrowLeft, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -12,6 +12,7 @@ const FOUNDER_LIMIT = 100;
 
 export default function PlanPage() {
   const { t } = useTranslations();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("checkout") === "cancelled";
 
@@ -56,16 +57,30 @@ export default function PlanPage() {
         }),
       });
       const json = await res.json();
-      if (process.env.NODE_ENV === "development" && !res.ok) {
-        console.error("[checkout] API error:", res.status, json);
+      if (process.env.NODE_ENV === "development") {
+        console.log("[checkout] response", res.status, json);
       }
+
       if (json.url) {
         track("checkout_started", { offer_type: offerType, is_founder: promoApplied });
         window.location.href = json.url;
-      } else {
-        setCheckoutError(json.error ?? "Checkout could not start. Please try again.");
-        setLoading(null);
+        return;
       }
+
+      // Handle structured error codes
+      const code = json.error as string | undefined;
+      if (code === "AUTH_REQUIRED") {
+        router.push("/login?next=/plan");
+        return;
+      }
+      if (code === "MISSING_CONFIG") {
+        setCheckoutError("Checkout is not configured yet. Please contact support.");
+      } else if (code === "STRIPE_ERROR") {
+        setCheckoutError("Stripe checkout could not start. Please try again.");
+      } else {
+        setCheckoutError(json.message ?? "Checkout could not start. Please try again.");
+      }
+      setLoading(null);
     } catch (err) {
       if (process.env.NODE_ENV === "development") console.error("[checkout] fetch error:", err);
       setCheckoutError("Checkout could not start. Please try again.");
