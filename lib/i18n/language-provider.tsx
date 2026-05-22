@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import type { AppLanguage } from "@/types/language";
 import { isSupportedLanguage } from "@/types/language";
 import {
@@ -113,6 +114,8 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const router = useRouter();
+
   // ── Manual language change (called from LanguageSelector) ─────────────────
   const setLanguage = useCallback((lang: AppLanguage) => {
     if (!isSupportedLanguage(lang)) return;
@@ -127,7 +130,11 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     persistLanguageCookie(lang);
     track("language_changed", { language: lang as string } as never);
     devLog("language changed (manual)", { language: lang, source: "manual" });
-  }, []);
+
+    // Re-render server components so server-translated pages (settings, dashboard,
+    // history, templates) pick up the new cookie immediately without a hard reload.
+    router.refresh();
+  }, [router]);
 
   const dict = getDictionary(language);
 
