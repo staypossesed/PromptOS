@@ -77,6 +77,10 @@ CREATE POLICY "users_read_own_usage_events"
   ON usage_events FOR SELECT
   USING (auth.uid() = user_id);
 
+CREATE POLICY "users_insert_own_usage_events"
+  ON usage_events FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
 -- Service role (used by webhook and server-side helpers) can do everything.
 -- The service role bypasses RLS by default — no policies needed.
 

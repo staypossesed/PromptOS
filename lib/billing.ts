@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { stripe } from "@/lib/stripe";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 export type PlanType =
   | "free"
@@ -155,13 +156,15 @@ export function checkUsageLimits(billing: BillingStatus): UsageCheckResult {
 // ── Usage recording ─────────────────────────────────────────────────────────
 
 export async function recordUsageEvent(
-  supabase: SupabaseClient,
+  _supabase: SupabaseClient,
   userId: string,
   eventType: string,
   source?: string
 ): Promise<void> {
   try {
-    await supabase.from("usage_events").insert({ user_id: userId, event_type: eventType, source });
+    // Use admin client to bypass RLS — usage_events has no INSERT policy for user JWT
+    const admin = createAdminClient();
+    await admin.from("usage_events").insert({ user_id: userId, event_type: eventType, source });
   } catch {
     // Non-critical — never crash the generation flow
   }
