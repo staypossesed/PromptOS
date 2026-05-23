@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   title: "Umprompt — From rough ideas to perfect AI prompts",
   description:
     "Generate, score, optimize, and save execution-ready prompts for Claude, Cursor, and ChatGPT.",
+  icons: {
+    icon: "/brand/umprompt-icon.png",
+    apple: "/brand/umprompt-icon.png",
+  },
 };
 
 export default async function RootLayout({
