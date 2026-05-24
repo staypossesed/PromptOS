@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import {
   ArrowRight,
   Sparkles,
@@ -18,6 +17,7 @@ import { Logo } from "@/components/brand/logo";
 import { FeatureTriad } from "@/components/marketing/feature-triad";
 import { ToolStrip } from "@/components/marketing/tool-strip";
 import { UseCasesDeep } from "@/components/marketing/use-cases";
+import { HeroMockup } from "@/components/marketing/hero-mockup";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export default function LandingPage() {
@@ -70,8 +70,9 @@ export default function LandingPage() {
             </h1>
 
             <p className="mt-6 text-lg md:text-xl text-ink-500 leading-relaxed max-w-2xl mx-auto text-pretty">
-              Turn a rough idea into an execution-ready prompt — scored across 6 dimensions, auto-optimized, and saved to your workspace.
-              Built for Claude, Cursor, and ChatGPT.
+              Turn rough ideas into structured prompts, prompt packs, and coding-agent specs —
+              scored, optimized, and saved to your workspace.
+              Built for Claude, Cursor, Codex, and ChatGPT.
             </p>
 
             <div className="mt-9 flex flex-col sm:flex-row gap-3 justify-center items-center">
@@ -109,16 +110,8 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="mt-14 md:mt-20 relative max-w-4xl mx-auto">
-            <div className="absolute inset-x-8 -bottom-6 h-12 rounded-full bg-clay-400/20 blur-2xl pointer-events-none" />
-            <Image
-              src="/brand/umprompt-banner.png"
-              alt="Umprompt — From rough idea to perfect prompt"
-              width={1200}
-              height={400}
-              className="relative rounded-2xl shadow-xl w-full h-auto"
-              priority
-            />
+          <div className="mt-14 md:mt-20 max-w-4xl mx-auto">
+            <HeroMockup />
           </div>
         </div>
       </section>
