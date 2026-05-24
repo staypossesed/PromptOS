@@ -32,7 +32,7 @@ const FAQS = [
   },
   {
     q: "How many prompts can I create?",
-    a: "Free plan includes 20 prompts per month. Your usage resets at the start of each calendar month.",
+    a: "Free plan includes 7 prompts per week. Your usage resets every Monday.",
   },
 ];
 

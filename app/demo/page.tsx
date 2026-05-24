@@ -262,7 +262,7 @@ export default function DemoPage() {
             Try it with your own idea.
           </h2>
           <p className="text-clay-50/90 mb-7 max-w-sm mx-auto">
-            Free to start. No credit card. Built for Claude, Cursor, and ChatGPT.
+            Free to start. 7 prompts/week. Built for Claude, Cursor, and ChatGPT.
           </p>
           <Button
             asChild

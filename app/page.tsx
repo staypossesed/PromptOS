@@ -85,16 +85,23 @@ export default function LandingPage() {
             <p className="mt-5 text-xs text-ink-400 flex items-center justify-center gap-3 flex-wrap">
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5 text-clay-500" />
-                No credit card
-              </span>
-              <span className="flex items-center gap-1.5">
-                <CheckCircle2 className="size-3.5 text-clay-500" />
                 Free to start
               </span>
               <span className="flex items-center gap-1.5">
                 <CheckCircle2 className="size-3.5 text-clay-500" />
-                20 prompts/day
+                7 prompts/week
               </span>
+              <span className="flex items-center gap-1.5">
+                <CheckCircle2 className="size-3.5 text-clay-500" />
+                Upgrade when ready
+              </span>
+            </p>
+            <p className="mt-3 text-xs text-center text-ink-400">
+              Founder offer: first 100 users get Pro for{" "}
+              <span className="text-clay-600 font-medium">$4.99/mo</span> or{" "}
+              <span className="text-clay-600 font-medium">$34.99 lifetime</span>{" "}
+              with code{" "}
+              <code className="font-mono text-clay-700 bg-clay-500/10 px-1 py-0.5 rounded text-[11px]">UMPROMPT</code>
             </p>
           </div>
 
