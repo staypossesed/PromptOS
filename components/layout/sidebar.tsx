@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
+import { checkIsAdmin } from "@/app/actions/admin";
 import {
   Home,
   Wand2,
@@ -34,6 +35,7 @@ interface NavItem {
 export function Sidebar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const { t } = useTranslations();
   const {
@@ -51,6 +53,10 @@ export function Sidebar() {
       setUser(session?.user ?? null);
     });
     return () => listener.subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    checkIsAdmin().then(setIsAdmin);
   }, []);
 
   const PRIMARY_NAV: NavItem[] = [
@@ -107,7 +113,9 @@ export function Sidebar() {
         </NavGroup>
 
         <NavGroup label={t("nav.library")} className="mt-6">
-          {SECONDARY_NAV.map((item) => (
+          {SECONDARY_NAV.filter(
+            (item) => item.href !== "/model-lab" || isAdmin
+          ).map((item) => (
             <NavLink
               key={item.labelKey}
               label={t(item.labelKey)}

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/server";
+import { isAdminUser } from "@/lib/admin";
 
 /**
  * Routes that require an active session.
@@ -41,6 +42,13 @@ export async function middleware(request: NextRequest) {
     redirectUrl.pathname = "/login";
     // Preserve the intended destination so we can redirect back after sign-in
     redirectUrl.searchParams.set("next", pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // ── Authenticated non-admin hits /model-lab ─────────────────────────────
+  if (user && pathname.startsWith("/model-lab") && !isAdminUser(user.email)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);
   }
 
