@@ -12,7 +12,7 @@ import { ScorePanel } from "@/components/builder/score-panel";
 import { PackTypeSelector } from "@/components/builder/pack-type-selector";
 import { PromptPackOutput } from "@/components/builder/prompt-pack-output";
 import { Button } from "@/components/ui/button";
-import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Layers } from "lucide-react";
+import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Layers, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { EXAMPLE_IDEAS, type ToolId } from "@/lib/mock-data";
 import type { PromptRecord } from "@/types/prompt";
@@ -24,6 +24,8 @@ import { track } from "@/lib/analytics";
 import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
 import { TEMPLATES } from "@/lib/templates";
 import { OnboardingPanel } from "@/components/builder/onboarding-panel";
+import { PacksUpsell } from "@/components/builder/packs-upsell";
+import { usePromptUsage } from "@/hooks/usePromptUsage";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
 
@@ -85,6 +87,7 @@ function BuilderInner() {
   }
 
   const { t, language } = useTranslations();
+  const { isPaid, isLoading: usageLoading } = usePromptUsage();
 
   // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
@@ -587,7 +590,7 @@ function BuilderInner() {
         ]}
         actions={
           <div className="hidden md:flex items-center gap-2">
-            {mode === "pack" ? (
+            {mode === "pack" && isPaid ? (
               <>
                 {savedPackId && (
                   <Button
@@ -711,6 +714,12 @@ function BuilderInner() {
             >
               <Layers className="size-3.5" />
               {t("builder.pack")}
+              {!usageLoading && !isPaid && (
+                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-clay-600 bg-clay-500/10 border border-clay-200/50 rounded-full px-1.5 py-0.5 leading-none">
+                  <Crown className="size-2.5" />
+                  Pro
+                </span>
+              )}
             </button>
           </div>
         </div>
@@ -725,8 +734,10 @@ function BuilderInner() {
           />
         )}
 
-        {isLoading ? (
+        {isLoading || (mode === "pack" && usageLoading) ? (
           <BuilderSkeleton />
+        ) : mode === "pack" && !isPaid ? (
+          <PacksUpsell />
         ) : mode === "pack" ? (
           /* ── Pack mode layout ─────────────────────────────────────────── */
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
