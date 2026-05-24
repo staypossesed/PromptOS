@@ -7,7 +7,10 @@ import {
   TrendingUp,
   CheckCircle2,
   Zap,
-  MessageSquare,
+  Crown,
+  Layers,
+  Hammer,
+  Shuffle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/brand/logo";
@@ -21,6 +24,7 @@ export default function LandingPage() {
   return (
     <div className="min-h-screen bg-paper">
       <PageViewTracker event="landing_view" />
+
       {/* Top nav */}
       <header className="sticky top-0 z-30 backdrop-blur-md bg-cream-50/70 border-b border-ink-100/40">
         <div className="max-w-6xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
@@ -29,11 +33,11 @@ export default function LandingPage() {
             <Link href="/demo" className="hover:text-ink-900 transition-colors">Demo</Link>
             <a href="#features" className="hover:text-ink-900 transition-colors">Features</a>
             <a href="#how" className="hover:text-ink-900 transition-colors">How it works</a>
-            <a href="#use-cases" className="hover:text-ink-900 transition-colors">Use cases</a>
+            <a href="#pricing" className="hover:text-ink-900 transition-colors">Pricing</a>
           </nav>
           <div className="flex items-center gap-2">
             <Button asChild variant="ghost" size="sm" className="hidden sm:inline-flex">
-              <Link href="/dashboard">Sign in</Link>
+              <Link href="/login">Sign in</Link>
             </Button>
             <Button asChild size="sm">
               <Link href="/builder">
@@ -118,11 +122,28 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* Stats */}
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-14 md:py-20">
+        <div className="grid grid-cols-3 gap-6 max-w-lg mx-auto text-center">
+          {STATS.map((s) => (
+            <div key={s.label}>
+              <div className="font-serif text-4xl md:text-5xl font-bold text-ink-900 tabular-nums">
+                {s.value}
+              </div>
+              <div className="text-xs text-ink-400 mt-2 leading-snug">{s.label}</div>
+            </div>
+          ))}
+        </div>
+      </section>
+
       {/* Value props */}
-      <section className="max-w-6xl mx-auto px-5 lg:px-8 py-16 md:py-20">
+      <section className="max-w-6xl mx-auto px-5 lg:px-8 pb-16 md:pb-20">
         <div className="grid md:grid-cols-3 gap-6">
           {VALUE_PROPS.map((vp) => (
             <div key={vp.headline} className="rounded-2xl border border-ink-100/60 bg-card card-soft p-7">
+              <div className="size-9 rounded-xl bg-clay-500/10 border border-clay-200/40 flex items-center justify-center mb-4">
+                <vp.icon className="size-5 text-clay-600" strokeWidth={1.75} />
+              </div>
               <h3 className="font-serif text-xl font-medium text-ink-900 mb-2">{vp.headline}</h3>
               <p className="text-[14px] text-ink-500 leading-relaxed">{vp.body}</p>
             </div>
@@ -194,23 +215,120 @@ export default function LandingPage() {
         <UseCasesDeep />
       </section>
 
-      {/* Feedback CTA */}
-      <section className="max-w-6xl mx-auto px-5 lg:px-8 pb-12">
-        <div className="rounded-2xl border border-ink-100/70 bg-card card-soft px-7 py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <MessageSquare className="size-4 text-clay-600 shrink-0" />
-            <p className="text-[14px] text-ink-700">
-              Trying Umprompt? We read every message.{" "}
-              <span className="text-ink-400">Your feedback shapes what we build next.</span>
-            </p>
+      {/* Pricing */}
+      <section id="pricing" className="max-w-6xl mx-auto px-5 lg:px-8 pb-20 md:pb-28">
+        <div className="max-w-2xl mb-12 mx-auto text-center">
+          <div className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
+            Pricing
           </div>
-          <Button asChild variant="outline" size="sm" className="shrink-0">
-            <Link href="/login">
-              Send feedback
-              <ArrowRight className="size-3.5" />
-            </Link>
-          </Button>
+          <h2 className="font-serif text-4xl md:text-5xl font-bold tracking-tight text-ink-900 leading-[1.05]">
+            Start free. Upgrade when you&rsquo;re ready.
+          </h2>
+          <p className="mt-4 text-ink-500 text-[15px]">
+            Free plan gives you 7 prompts every week — enough to try the full workflow.
+          </p>
         </div>
+
+        <div className="grid md:grid-cols-3 gap-5 max-w-4xl mx-auto">
+          {/* Free */}
+          <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-6 flex flex-col">
+            <div className="text-sm font-semibold text-ink-800 mb-1">Free</div>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="font-serif text-4xl font-bold text-ink-900">$0</span>
+            </div>
+            <p className="text-xs text-ink-400 mb-5">Always free</p>
+            <ul className="space-y-2.5 flex-1 mb-6">
+              {["7 prompts/week", "Full prompt builder", "6-dimension scoring", "Template library"].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-ink-600">
+                  <CheckCircle2 className="size-3.5 text-green-600 shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/builder">Get started free</Link>
+            </Button>
+          </div>
+
+          {/* Pro */}
+          <div className="rounded-2xl border border-clay-500/40 bg-clay-500/5 ring-1 ring-clay-500/20 p-6 flex flex-col relative">
+            <div className="absolute -top-3.5 left-1/2 -translate-x-1/2">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-white bg-clay-500 rounded-full px-3 py-1 whitespace-nowrap">
+                Most popular
+              </span>
+            </div>
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-sm font-semibold text-ink-800">Pro</div>
+              <Zap className="size-4 text-clay-500" />
+            </div>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="font-serif text-4xl font-bold text-ink-900">$9.99</span>
+              <span className="text-sm text-ink-400">/mo</span>
+            </div>
+            <p className="text-xs text-clay-600 font-medium mb-5">
+              Founder: $4.99/mo with code UMPROMPT
+            </p>
+            <ul className="space-y-2.5 flex-1 mb-6">
+              {[
+                "Unlimited fair-use prompts",
+                "Prompt Packs",
+                "Full history",
+                "Priority support",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-ink-600">
+                  <CheckCircle2 className="size-3.5 text-green-600 shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Button asChild className="w-full">
+              <Link href="/plan">
+                Upgrade to Pro
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+
+          {/* Lifetime */}
+          <div className="rounded-2xl border border-ink-900/20 bg-ink-900/[0.03] p-6 flex flex-col">
+            <div className="flex items-center justify-between mb-1">
+              <div className="text-sm font-semibold text-ink-800">Lifetime</div>
+              <Crown className="size-4 text-ink-400" />
+            </div>
+            <div className="flex items-baseline gap-1 mb-1">
+              <span className="font-serif text-4xl font-bold text-ink-900">$99.99</span>
+            </div>
+            <p className="text-xs text-clay-600 font-medium mb-5">
+              Founder: $34.99 with code UMPROMPT
+            </p>
+            <ul className="space-y-2.5 flex-1 mb-6">
+              {[
+                "Everything in Pro",
+                "Pay once, use forever",
+                "All future updates",
+                "Lifetime access",
+              ].map((f) => (
+                <li key={f} className="flex items-center gap-2 text-sm text-ink-600">
+                  <CheckCircle2 className="size-3.5 text-green-600 shrink-0" />
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <Button asChild variant="outline" className="w-full">
+              <Link href="/plan">
+                Get Lifetime
+                <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          </div>
+        </div>
+
+        <p className="mt-7 text-center text-xs text-ink-400 flex items-center justify-center gap-1.5 flex-wrap">
+          <Crown className="size-3 text-clay-500 shrink-0" />
+          Founder spots for the first 100 users — apply code{" "}
+          <code className="font-mono text-clay-700 bg-clay-500/10 px-1 py-0.5 rounded text-[11px]">UMPROMPT</code>
+          {" "}at checkout
+        </p>
       </section>
 
       {/* Final CTA */}
@@ -253,6 +371,12 @@ export default function LandingPage() {
   );
 }
 
+const STATS = [
+  { value: "6", label: "quality dimensions scored" },
+  { value: "3", label: "AI tools tuned" },
+  { value: "100", label: "founder spots" },
+];
+
 const STEPS = [
   {
     icon: Sparkles,
@@ -278,14 +402,17 @@ const STEPS = [
 
 const VALUE_PROPS = [
   {
+    icon: Shuffle,
     headline: "Not another prompt library.",
     body: "Libraries give you prompts someone else wrote. Umprompt generates prompts from your specific idea — structured around how your target tool actually works.",
   },
   {
+    icon: Hammer,
     headline: "Built for people who actually use AI tools.",
     body: "Not for sharing on Twitter. For shipping work. If you use Claude, Cursor, or ChatGPT to build real things, Umprompt is the missing step between your idea and execution.",
   },
   {
+    icon: Layers,
     headline: "Generate, score, optimize, and save.",
     body: "One idea. Four steps. A quality-scored, optimized prompt saved to your workspace — ready to paste, iterate on, and reuse.",
   },
