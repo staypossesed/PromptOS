@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,28 +27,37 @@ export function LoginForm() {
   const [isGooglePending, setIsGooglePending] = useState(false);
   const [isGithubPending, setIsGithubPending] = useState(false);
 
+  // Create the client once at mount so PKCE storage is warm before the first click.
+  const supabase = useMemo(() => createClient(), []);
+
   async function handleGoogleSignIn() {
     setIsGooglePending(true);
     setErrorMsg(null);
     track("google_signin_started");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "google",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
+      },
     });
-    if (error) { setErrorMsg(error.message); setIsGooglePending(false); }
+    if (error) { setErrorMsg(error.message); setIsGooglePending(false); return; }
+    if (data.url) window.location.href = data.url;
   }
 
   async function handleGithubSignIn() {
     setIsGithubPending(true);
     setErrorMsg(null);
     track("github_signin_started");
-    const supabase = createClient();
-    const { error } = await supabase.auth.signInWithOAuth({
+    const { data, error } = await supabase.auth.signInWithOAuth({
       provider: "github",
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+        skipBrowserRedirect: true,
+      },
     });
-    if (error) { setErrorMsg(error.message); setIsGithubPending(false); }
+    if (error) { setErrorMsg(error.message); setIsGithubPending(false); return; }
+    if (data.url) window.location.href = data.url;
   }
 
   function handleSubmit(e: React.FormEvent) {
