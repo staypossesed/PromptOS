@@ -10,11 +10,13 @@
  *   - context: object (optional)
  *   - provider: 'anthropic' | 'openrouter' (optional override)
  *   - model: registered model id (optional override)
+ *   - outputLanguage: BCP-47 language code (optional)
  *
  * Response:
  *   - text/plain stream (chunked)
  *   - X-Model-Used header — short name of the model that ran
  *   - X-Provider-Used header — provider id that ran
+ *   - X-Request-Id header — generation run identifier for linking to saves
  *   - X-RateLimit-Remaining / X-RateLimit-Reset headers
  */
 
@@ -24,6 +26,12 @@ import { streamGeneratedPrompt, type GenerateInput } from "@/lib/ai/generate-pro
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
 import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
+import {
+  newRequestId,
+  insertGenerationRun,
+  markGenerationSuccess,
+  markGenerationFailed,
+} from "@/lib/generation-runs";
 
 export const runtime = "nodejs";
 
@@ -47,8 +55,6 @@ function validateBody(
     return { valid: false, error: "Field 'target_tool' must be one of: claude, cursor, chatgpt." };
   }
 
-  // Optional model override — accept any string here; resolveModel() will validate
-  // against the registry and throw a typed error we can surface as 422 below.
   const modelOverride: GenerateInput["modelOverride"] = {};
   if (typeof b.provider === "string") modelOverride.provider = b.provider;
   if (typeof b.model === "string") modelOverride.model = b.model;
@@ -111,22 +117,60 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: validation.error }, { status: 422 });
   }
 
-  // 5. Stream — let the generator throw if config is broken; we map
-  //    each error class to the right HTTP status.
+  // 5. Insert generation run (started)
+  const requestId = newRequestId();
+  const startTime = Date.now();
+  const runId = await insertGenerationRun({
+    user_id: user.id,
+    request_id: requestId,
+    mode: "single",
+    target_tool: validation.data.target_tool,
+    output_language: validation.data.outputLanguage,
+    user_idea: validation.data.idea,
+    context: (validation.data.context as Record<string, unknown>) ?? undefined,
+    input_chars: validation.data.idea.length,
+  });
+
+  // 6. Stream — let the generator throw if config is broken.
   try {
     const { stream, choice } = streamGeneratedPrompt(validation.data);
 
     // Record usage event after successfully starting the stream
     void recordUsageEvent(supabase, user.id, "generate", "prompt");
 
+    // Non-blocking: update run on completion
+    if (runId) {
+      stream.text.then(async (text) => {
+        await markGenerationSuccess(runId, {
+          generated_output: text,
+          latency_ms: Date.now() - startTime,
+          output_chars: text.length,
+        });
+      }).catch(async () => {
+        await markGenerationFailed(runId, {
+          error_code: "STREAM_ERROR",
+          latency_ms: Date.now() - startTime,
+        });
+      });
+    }
+
     return stream.toTextStreamResponse({
       headers: {
         "X-Model-Used": choice.config.shortName,
         "X-Provider-Used": choice.provider,
+        "X-Request-Id": requestId,
       },
     });
   } catch (err) {
-    // Provider mis-configuration → 503 (the server can't fulfil the request)
+    if (runId) {
+      const msg = err instanceof Error ? err.message : String(err);
+      void markGenerationFailed(runId, {
+        error_code: err instanceof ProviderConfigError ? "PROVIDER_CONFIG_ERROR" : "GENERATION_ERROR",
+        error_message: msg,
+        latency_ms: Date.now() - startTime,
+      });
+    }
+
     if (err instanceof ProviderConfigError) {
       console.error("[generate]", { timestamp: new Date().toISOString(), userId: user.id, error: err.message });
       return NextResponse.json(
@@ -135,12 +179,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Invalid override → 422 (caller's fault)
     if (err instanceof Error && /invalid model override|provider mismatch/i.test(err.message)) {
       return NextResponse.json({ error: err.message }, { status: 422 });
     }
 
-    // Anything else → 500
     const message = err instanceof Error ? err.message : "AI generation failed.";
     console.error("[generate]", { timestamp: new Date().toISOString(), userId: user.id, error: message });
     return NextResponse.json({ error: message }, { status: 500 });

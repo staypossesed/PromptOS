@@ -112,6 +112,10 @@ export default function PrivacyPage() {
               policies ensure that each user can only access their own data. Data is encrypted at
               rest and in transit.
             </p>
+            <p>
+              Umprompt stores user-provided prompts and generated outputs to provide workspace
+              history, improve reliability, debug issues, and support users.
+            </p>
           </Section>
 
           <Section title="Changes to this policy">

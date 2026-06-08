@@ -15,6 +15,7 @@ import {
   LogOut,
   MessageSquare,
   FlaskConical,
+  ShieldCheck,
 } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
 import { FeedbackModal } from "@/components/feedback/feedback-modal";
+import { UpgradeCTA } from "@/components/billing/upgrade-cta";
 import type { User } from "@supabase/supabase-js";
 import { useTranslations } from "@/lib/i18n/use-translations";
 
@@ -126,6 +128,17 @@ export function Sidebar() {
             />
           ))}
         </NavGroup>
+
+        {isAdmin && (
+          <NavGroup label="Admin" className="mt-6">
+            <NavLink
+              label="Console"
+              href="/admin"
+              icon={ShieldCheck}
+              active={pathname.startsWith("/admin")}
+            />
+          </NavGroup>
+        )}
       </nav>
 
       {/* Footer */}
@@ -213,6 +226,14 @@ export function Sidebar() {
                   ? t("plan.free")
                   : t("plan.promptsLeftThisWeek", { count: remainingThisWeek ?? 0 })}
               </div>
+              {!usageLoading && (remainingThisWeek ?? 7) <= 2 && (
+                <UpgradeCTA
+                  variant="low_remaining"
+                  remainingThisWeek={remainingThisWeek ?? 0}
+                  compact
+                  sourcePage="sidebar"
+                />
+              )}
             </div>
           )}
         </Link>

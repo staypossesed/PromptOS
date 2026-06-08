@@ -3,6 +3,13 @@ import { createClient } from "@/lib/supabase/server";
 import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
 import { generatePromptPack } from "@/lib/ai/generate-prompt-pack";
 import { isValidPackType } from "@/types/prompt-pack";
+import {
+  newRequestId,
+  insertGenerationRun,
+  markGenerationSuccess,
+  markGenerationFailed,
+} from "@/lib/generation-runs";
+
 export async function POST(req: NextRequest) {
   // ── Auth ────────────────────────────────────────────────────────────────
   const supabase = await createClient();
@@ -44,10 +51,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Invalid pack_type." }, { status: 400 });
   }
 
+  // ── Insert generation run (started) ─────────────────────────────────────
+  const requestId = newRequestId();
+  const startTime = Date.now();
+  const runId = await insertGenerationRun({
+    user_id: user.id,
+    request_id: requestId,
+    mode: "pack",
+    pack_type: pack_type as string,
+    output_language: typeof outputLanguage === "string" ? outputLanguage : undefined,
+    user_idea: (idea as string).trim(),
+    context: (typeof context === "object" && context !== null)
+      ? (context as Record<string, unknown>)
+      : undefined,
+    input_chars: (idea as string).length,
+  });
+
   // ── Generate ────────────────────────────────────────────────────────────
   try {
     const pack = await generatePromptPack({
-      idea: idea.trim(),
+      idea: (idea as string).trim(),
       pack_type,
       context: (context as Record<string, string> | undefined) ?? {},
       outputLanguage: typeof outputLanguage === "string" ? outputLanguage : undefined,
@@ -56,9 +79,29 @@ export async function POST(req: NextRequest) {
     console.info("[pack:generate]", { timestamp: new Date().toISOString(), userId: user.id, pack_type, prompt_count: pack.prompts.length });
     void recordUsageEvent(supabase, user.id, "generate", "pack");
 
-    return NextResponse.json({ data: pack });
+    if (runId) {
+      void markGenerationSuccess(runId, {
+        generated_json: pack as unknown as Record<string, unknown>,
+        latency_ms: Date.now() - startTime,
+        output_chars: JSON.stringify(pack).length,
+      });
+    }
+
+    return NextResponse.json({ data: pack }, {
+      headers: { "X-Request-Id": requestId },
+    });
   } catch (err) {
-    console.error("[pack:generate]", { timestamp: new Date().toISOString(), userId: user.id, pack_type, error: err instanceof Error ? err.message : String(err) });
+    const errMsg = err instanceof Error ? err.message : String(err);
+    console.error("[pack:generate]", { timestamp: new Date().toISOString(), userId: user.id, pack_type, error: errMsg });
+
+    if (runId) {
+      void markGenerationFailed(runId, {
+        error_code: "PACK_GENERATION_ERROR",
+        error_message: errMsg,
+        latency_ms: Date.now() - startTime,
+      });
+    }
+
     return NextResponse.json(
       { error: "Pack generation failed. Please try again." },
       { status: 500 }

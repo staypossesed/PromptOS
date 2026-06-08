@@ -25,6 +25,7 @@ import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
 import { TEMPLATES } from "@/lib/templates";
 import { OnboardingPanel } from "@/components/builder/onboarding-panel";
 import { PacksUpsell } from "@/components/builder/packs-upsell";
+import { UpgradeCTA } from "@/components/billing/upgrade-cta";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
@@ -53,6 +54,10 @@ function BuilderInner() {
   // ── Pack save state ─────────────────────────────────────────────────────
   const [savedPackId, setSavedPackId] = useState<string | null>(null);
   const [isPackSaved, setIsPackSaved] = useState(false);
+
+  // ── Generation run request IDs (for linking saves to generation_runs) ───
+  const [generateRequestId, setGenerateRequestId] = useState<string | null>(null);
+  const [packRequestId, setPackRequestId] = useState<string | null>(null);
 
   // ── Pack state ──────────────────────────────────────────────────────────
   const [packType, setPackType] = useState<PackType>("build_an_app");
@@ -87,7 +92,7 @@ function BuilderInner() {
   }
 
   const { t, language } = useTranslations();
-  const { isPaid, isLoading: usageLoading } = usePromptUsage();
+  const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
 
   // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
@@ -322,6 +327,7 @@ function BuilderInner() {
     setIsGeneratingPack(true);
     setPackResult(null);
     setPackError(null);
+    setPackRequestId(null);
 
     const outputLanguage = detectTextLanguage(idea, language);
 
@@ -343,6 +349,8 @@ function BuilderInner() {
       }
       setPackResult(json.data);
       if (savedPackId) setIsPackSaved(false);
+      const packReqId = res.headers.get("X-Request-Id");
+      if (packReqId) setPackRequestId(packReqId);
       track("prompt_pack_generated", { pack_type: packType });
       window.dispatchEvent(new Event("prompt_usage_refresh"));
     } catch (err) {
@@ -369,6 +377,7 @@ function BuilderInner() {
     setScore(null);
     setScoreError(null);
     setIsSaved(false);
+    setGenerateRequestId(null);
     setActiveTab("prompt");
 
     try {
@@ -411,6 +420,10 @@ function BuilderInner() {
         accumulated += decoder.decode(value, { stream: true });
         setGeneratedPrompt(accumulated);
       }
+
+      // Capture request_id from header for linking to saved prompt
+      const reqId = res.headers.get("X-Request-Id");
+      if (reqId) setGenerateRequestId(reqId);
 
       // Generation done — hand off to scoring (separate phase)
       setIsGenerating(false);
@@ -460,7 +473,7 @@ function BuilderInner() {
           const res = await fetch("/api/prompts", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({ ...body, request_id: generateRequestId }),
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Save failed.");
@@ -476,7 +489,7 @@ function BuilderInner() {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
       }
     });
-  }, [idea, tool, context, generatedPrompt, score, savedId, router, t]);
+  }, [idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId]);
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
@@ -535,7 +548,7 @@ function BuilderInner() {
           const res = await fetch("/api/prompt-packs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
+            body: JSON.stringify({ ...body, request_id: packRequestId }),
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Save failed.");
@@ -549,7 +562,7 @@ function BuilderInner() {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
       }
     });
-  }, [idea, packType, context, packResult, savedPackId, t]);
+  }, [idea, packType, context, packResult, savedPackId, t, packRequestId]);
 
   // ── Delete Pack ───────────────────────────────────────────────────────────
   const handleDeletePack = useCallback(() => {
@@ -882,6 +895,25 @@ function BuilderInner() {
             <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-13rem)] sticky top-24">
               <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />
             </div>
+          </div>
+        )}
+
+        {/* Upgrade CTA — after save (higher priority) or after first generate */}
+        {!isPaid && !usageLoading && mode === "single" && generatedPrompt && !isGenerating && !isScoring && (
+          <div className="mt-6 max-w-lg">
+            {isSaved ? (
+              <UpgradeCTA
+                variant="saved_prompt"
+                remainingThisWeek={remainingThisWeek ?? 7}
+                sourcePage="builder"
+              />
+            ) : (
+              <UpgradeCTA
+                variant="first_prompt"
+                remainingThisWeek={remainingThisWeek ?? 7}
+                sourcePage="builder"
+              />
+            )}
           </div>
         )}
       </main>

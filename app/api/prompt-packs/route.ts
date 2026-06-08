@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { listPromptPacks, createPromptPack } from "@/lib/prompt-packs";
 import { validateCreatePackBody } from "@/types/prompt-pack";
+import { linkRunToPack } from "@/lib/generation-runs";
 
 // ─── GET /api/prompt-packs ────────────────────────────────────────────────
 
@@ -52,6 +53,15 @@ export async function POST(request: NextRequest) {
 
   if (error) {
     return NextResponse.json({ error }, { status: 500 });
+  }
+
+  // Link the generation run to the saved pack if the client sent a request_id
+  const requestId =
+    typeof (body as Record<string, unknown>).request_id === "string"
+      ? ((body as Record<string, unknown>).request_id as string)
+      : null;
+  if (requestId && data?.id) {
+    void linkRunToPack(requestId, data.id);
   }
 
   return NextResponse.json({ data }, { status: 201 });

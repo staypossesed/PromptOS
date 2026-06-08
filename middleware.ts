@@ -6,7 +6,7 @@ import { isAdminUser } from "@/lib/admin";
  * Routes that require an active session.
  * Any path that starts with these prefixes will be guarded.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/settings", "/templates", "/model-lab"];
+const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/settings", "/templates", "/model-lab", "/admin"];
 
 /**
  * Routes that authenticated users should not see.
@@ -45,8 +45,8 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(redirectUrl);
   }
 
-  // ── Authenticated non-admin hits /model-lab ─────────────────────────────
-  if (user && pathname.startsWith("/model-lab") && !isAdminUser(user.email)) {
+  // ── Authenticated non-admin hits /model-lab or /admin ───────────────────
+  if (user && (pathname.startsWith("/model-lab") || pathname.startsWith("/admin")) && !isAdminUser(user.email)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     return NextResponse.redirect(redirectUrl);

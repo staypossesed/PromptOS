@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Check, Crown, Zap, Infinity, ArrowLeft, AlertCircle } from "lucide-react";
@@ -18,10 +18,12 @@ export default function PlanPage() {
 
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
+  const [promoAutoApplied, setPromoAutoApplied] = useState(false);
   const [promoError, setPromoError] = useState(false);
   const [founderCount, setFounderCount] = useState<number | null>(null);
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const autoAppliedRef = useRef(false);
 
   useEffect(() => {
     track("plan_page_viewed");
@@ -30,6 +32,18 @@ export default function PlanPage() {
       .then((data) => { if (typeof data?.count === "number") setFounderCount(data.count); })
       .catch(() => null);
   }, []);
+
+  // Auto-apply promo code from URL (?promo=UMPROMPT)
+  useEffect(() => {
+    const promo = searchParams.get("promo");
+    if (promo?.toUpperCase() === "UMPROMPT" && !autoAppliedRef.current) {
+      autoAppliedRef.current = true;
+      setPromoInput("UMPROMPT");
+      setPromoApplied(true);
+      setPromoAutoApplied(true);
+      track("promo_code_applied", { is_founder: true, source: "url_param" });
+    }
+  }, [searchParams]);
 
   function applyPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -110,6 +124,15 @@ export default function PlanPage() {
           </h1>
           <p className="text-ink-500 text-[15px]">{t("billing.planSubtitle")}</p>
         </div>
+
+        {/* Auto-applied founder unlock notice */}
+        {promoAutoApplied && (
+          <div className="mb-6 flex items-center gap-2 rounded-xl border border-clay-500/30 bg-clay-500/8 px-4 py-3 text-sm text-clay-800">
+            <Crown className="size-4 shrink-0 text-clay-600" />
+            <span className="font-medium">Founder prices unlocked.</span>
+            <span className="text-clay-600">You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</span>
+          </div>
+        )}
 
         {/* Cancelled notice */}
         {cancelled && (

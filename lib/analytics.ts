@@ -53,7 +53,11 @@ export type AnalyticsEvent =
   | "checkout_started"
   | "free_limit_reached"
   | "upgrade_clicked"
-  | "billing_portal_opened";
+  | "billing_portal_opened"
+  // Upgrade CTAs
+  | "upgrade_cta_shown"
+  | "upgrade_cta_clicked"
+  | "upgrade_cta_dismissed";
 
 export interface EventProperties {
   target_tool?: string;
@@ -78,6 +82,11 @@ export interface EventProperties {
   plan?: string;
   offer_type?: string;
   is_founder?: boolean;
+  // CTA tracking (no prompt text)
+  cta_variant?: string;
+  user_segment?: string;
+  remaining_this_week?: number;
+  source_page?: string;
 }
 
 export function track(event: AnalyticsEvent, properties?: EventProperties): void {
