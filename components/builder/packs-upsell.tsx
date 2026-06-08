@@ -55,20 +55,16 @@ export function PacksUpsell() {
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <Button asChild size="lg">
-              <Link href="/plan">
-                Upgrade to Pro — $9.99/mo
+              <Link href="/plan?promo=UMPROMPT">
+                Claim founder deal — $4.99/mo
                 <ArrowRight className="size-4" />
               </Link>
             </Button>
           </div>
           <p className="mt-3 text-xs text-ink-400">
-            Founder offer:{" "}
-            <span className="text-clay-600 font-medium">$4.99/mo</span> or{" "}
+            Or{" "}
             <span className="text-clay-600 font-medium">$34.99 lifetime</span>{" "}
-            with code{" "}
-            <code className="font-mono text-clay-700 bg-clay-500/10 px-1 py-0.5 rounded text-[11px]">
-              UMPROMPT
-            </code>
+            — first 100 users only
           </p>
         </div>
       </div>
@@ -131,8 +127,8 @@ export function PacksUpsell() {
                 Upgrade to Pro to generate full pack workflows
               </div>
               <Button asChild size="sm">
-                <Link href="/plan">
-                  See pricing
+                <Link href="/plan?promo=UMPROMPT">
+                  See founder pricing
                   <ArrowRight className="size-3.5" />
                 </Link>
               </Button>

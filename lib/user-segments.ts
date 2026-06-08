@@ -50,7 +50,7 @@ export function computeSegment(data: {
   const totalActivity = data.totalUsageEvents;
   if (totalActivity === 0) return "new_signup";
   if (totalActivity === 1) return "tried_once";
-  if (totalActivity >= 6 || data.savedPromptCount > 0) return "high_intent";
+  if (totalActivity >= 6 || data.savedPromptCount > 0 || data.packCount > 0) return "high_intent";
   return "active_free";
 }
 
