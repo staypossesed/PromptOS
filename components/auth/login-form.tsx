@@ -7,7 +7,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ArrowRight, Mail, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { sendMagicLink } from "@/app/actions/auth";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -70,8 +69,16 @@ export function LoginForm() {
     setErrorMsg(null);
     track("signup_started");
     startTransition(async () => {
-      const { error } = await sendMagicLink(trimmed, next);
-      if (error) setErrorMsg(error);
+      const { error } = await supabase.auth.signInWithOtp({
+        email: trimmed,
+        options: {
+          // PKCE verifier is stored in localStorage here (browser client),
+          // so clicking the link in the same browser always works.
+          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          shouldCreateUser: true,
+        },
+      });
+      if (error) setErrorMsg(error.message);
       else setStage("sent");
     });
   }

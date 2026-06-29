@@ -25,9 +25,8 @@ export async function GET(request: NextRequest) {
 
     if (error) {
       console.error("[auth/callback] exchangeCodeForSession error:", error.message);
-      // Redirect to login with an error query param so the UI can show a message
       return NextResponse.redirect(
-        `${origin}/login?error=${encodeURIComponent("Link expired or already used. Request a new one.")}`
+        `${origin}/login?error=${encodeURIComponent("Magic link failed — it may have expired or been opened in a different browser. Please request a new one.")}`
       );
     }
 
