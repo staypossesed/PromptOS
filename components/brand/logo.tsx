@@ -15,7 +15,7 @@ export function Logo({ className, showWordmark = true, size = 32 }: LogoProps) {
         alt="Umprompt"
         width={size}
         height={size}
-        className="rounded-full shrink-0 hue-rotate-[125deg] saturate-[0.65]"
+        className="rounded-full shrink-0"
         priority
       />
       {showWordmark && (

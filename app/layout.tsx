@@ -16,8 +16,8 @@ export const metadata: Metadata = {
   description:
     "Turn messy ideas into clear AI requests for writing, coding, research, everyday tasks and more. Start with an idea; Umprompt handles the structure.",
   icons: {
-    icon: "/brand/umprompt-icon.png",
-    apple: "/brand/umprompt-icon.png",
+    icon: [{ url: "/icon.png", sizes: "192x192", type: "image/png" }],
+    apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
 };
 
