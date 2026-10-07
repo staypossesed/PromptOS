@@ -6,6 +6,13 @@ Umprompt helps people describe what they want without learning prompt engineerin
 
 ## Product Experience
 
+- **Private library:** create and edit context profiles and reusable playbooks. Requires `supabase/workspace.sql`; there is no silent device-only fallback.
+- **Explicit profile sharing:** saving a profile is separate from applying it. Applying requires a preview/confirmation explaining Anthropic/OpenRouter sharing. Only the confirmed snapshot is included; playbooks do not embed profiles and analytics events exclude library content.
+- **Interactive results:** refine a prompt, preview/restore up to five previous versions, and prepare relevant next tasks without starting an automatic generation. Save the prompt to persist its version history.
+- **Value-based upgrades:** the builder offers an upgrade after a copy/save when two or fewer free generations remain. Refinements use the existing generation allowance; subscriptions and lifetime entitlements are unchanged.
+- **Continuous checkout:** return to the same task after upgrading or cancelling. Paid access is confirmed from Stripe's current payment/subscription state; the return screen does not assume a successful charge. See [payment verification](docs/payment-verification.md) for the outstanding isolated Stripe test purchase.
+- **Content-safe measurement:** explicit PostHog events cover refinements, library use, next tasks, copies, feedback, and upgrades. Autocapture and session recording are disabled to keep profile/prompt content out of analytics.
+
 - **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
 - **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
 - **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
@@ -69,6 +76,7 @@ For a new Supabase project, run the SQL files in the Supabase SQL editor in this
 5. `supabase/billing.sql`: customers, subscriptions, promo redemptions, and usage tracking.
 6. `supabase/generation-runs.sql`: generation diagnostics.
 7. `supabase/admin-audit-logs.sql`: audit records for administrative actions.
+8. `supabase/workspace.sql`: private context profiles and reusable playbooks.
 
 Review migrations before applying them to an existing database. Keep row-level security enabled. The service-role key is server-only and is required for administrative and billing synchronization operations.
 
@@ -149,7 +157,7 @@ The webhook route is `/api/stripe/webhook`. Its handler supports `checkout.sessi
 | `UPSTASH_REDIS_REST_URL` | Redis REST endpoint for shared rate limiting |
 | `UPSTASH_REDIS_REST_TOKEN` | Redis REST credential |
 
-The analytics wrapper tracks named events without adding prompt or answer text to event properties. Review PostHog project settings, autocapture, and session-recording configuration separately before launch. Account identification includes the signed-in user's ID and email.
+The analytics wrapper tracks named events without adding prompt, profile, or answer text to event properties. Autocapture and session recording are disabled in the client configuration; review privacy implications before enabling either. Account identification includes the signed-in user's ID and email.
 
 Configure both Upstash variables for shared limits across serverless instances. The in-memory fallback is suitable for local development, not reliable enforcement across production instances.
 
@@ -162,11 +170,14 @@ Configure both Upstash variables for shared limits across serverless instances. 
 | `npm run start` | Serve the production build locally |
 | `npm run lint` | Run the configured ESLint checks |
 | `npm test` | Run the offline regression suite |
+| `node scripts/check-workspace-ui.cjs` | Test desktop/mobile interactions against a running local dev server with synthetic API responses |
 | `npm run eval:outcomes -- --dry-run` | Inspect synthetic evaluation tasks without provider calls |
 | `npm run eval:outcomes -- --limit 2` | Run a limited, billable answer-outcome evaluation |
 | `node scripts/smoke-generation.cjs` | Run billable clarification and generation smoke checks |
 
-The regression suite covers suggestion relevance and rotation, localization, context validation, portable prompt assembly, safe auth redirects, and refreshed or cleared session cookies on normal responses and redirects.
+The regression suite covers suggestion relevance and rotation, localization, context validation, portable prompt assembly, safe auth redirects, refreshed or cleared session cookies, library ownership filters, profile consent, refinements, history, and contextual upgrade eligibility.
+
+The browser-check script creates temporary fixture routes and removes them when it finishes. It uses an isolated browser with mocked API responses: no signed-in user data, provider calls, or payments. Set `UI_SCREENSHOT_DIR` to retain desktop/mobile screenshots. Do not deploy while that test is running.
 
 Provider-backed scripts use synthetic tasks, not saved user prompts, and incur API usage. See [Answer Outcome Evaluation](docs/outcome-evaluation.md) for methodology and limitations. Do not present prompt scores or a small model-judged sample as proof of improved answers.
 
@@ -176,6 +187,9 @@ Provider-backed scripts use synthetic tasks, not saved user prompts, and incur A
 - Sign in with each enabled provider and confirm return to the intended app page.
 - Generate from both a clear request and an ambiguous idea; check follow-up answers and the skip path.
 - Copy, download, save, and reopen a prompt; verify text and context survive.
+- Create/edit/delete a profile; cancel and confirm its preview before generation.
+- Save a playbook, reuse it with new task details, and confirm it does not apply a profile automatically.
+- Refine a result, restore an earlier version, save/reopen its history, and check failed-request recovery.
 - Open optional quality review and test optimization separately.
 - Check pricing, account, feedback, history, and templates on desktop and a narrow mobile viewport.
 - Check keyboard navigation and reduced-motion behavior.
