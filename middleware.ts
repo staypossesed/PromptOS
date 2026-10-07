@@ -6,7 +6,7 @@ import { isAdminUser } from "@/lib/admin";
  * Routes that require an active session.
  * Any path that starts with these prefixes will be guarded.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/settings", "/templates", "/model-lab", "/admin"];
+const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/library", "/settings", "/templates", "/model-lab", "/admin"];
 
 /**
  * Routes that authenticated users should not see.

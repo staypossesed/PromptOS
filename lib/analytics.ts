@@ -13,6 +13,17 @@
 import posthog from "posthog-js";
 
 export type AnalyticsEvent =
+  | "workspace_create_opened"
+  | "checkout_completed"
+  | "checkout_failed"
+  | "checkout_cancelled"
+  | "checkout_verification_pending"
+  | "prompt_refined"
+  | "prompt_version_restored"
+  | "workspace_item_saved"
+  | "workspace_item_used"
+  | "workspace_item_deleted"
+  | "next_step_selected"
   | "category_selected"
   | "idea_suggestion_selected"
   | "clarification_shown"

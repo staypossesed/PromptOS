@@ -1,5 +1,7 @@
 import type { ToolId } from "@/lib/mock-data";
 import type { TaskCategory } from "@/lib/task-categories";
+import type { ContextProfile, PromptVersion } from "@/lib/workspace";
+import { parsePromptContext } from "@/lib/prompt-context";
 
 // ─── Score types (matches MOCK_SCORE shape) ────────────────────────────────
 
@@ -19,6 +21,9 @@ export interface PromptScore {
 // ─── Context stored as JSONB ───────────────────────────────────────────────
 
 export interface PromptContext {
+  profile?: ContextProfile & { id: string; name: string };
+  profileConsent?: boolean;
+  versions?: PromptVersion[];
   category?: TaskCategory;
   universal?: boolean;
   clarifications?: string;
@@ -104,6 +109,8 @@ export function validateCreateBody(
     return { valid: false, error: "Field 'generated_prompt' is required and must be a non-empty string." };
   }
 
+  const context = parsePromptContext(b.context);
+  if (context.error) return { valid: false, error: context.error };
   return {
     valid: true,
     data: {
@@ -111,9 +118,7 @@ export function validateCreateBody(
       target_tool: b.target_tool as ToolId,
       generated_prompt: (b.generated_prompt as string).trim(),
       title: typeof b.title === "string" && b.title.trim() ? b.title.trim() : undefined,
-      context: typeof b.context === "object" && b.context !== null
-        ? (b.context as PromptContext)
-        : {},
+      context: context.data,
       score: b.score != null ? (b.score as PromptScore) : null,
     },
   };
@@ -153,7 +158,9 @@ export function validateUpdateBody(
     data.generated_prompt = b.generated_prompt.trim();
   }
   if ("context" in b) {
-    data.context = (b.context as PromptContext) ?? {};
+    const context = parsePromptContext(b.context);
+    if (context.error) return { valid: false, error: context.error };
+    data.context = context.data;
   }
   if ("score" in b) {
     data.score = b.score != null ? (b.score as PromptScore) : null;
