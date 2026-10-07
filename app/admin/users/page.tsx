@@ -17,7 +17,7 @@ const SEGMENT_COLORS: Record<UserSegment, string> = {
   high_intent: "bg-clay-500/10 text-clay-700 border-clay-200/60",
   limit_reached: "bg-destructive/10 text-destructive border-destructive/20",
   checkout_started: "bg-amber-50 text-amber-700 border-amber-200/60",
-  active_free: "bg-blue-50 text-blue-700 border-blue-200/60",
+  active_free: "bg-zinc-100 text-zinc-700 border-zinc-200/60",
   tried_once: "bg-ink-100/60 text-ink-600 border-ink-200/40",
   new_signup: "bg-ink-100/40 text-ink-400 border-ink-200/30",
 };

@@ -97,7 +97,7 @@ export function OnboardingPanel({ onSelect }: OnboardingPanelProps) {
   if (!visible) return null;
 
   return (
-    <div className="rounded-2xl border border-clay-200/50 bg-gradient-to-br from-clay-50/50 to-cream-50/60 p-5 mb-5 relative card-soft">
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 mb-5 relative">
       <button
         onClick={dismiss}
         className="absolute top-3.5 right-3.5 text-ink-300 hover:text-ink-500 transition-colors"

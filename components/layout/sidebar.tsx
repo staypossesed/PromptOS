@@ -320,7 +320,7 @@ function NavLink({
         {label}
       </span>
       {badge && (
-        <span className="text-[10px] uppercase tracking-wider text-[#7A520E] bg-[#D9952F]/10 border border-[#D9952F]/30 rounded-full px-1.5 py-0.5">
+        <span className="text-[10px] uppercase tracking-wider text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-full px-1.5 py-0.5">
           {badge}
         </span>
       )}

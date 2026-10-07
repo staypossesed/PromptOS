@@ -20,7 +20,7 @@ export async function middleware(request: NextRequest) {
   // Create the Supabase middleware client.
   // IMPORTANT: we must await getUser() before returning supabaseResponse
   // so that any session-refresh cookies are written into the response.
-  const { supabase, supabaseResponse } = createMiddlewareClient(request);
+  const { supabase, getResponse } = createMiddlewareClient(request);
 
   // Refresh the session if a refresh token is stored.
   // getUser() is the only reliable way to verify the JWT server-side —
@@ -29,11 +29,24 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // Read the response after auth has refreshed or cleared the session cookies.
+  const supabaseResponse = getResponse();
+  function redirectWithSession(url: URL) {
+    const response = NextResponse.redirect(url);
+    supabaseResponse.cookies.getAll().forEach((cookie) => response.cookies.set(cookie));
+    // Session responses must not be shared by caches, including redirects.
+    for (const name of ["cache-control", "expires", "pragma"]) {
+      const value = supabaseResponse.headers.get(name);
+      if (value) response.headers.set(name, value);
+    }
+    return response;
+  }
+
   // ── Authenticated user hits a login-only page ──────────────────────────
   if (user && AUTH_ONLY_PATHS.some((p) => pathname.startsWith(p))) {
     const redirectUrl = request.nextUrl.clone();
-    redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+    redirectUrl.pathname = "/builder";
+    return redirectWithSession(redirectUrl);
   }
 
   // ── Unauthenticated user hits a protected page ─────────────────────────
@@ -41,15 +54,16 @@ export async function middleware(request: NextRequest) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/login";
     // Preserve the intended destination so we can redirect back after sign-in
-    redirectUrl.searchParams.set("next", pathname);
-    return NextResponse.redirect(redirectUrl);
+    redirectUrl.search = "";
+    redirectUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return redirectWithSession(redirectUrl);
   }
 
   // ── Authenticated non-admin hits /model-lab or /admin ───────────────────
   if (user && (pathname.startsWith("/model-lab") || pathname.startsWith("/admin")) && !isAdminUser(user.email)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
-    return NextResponse.redirect(redirectUrl);
+    return redirectWithSession(redirectUrl);
   }
 
   // ── All other cases: pass through with refreshed session cookies ────────

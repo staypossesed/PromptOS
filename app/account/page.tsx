@@ -75,7 +75,7 @@ export default async function AccountPage() {
               {billing.isPaid ? (
                 <div className="flex items-center justify-between">
                   <span className="text-sm text-ink-600">{t("billing.planStatus")}</span>
-                  <span className="text-sm font-medium text-green-700">{t("billing.planActive")}</span>
+                  <span className="text-sm font-medium text-emerald-700">{t("billing.planActive")}</span>
                 </div>
               ) : (
                 <>

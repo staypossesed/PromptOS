@@ -77,7 +77,7 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const score = await scorePrompt(b.generated_prompt, b.idea, b.target_tool);
+    const score = await scorePrompt(b.generated_prompt, b.idea, b.target_tool, b.universal === true);
     return NextResponse.json({ data: score });
   } catch (err) {
     if (err instanceof ProviderConfigError) {

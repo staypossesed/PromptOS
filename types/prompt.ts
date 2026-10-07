@@ -1,4 +1,5 @@
 import type { ToolId } from "@/lib/mock-data";
+import type { TaskCategory } from "@/lib/task-categories";
 
 // ─── Score types (matches MOCK_SCORE shape) ────────────────────────────────
 
@@ -18,6 +19,9 @@ export interface PromptScore {
 // ─── Context stored as JSONB ───────────────────────────────────────────────
 
 export interface PromptContext {
+  category?: TaskCategory;
+  universal?: boolean;
+  clarifications?: string;
   projectType?: string;
   audience?: string;
   constraints?: string;

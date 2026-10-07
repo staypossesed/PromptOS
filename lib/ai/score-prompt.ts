@@ -67,14 +67,15 @@ const SCORE_SCHEMA = jsonSchema<RawScoreResult>({
 export async function scorePrompt(
   generatedPrompt: string,
   idea: string,
-  targetTool: ToolId
+  targetTool: ToolId,
+  universal = false
 ): Promise<PromptScore> {
   const scoreModelId = process.env.SCORE_AI_MODEL ?? "claude-sonnet-4-6";
   const choice = resolveModel({ model: scoreModelId });
   const model = choice.config.factory();
   const profile = getToolProfile(targetTool);
 
-  const system = `You are a prompt quality evaluator for AI prompts targeting ${profile.displayName}.
+  const system = `You are a prompt quality evaluator for AI prompts targeting ${universal ? "a capable general-purpose AI assistant" : profile.displayName}.
 
 Score the prompt across these 6 dimensions. Be calibrated — not inflated:
 - 85-100  Excellent: this dimension is handled exceptionally well
@@ -88,7 +89,7 @@ Scoring context:
 - Original idea the prompt was built from: "${idea}"
 - Target tool: ${profile.displayName}
 
-For tool_fit, judge whether the structure, syntax, and conventions used in the prompt match what ${profile.displayName} responds to best.`;
+For tool_fit, ${universal ? "judge whether the prompt is portable, task-appropriate and easy to execute. Do not reward vendor syntax or length. Examples are unnecessary for many tasks; score their appropriateness, not their presence. Penalize invented facts and needless requirements. This score estimates prompt quality, not the quality of an actual answer." : `judge whether the structure, syntax, and conventions used in the prompt match what ${profile.displayName} responds to best.`}`;
 
   const user = `Score this ${profile.displayName} prompt:\n\n${generatedPrompt}`;
 

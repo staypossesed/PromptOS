@@ -1,11 +1,14 @@
 "use client";
 
 import { useEffect, useState, useCallback, useTransition } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
+import { ActionIcon } from "@/components/ui/action-icon";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
 import { IdeaInput } from "@/components/builder/idea-input";
-import { ToolSelector } from "@/components/builder/tool-selector";
+import { IdeaComposer } from "@/components/builder/idea-composer";
+import { composerCopy } from "@/lib/composer-copy";
 import { ContextPanel } from "@/components/builder/context-panel";
 import { PromptOutput } from "@/components/builder/prompt-output";
 import { ScorePanel } from "@/components/builder/score-panel";
@@ -14,7 +17,7 @@ import { PromptPackOutput } from "@/components/builder/prompt-pack-output";
 import { Button } from "@/components/ui/button";
 import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Layers, Crown } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { EXAMPLE_IDEAS, type ToolId } from "@/lib/mock-data";
+import { type ToolId } from "@/lib/mock-data";
 import type { PromptRecord } from "@/types/prompt";
 import type { PromptContext } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
@@ -23,7 +26,6 @@ import { Suspense } from "react";
 import { track } from "@/lib/analytics";
 import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
 import { TEMPLATES } from "@/lib/templates";
-import { OnboardingPanel } from "@/components/builder/onboarding-panel";
 import { PacksUpsell } from "@/components/builder/packs-upsell";
 import { UpgradeCTA } from "@/components/billing/upgrade-cta";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
@@ -33,6 +35,7 @@ import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
 function BuilderInner() {
+  const reducedMotion = useReducedMotion();
   const router = useRouter();
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
@@ -40,7 +43,7 @@ function BuilderInner() {
   const packId = searchParams.get("pack");
 
   // ── Mode ────────────────────────────────────────────────────────────────
-  const [mode, setMode] = useState<"single" | "pack">("single");
+  const [mode, setMode] = useState<"single" | "pack">(searchParams.get("mode") === "pack" ? "pack" : "single");
 
   // ── Core builder state ──────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
@@ -64,9 +67,6 @@ function BuilderInner() {
   const [packResult, setPackResult] = useState<PromptPack | null>(null);
   const [isGeneratingPack, setIsGeneratingPack] = useState(false);
   const [packError, setPackError] = useState<string | null>(null);
-
-  // ── Tab state (mobile) ──────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState<"prompt" | "score">("prompt");
 
   // ── Async operation states ──────────────────────────────────────────────
   const [isLoading, setIsLoading] = useState(false);
@@ -92,12 +92,23 @@ function BuilderInner() {
   }
 
   const { t, language } = useTranslations();
+  const copy = composerCopy(language);
   const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
 
   // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
     track("builder_opened");
-  }, []);
+    if (promptId || templateId || packId) return;
+    try {
+      const draft = sessionStorage.getItem("ump:idea_draft");
+      if (draft) {
+        const parsed = JSON.parse(draft);
+        if (typeof parsed.idea === "string") setIdea(parsed.idea.slice(0, 4000));
+        if (parsed.context && typeof parsed.context === "object") setContext(parsed.context);
+        sessionStorage.removeItem("ump:idea_draft");
+      }
+    } catch { /* A malformed draft must not prevent opening the builder. */ }
+  }, [promptId, templateId, packId]);
 
   // ── Prefill from Model Lab "Use this output" ──────────────────────────────
   // Reads sessionStorage once on mount. Runs before other load effects so that
@@ -227,18 +238,17 @@ function BuilderInner() {
   // ── Score helper (shared by generate flow, manual retry, and optimize) ─────
   const runScoring = useCallback(async (
     prompt: string,
-    opts?: { idea?: string; tool?: ToolId }
+    opts?: { idea?: string; tool?: ToolId; universal?: boolean }
   ): Promise<import("@/types/prompt").PromptScore | null> => {
     const effectiveIdea = opts?.idea ?? idea;
     const effectiveTool = opts?.tool ?? tool;
     setScoreError(null);
     setIsScoring(true);
-    setActiveTab("score");
     try {
       const res = await fetch("/api/prompts/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ generated_prompt: prompt, idea: effectiveIdea, target_tool: effectiveTool }),
+        body: JSON.stringify({ generated_prompt: prompt, idea: effectiveIdea, target_tool: effectiveTool, universal: opts?.universal ?? context.universal }),
       });
       if (res.ok) {
         const { data } = await res.json();
@@ -256,7 +266,7 @@ function BuilderInner() {
     } finally {
       setIsScoring(false);
     }
-  }, [idea, tool]);
+  }, [idea, tool, context.universal]);
 
   // ── Manual retry (called from ScorePanel error state) ────────────────────
   const handleRetryScore = useCallback(() => {
@@ -362,12 +372,14 @@ function BuilderInner() {
   }, [idea, packType, context, language, isGeneratingPack, savedPackId, t]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
-  const handleGenerate = useCallback(async () => {
+  const handleGenerate = useCallback(async (nextContext?: PromptContext) => {
     if (!idea.trim()) {
       showToast("error", t("builder.addIdeaFirst"));
       return;
     }
-    if (isGenerating || isScoring) return;
+    if (isGenerating || isScoring || isOptimizing) return;
+    const effectiveContext = nextContext ?? { ...context, universal: true, category: context.category ?? "auto" };
+    setContext(effectiveContext);
 
     const outputLanguage = detectTextLanguage(idea, language);
     track("prompt_language_detected", { inputLanguage: outputLanguage, outputLanguage } as never);
@@ -378,13 +390,12 @@ function BuilderInner() {
     setScoreError(null);
     setIsSaved(false);
     setGenerateRequestId(null);
-    setActiveTab("prompt");
 
     try {
       const res = await fetch("/api/prompts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, target_tool: tool, context, outputLanguage }),
+        body: JSON.stringify({ idea, target_tool: tool, context: effectiveContext, outputLanguage }),
       });
 
       if (!res.ok) {
@@ -421,6 +432,10 @@ function BuilderInner() {
         setGeneratedPrompt(accumulated);
       }
 
+      accumulated += decoder.decode();
+      if (!accumulated.trim()) throw new Error("No prompt was returned. Please try again.");
+      setGeneratedPrompt(accumulated);
+
       // Capture request_id from header for linking to saved prompt
       const reqId = res.headers.get("X-Request-Id");
       if (reqId) setGenerateRequestId(reqId);
@@ -429,14 +444,14 @@ function BuilderInner() {
       setIsGenerating(false);
       track("prompt_generated", { target_tool: tool });
       window.dispatchEvent(new Event("prompt_usage_refresh"));
-      await runScoring(accumulated);
+      await runScoring(accumulated, { universal: effectiveContext.universal });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Generation failed.";
       showToast("error", message);
     } finally {
       setIsGenerating(false); // safety reset if streaming itself threw
     }
-  }, [idea, tool, context, language, isGenerating, isScoring, runScoring, t]);
+  }, [idea, tool, context, language, isGenerating, isScoring, isOptimizing, runScoring, t]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = useCallback(() => {
@@ -594,7 +609,7 @@ function BuilderInner() {
     : t("builder.untitledPrompt");
 
   return (
-    <AppShell>
+    <AppShell modern>
       <Topbar
         breadcrumb={[
           { label: t("nav.workspace") },
@@ -627,11 +642,7 @@ function BuilderInner() {
                   onClick={handleSavePack}
                   disabled={isSavingPack || isLoading || isGeneratingPack || !packResult}
                 >
-                  {isSavingPack ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Save className="size-3.5" />
-                  )}
+                  <ActionIcon pending={isSavingPack} success={isPackSaved} icon={Save} />
                   {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
                 </Button>
               </>
@@ -659,11 +670,7 @@ function BuilderInner() {
                   onClick={handleSave}
                   disabled={isSaving || isLoading || isGenerating || isScoring || isOptimizing || !generatedPrompt}
                 >
-                  {isSaving ? (
-                    <Loader2 className="size-3.5 animate-spin" />
-                  ) : (
-                    <Save className="size-3.5" />
-                  )}
+                  <ActionIcon pending={isSaving} success={isSaved} icon={Save} />
                   {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
                 </Button>
               </>
@@ -673,10 +680,13 @@ function BuilderInner() {
       />
 
       {/* Toast notification */}
+      <AnimatePresence>
       {toast && (
-        <div
+        <motion.div role="status"
+          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
+          transition={{ duration: reducedMotion ? 0 : 0.18 }}
           className={cn(
-            "fixed bottom-5 right-5 z-50 flex items-center gap-2.5 rounded-2xl border px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-sm transition-all",
+            "fixed bottom-5 right-5 z-50 flex max-w-[calc(100vw-2.5rem)] items-center gap-2.5 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-sm",
             toast.kind === "success"
               ? "border-sage-200 bg-card text-ink-800"
               : "border-destructive/20 bg-card text-destructive"
@@ -688,24 +698,25 @@ function BuilderInner() {
             <AlertCircle className="size-4 shrink-0" />
           )}
           {toast.message}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
-      <main className="flex-1 px-4 md:px-8 lg:px-10 py-6 md:py-8">
-        <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+      <main className="flex-1 px-4 md:px-8 lg:px-10 py-8 md:py-12">
+        <div className="mx-auto mb-8 flex max-w-3xl flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-serif text-2xl md:text-3xl tracking-tight text-ink-900 leading-tight">
-              {mode === "pack" ? t("builder.packTitle") : savedId ? t("builder.editTitle") : t("builder.title")}
+            <h1 className="font-serif text-2xl md:text-3xl text-zinc-900 leading-tight">
+              {mode === "pack" ? t("builder.packTitle") : copy.title}
             </h1>
             <p className="text-sm text-ink-400 mt-1">
               {mode === "pack"
                 ? t("builder.packSubtitle")
-                : t("builder.subtitle")}
+                : copy.subtitle}
             </p>
           </div>
 
           {/* Mode toggle */}
-          <div className="flex p-1 bg-cream-100 rounded-full border border-ink-100/60 shrink-0 gap-0.5">
+          <div className="flex p-1 bg-white rounded-md border border-zinc-200 shrink-0 gap-0.5">
             <button
               type="button"
               onClick={() => setMode("single")}
@@ -736,16 +747,6 @@ function BuilderInner() {
             </button>
           </div>
         </div>
-
-        {!isLoading && !promptId && !templateId && !idea && mode === "single" && (
-          <OnboardingPanel
-            onSelect={(newIdea, newTool, newContext) => {
-              setIdea(newIdea);
-              setTool(newTool);
-              setContext(newContext);
-            }}
-          />
-        )}
 
         {isLoading || (mode === "pack" && usageLoading) ? (
           <BuilderSkeleton />
@@ -779,11 +780,7 @@ function BuilderInner() {
                 onClick={handleSavePack}
                 disabled={isSavingPack || isGeneratingPack || !packResult}
               >
-                {isSavingPack ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Save className="size-4" />
-                )}
+                <ActionIcon pending={isSavingPack} success={isPackSaved} icon={Save} />
                 {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
               </Button>
             </div>
@@ -792,115 +789,19 @@ function BuilderInner() {
             </div>
           </div>
         ) : (
-          /* ── Single mode layout ───────────────────────────────────────── */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            {/* Left: input column */}
-            <div className="lg:col-span-4 space-y-5">
-              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 space-y-5">
-                <IdeaInput value={idea} onChange={setIdea} />
-
-                {/* Example chips */}
-                <div className="space-y-2">
-                  <div className="text-[11px] font-medium text-ink-400 uppercase tracking-wider">
-                    {t("builder.tryExample")}
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {EXAMPLE_IDEAS.map((example) => (
-                      <button
-                        key={example}
-                        onClick={() => setIdea(example)}
-                        className="text-[11px] text-ink-600 bg-cream-100 hover:bg-cream-200 border border-ink-100 rounded-full px-2.5 py-1 transition-colors"
-                      >
-                        {example}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <ToolSelector value={tool} onChange={setTool} />
-                <ContextPanel value={context} onChange={setContext} />
-              </div>
-
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleGenerate}
-                disabled={!idea.trim() || isGenerating || isScoring || isOptimizing}
-              >
-                {isGenerating ? (
-                  <><Loader2 className="size-4 animate-spin" />{t("builder.generating")}</>
-                ) : isScoring ? (
-                  <><Loader2 className="size-4 animate-spin" />{t("builder.scoring")}</>
-                ) : isOptimizing ? (
-                  <><Loader2 className="size-4 animate-spin" />{t("builder.optimizing")}</>
-                ) : (
-                  <><Wand2 className="size-4" />{generatedPrompt ? t("builder.regenerate") : t("builder.generatePrompt")}</>
-                )}
-              </Button>
-
-              {/* Mobile save button */}
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full md:hidden"
-                onClick={handleSave}
-                disabled={isSaving || isGenerating || isScoring || isOptimizing || !generatedPrompt}
-              >
-                {isSaving ? (
-                  <Loader2 className="size-4 animate-spin" />
-                ) : (
-                  <Save className="size-4" />
-                )}
-                {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
-              </Button>
-            </div>
-
-            {/* Mobile: tab switcher */}
-            <div className="lg:hidden">
-              <div className="flex p-1 bg-cream-100 rounded-full mb-4 border border-ink-100/60">
-                <TabButton active={activeTab === "prompt"} onClick={() => setActiveTab("prompt")}>
-                  {t("builder.tabPrompt")}
-                </TabButton>
-                <TabButton active={activeTab === "score"} onClick={() => setActiveTab("score")}>
-                  {t("builder.tabScore")}{score ? ` · ${score.overall}` : ""}
-                </TabButton>
-              </div>
-              <div className="min-h-[500px] h-[65vh]">
-                {activeTab === "prompt" ? (
-                  <PromptOutput
-                    prompt={generatedPrompt}
-                    targetTool={tool}
-                    isSaved={isSaved}
-                    isGenerating={isGenerating}
-                    isOptimizing={isOptimizing}
-                    onRegenerate={handleGenerate}
-                  />
-                ) : (
-                  <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />
-                )}
-              </div>
-            </div>
-
-            {/* Desktop: two columns */}
-            <div className="hidden lg:block lg:col-span-5 h-[calc(100vh-13rem)] sticky top-24">
-              <PromptOutput
-                prompt={generatedPrompt}
-                targetTool={tool}
-                isSaved={isSaved}
-                isGenerating={isGenerating}
-                isOptimizing={isOptimizing}
-                onRegenerate={handleGenerate}
-              />
-            </div>
-            <div className="hidden lg:block lg:col-span-3 h-[calc(100vh-13rem)] sticky top-24">
-              <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />
-            </div>
-          </div>
+          <IdeaComposer idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
+            onGenerate={handleGenerate} busy={isGenerating || isScoring || isOptimizing}
+            generating={isGenerating || isOptimizing} hasResult={!!generatedPrompt.trim()}
+            onSave={handleSave} saving={isSaving} saved={isSaved}
+            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal isSaved={isSaved} isGenerating={isGenerating} isOptimizing={isOptimizing} onRegenerate={() => void handleGenerate()} />}
+            quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />}
+          />
         )}
+
 
         {/* Upgrade CTA — after save (higher priority) or after first generate */}
         {!isPaid && !usageLoading && mode === "single" && generatedPrompt && !isGenerating && !isScoring && (
-          <div className="mt-6 max-w-lg">
+          <div className="mx-auto mt-6 max-w-3xl">
             {isSaved ? (
               <UpgradeCTA
                 variant="saved_prompt"
@@ -934,28 +835,6 @@ function BuilderSkeleton() {
         <div className="rounded-2xl bg-cream-100 h-[calc(100vh-13rem)]" />
       </div>
     </div>
-  );
-}
-
-function TabButton({
-  children,
-  active,
-  onClick,
-}: {
-  children: React.ReactNode;
-  active: boolean;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={cn(
-        "flex-1 text-sm font-medium py-2 rounded-full transition-all",
-        active ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
-      )}
-    >
-      {children}
-    </button>
   );
 }
 

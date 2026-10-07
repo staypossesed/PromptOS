@@ -32,7 +32,6 @@ export function EmptyState() {
   return (
     <div className="relative rounded-3xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       <div className="absolute inset-0 bg-dotgrid opacity-30 pointer-events-none" />
-      <div className="absolute -top-24 left-1/2 -translate-x-1/2 size-72 rounded-full bg-clay-200/25 blur-3xl pointer-events-none" />
 
       <div className="relative px-8 pt-12 pb-10 md:px-14 md:pt-16 md:pb-12">
         <div className="max-w-lg mx-auto text-center mb-10">

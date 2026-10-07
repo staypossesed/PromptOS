@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { X, Home, Wand2, History, Sparkles, User, HelpCircle, Plus, Shield, FileText } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
@@ -17,6 +17,7 @@ interface MobileNavProps {
 export function MobileNav({ open, onClose }: MobileNavProps) {
   const pathname = usePathname();
   const { t } = useTranslations();
+  const reducedMotion = useReducedMotion();
 
   const NAV = [
     { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
@@ -37,7 +38,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18 }}
             className="fixed inset-0 z-40 bg-ink-900/30 backdrop-blur-sm lg:hidden"
             onClick={onClose}
           />
@@ -45,8 +46,8 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
             initial={{ x: "-100%" }}
             animate={{ x: 0 }}
             exit={{ x: "-100%" }}
-            transition={{ type: "spring", damping: 28, stiffness: 280 }}
-            className="fixed left-0 top-0 z-50 flex h-screen w-72 flex-col bg-cream-50 border-r border-ink-100 lg:hidden"
+            transition={{ duration: reducedMotion ? 0 : 0.22, ease: "easeOut" }}
+            className="fixed left-0 top-0 z-50 flex h-screen w-72 max-w-[calc(100vw-1rem)] flex-col bg-cream-50 border-r border-ink-100 lg:hidden"
           >
             <div className="flex h-16 items-center justify-between px-5 border-b border-ink-100/60">
               <Logo />

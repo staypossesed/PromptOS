@@ -406,7 +406,7 @@ export default function ModelLabPage() {
                           <div className="flex items-center gap-1.5">
                             <div className="text-sm font-medium text-ink-800">{m.label}</div>
                             {m.experimental && (
-                              <span className="text-[10px] font-medium bg-[#D9952F]/10 text-[#7A520E] border border-[#D9952F]/30 rounded-full px-1.5 py-0.5 leading-none">
+                              <span className="text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full px-1.5 py-0.5 leading-none">
                                 Experimental
                               </span>
                             )}

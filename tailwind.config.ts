@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+import colors from "tailwindcss/colors";
 
 const config: Config = {
   darkMode: ["class"],
@@ -21,50 +22,27 @@ const config: Config = {
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       colors: {
-        // Cream / off-white surfaces
+        // Compatibility names keep existing pages on the shared neutral/green palette.
         cream: {
-          50: "#FFFDF8",   // soft warm surface (#FFFDF8)
-          100: "#F7F2EA",  // background cream (#F7F2EA)
-          200: "#EFE7D9",
-          300: "#E4D8C4",
+          50: colors.white,
+          100: colors.zinc[100],
+          200: colors.zinc[200],
+          300: colors.zinc[300],
         },
-        // Warm clay — primary brand color
-        clay: {
-          50: "#FBF1EC",
-          100: "#F5DDD0",
-          200: "#EBBBA1",
-          300: "#DC9670",
-          400: "#CC7849",
-          500: "#BD5A2C",  // primary clay (#BD5A2C)
-          600: "#A84E26",  // hover clay (#A84E26)
-          700: "#843E1C",
-          800: "#612B14",
-          900: "#421D0E",
-        },
-        // Charcoal ink — text
+        clay: { ...colors.emerald, 500: colors.emerald[700], 600: colors.emerald[800] },
         ink: {
-          50: "#F5F3EF",
-          100: "#E6DDD2",  // soft border (#E6DDD2)
-          200: "#C7C2B8",
-          300: "#9B958A",
-          400: "#6F6760",  // muted text (#6F6760)
-          500: "#4A453C",
-          600: "#332F28",
-          700: "#26231D",
-          800: "#1C1814",  // dark ink (#1C1814)
-          900: "#13110D",
+          50: colors.zinc[100],
+          100: colors.zinc[200],
+          200: colors.zinc[300],
+          300: colors.zinc[400],
+          400: colors.zinc[500],
+          500: colors.zinc[600],
+          600: colors.zinc[700],
+          700: colors.zinc[800],
+          800: colors.zinc[900],
+          900: colors.zinc[950],
         },
-        // Sage — success / saved states
-        sage: {
-          50: "#EEF3ED",
-          100: "#D8E9D6",
-          200: "#B3D0B0",
-          300: "#8DB88A",
-          400: "#7CA878",
-          500: "#7C9278",  // primary sage (#7C9278)
-          600: "#697F66",
-          700: "#556653",
-        },
+        sage: colors.emerald,
         // shadcn semantic tokens
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",

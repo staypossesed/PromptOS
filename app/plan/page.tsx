@@ -119,7 +119,7 @@ export default function PlanPage() {
 
         {/* Header */}
         <div className="mb-10 text-center">
-          <h1 className="font-serif text-3xl md:text-4xl tracking-tight text-ink-900 mb-3">
+          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 mb-3">
             {t("billing.planTitle")}
           </h1>
           <p className="text-ink-500 text-[15px]">{t("billing.planSubtitle")}</p>
@@ -127,10 +127,9 @@ export default function PlanPage() {
 
         {/* Auto-applied founder unlock notice */}
         {promoAutoApplied && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl border border-clay-500/30 bg-clay-500/8 px-4 py-3 text-sm text-clay-800">
-            <Crown className="size-4 shrink-0 text-clay-600" />
-            <span className="font-medium">Founder prices unlocked.</span>
-            <span className="text-clay-600">You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</span>
+          <div className="mb-6 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <Crown className="size-4 shrink-0 mt-0.5 text-emerald-700" />
+            <p><span className="font-semibold">Founder prices unlocked.</span>{" "}You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</p>
           </div>
         )}
 
@@ -143,16 +142,16 @@ export default function PlanPage() {
         )}
 
         {/* Founder banner */}
-        <div className="mb-8 rounded-2xl border border-clay-500/30 bg-clay-500/5 px-5 py-4">
+        <div className="mb-8 border-y border-border py-5">
           <div className="flex items-start gap-3">
-            <div className="size-8 rounded-xl bg-clay-500/10 flex items-center justify-center shrink-0 mt-0.5">
+            <div className="size-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
               <Crown className="size-4 text-clay-600" />
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-clay-800 mb-1">
+              <p className="text-sm font-semibold text-ink-800 mb-1">
                 {t("billing.founderBanner")}
               </p>
-              <p className="text-xs text-clay-600">
+              <p className="text-xs text-ink-500">
                 {t("billing.featureFirstHundred")}
                 {spotsLeft !== null && ` — ${spotsLeft} ${t("billing.founderSpotsLeft")}`}
               </p>
@@ -160,14 +159,15 @@ export default function PlanPage() {
           </div>
 
           {/* Promo code input */}
-          <div className="mt-4 flex items-center gap-2">
+          <div className="mt-4 flex items-center gap-2 max-w-sm">
             <input
               type="text"
               value={promoInput}
               onChange={(e) => { setPromoInput(e.target.value); setPromoError(false); }}
               onKeyDown={(e) => e.key === "Enter" && applyPromo()}
               placeholder={t("billing.promoCodePlaceholder")}
-              className="flex-1 h-9 rounded-lg border border-ink-200 bg-white px-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-clay-500/30 focus:border-clay-500"
+              aria-label={t("billing.promoCodePlaceholder")}
+              className="flex-1 min-w-0 h-9 rounded-lg border border-ink-200 bg-white px-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-clay-500/30 focus:border-clay-500"
             />
             <Button
               variant="outline"
@@ -179,7 +179,7 @@ export default function PlanPage() {
             </Button>
           </div>
           {promoApplied && (
-            <p className="mt-2 text-xs text-green-700 flex items-center gap-1">
+            <p className="mt-2 text-xs text-emerald-700 flex items-center gap-1">
               <Check className="size-3.5" />
               {t("billing.codeApplied")}
             </p>
@@ -306,17 +306,17 @@ function PricingCard({
 
   return (
     <div
-      className={`rounded-2xl border p-5 flex flex-col ${
+      className={`rounded-lg border p-5 flex flex-col ${
         isPrimary
-          ? "border-clay-500/40 bg-clay-500/5 ring-1 ring-clay-500/20"
+          ? "border-emerald-600 bg-white ring-1 ring-emerald-600"
           : isAccent
-          ? "border-ink-900/20 bg-ink-900/[0.03]"
+          ? "border-ink-200 bg-white"
           : "border-ink-100/70 bg-card card-soft"
       }`}
     >
-      <div className="flex items-start justify-between mb-4">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-start justify-between gap-2 mb-4">
+        <div className="min-w-0">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
             <h3 className="text-sm font-semibold text-ink-800">{name}</h3>
             {founderBadge && (
               <span className="text-[10px] uppercase tracking-wider text-clay-700 bg-clay-500/10 border border-clay-500/20 rounded-full px-1.5 py-0.5 font-medium flex items-center gap-0.5">
@@ -350,7 +350,7 @@ function PricingCard({
       <ul className="space-y-2 mb-6 flex-1">
         {features.map((f) => (
           <li key={f} className="flex items-center gap-2 text-sm text-ink-600">
-            <Check className="size-3.5 text-green-600 shrink-0" />
+            <Check className="size-3.5 text-emerald-700 shrink-0" />
             {f}
           </li>
         ))}

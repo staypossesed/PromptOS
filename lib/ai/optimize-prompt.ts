@@ -103,7 +103,7 @@ export async function optimizePrompt(input: OptimizeInput): Promise<string> {
       ? `\nLanguage: Preserve the language of the original prompt (${input.outputLanguage}). Keep code identifiers, API names, file paths, and technical terms in English.\n`
       : "";
 
-  const system = `You are an expert prompt engineer. Your task is to produce a substantially improved version of a prompt targeting ${profile.displayName}.
+  const system = context?.universal ? `Improve this portable AI request for the actual task. Preserve all user facts and intent. Fix ambiguity and missing deliverable instructions only when useful. Never invent facts, examples of user data, file paths, constraints or evidence. Mark optional defaults as assumptions. Do not force a persona or vendor-specific template, inflate length or optimize merely to raise a numeric score. Output ONLY the improved prompt.${langInstruction}` : `You are an expert prompt engineer. Your task is to produce a substantially improved version of a prompt targeting ${profile.displayName}.
 ${langInstruction}
 
 The improvement must be visible and meaningful. A reviewer reading both versions should immediately notice concrete additions and clarifications — not just minor rephrasing.
@@ -160,7 +160,7 @@ Write the improved prompt now. Make each weak dimension clearly better — not a
   // to make bolder changes.
 
   const sim = jaccardSimilarity(generated_prompt, improved);
-  if (sim > 0.88) {
+  if (sim > 0.88 && !context?.universal) {
     const retryUser = `${user}
 
 NOTE: Your previous attempt had ${Math.round(sim * 100)}% word overlap with the original — the improvement is not visible enough. You must add substantial new content to every weak dimension above. Add real examples, explicit constraints, concrete context, and exact output format specifications. Produce a clearly superior version now:`;

@@ -6,14 +6,15 @@ import "@fontsource-variable/bricolage-grotesque";
 import "./globals.css";
 import { cookies } from "next/headers";
 import { PostHogProvider } from "@/components/providers/posthog-provider";
+import { MotionProvider } from "@/components/providers/motion-provider";
 import { LanguageProvider } from "@/lib/i18n/language-provider";
 import { isSupportedLanguage } from "@/types/language";
 import { LANGUAGE_COOKIE_KEY, DEFAULT_LANGUAGE } from "@/lib/i18n/config";
 
 export const metadata: Metadata = {
-  title: "Umprompt — From rough ideas to perfect AI prompts",
+  title: "Umprompt — Turn rough ideas into ready-to-use AI prompts",
   description:
-    "Generate, score, optimize, and save execution-ready prompts for Claude, Cursor, and ChatGPT.",
+    "Turn messy ideas into clear AI requests for writing, coding, research, everyday tasks and more. Start with an idea; Umprompt handles the structure.",
   icons: {
     icon: "/brand/umprompt-icon.png",
     apple: "/brand/umprompt-icon.png",
@@ -37,7 +38,7 @@ export default async function RootLayout({
     >
       <body className="bg-paper antialiased text-ink-900 min-h-screen">
         <PostHogProvider>
-          <LanguageProvider>{children}</LanguageProvider>
+          <MotionProvider><LanguageProvider>{children}</LanguageProvider></MotionProvider>
         </PostHogProvider>
       </body>
     </html>

@@ -2,7 +2,7 @@
 
 import { TOOLS, ToolId } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { useTranslations } from "@/lib/i18n/use-translations";
 
 // Map tool id to the dictionary key for the description
@@ -18,6 +18,7 @@ interface ToolSelectorProps {
 }
 
 export function ToolSelector({ value, onChange }: ToolSelectorProps) {
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslations();
 
   return (
@@ -45,6 +46,7 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
                   <motion.div
                     initial={{ scale: 0 }}
                     animate={{ scale: 1 }}
+                    transition={{ duration: reducedMotion ? 0 : 0.16 }}
                     className={cn("size-2 rounded-full", TOOL_DOT[tool.id as ToolId])}
                   />
                 )}
@@ -70,13 +72,13 @@ export function ToolSelector({ value, onChange }: ToolSelectorProps) {
 
 const TOOL_DOT: Record<ToolId, string> = {
   claude:  "bg-clay-500",
-  cursor:  "bg-blue-400",
+  cursor:  "bg-emerald-600",
   chatgpt: "bg-emerald-500",
 };
 
 function ToolIcon({ id, active }: { id: ToolId; active: boolean }) {
   const base = "size-7 rounded-lg flex items-center justify-center transition-colors";
-  const stroke = active ? "#A24A22" : "#6E685D";
+  const stroke = active ? "#047857" : "#71717a";
   const bg = active ? "bg-clay-500/12" : "bg-cream-100";
 
   if (id === "claude") {

@@ -54,11 +54,11 @@ export default function PlanSuccessPage() {
     <div className="min-h-screen bg-paper flex items-center justify-center p-4">
       <div className="w-full max-w-md text-center">
         <div className="flex justify-center mb-6">
-          <div className="size-16 rounded-full bg-green-500/10 flex items-center justify-center">
+          <div className="size-16 rounded-lg bg-emerald-50 flex items-center justify-center">
             {isLoading ? (
-              <Loader2 className="size-8 text-green-600 animate-spin" />
+              <Loader2 className="size-8 text-emerald-700 animate-spin" />
             ) : (
-              <CheckCircle className="size-8 text-green-600" />
+              <CheckCircle className="size-8 text-emerald-700" />
             )}
           </div>
         </div>

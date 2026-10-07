@@ -25,6 +25,7 @@ import { createClient } from "@/lib/supabase/server";
 import { streamGeneratedPrompt, type GenerateInput } from "@/lib/ai/generate-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
+import { parsePromptContext } from "@/lib/prompt-context";
 import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
 import {
   newRequestId,
@@ -59,16 +60,15 @@ function validateBody(
   if (typeof b.provider === "string") modelOverride.provider = b.provider;
   if (typeof b.model === "string") modelOverride.model = b.model;
   const hasOverride = Object.keys(modelOverride).length > 0;
+  const context = parsePromptContext(b.context);
+  if (context.error) return { valid: false, error: context.error };
 
   return {
     valid: true,
     data: {
       idea: (b.idea as string).trim(),
       target_tool: b.target_tool,
-      context:
-        typeof b.context === "object" && b.context !== null
-          ? (b.context as GenerateInput["context"])
-          : undefined,
+      context: context.data,
       modelOverride: hasOverride ? modelOverride : undefined,
       outputLanguage: typeof b.outputLanguage === "string" ? b.outputLanguage : undefined,
     },

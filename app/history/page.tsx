@@ -181,7 +181,6 @@ export default async function HistoryPage({
                 {packs.length === 0 ? (
                   <div className="relative rounded-3xl border border-ink-100/70 bg-card card-soft overflow-hidden">
                     <div className="absolute inset-0 bg-dotgrid opacity-40 pointer-events-none" />
-                    <div className="absolute -top-32 -right-32 size-64 rounded-full bg-clay-200/40 blur-3xl pointer-events-none" />
                     <div className="relative p-10 md:p-14 text-center max-w-lg mx-auto">
                       <div className="size-12 rounded-2xl bg-clay-500/10 mx-auto mb-5 flex items-center justify-center">
                         <Layers className="size-5 text-clay-600" />

@@ -256,18 +256,16 @@ export default function DemoPage() {
         </Step>
 
         {/* CTA */}
-        <div className="mt-14 rounded-3xl bg-gradient-to-br from-clay-500 via-clay-600 to-clay-700 p-10 md:p-14 text-center relative overflow-hidden">
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(255,255,255,0.18),transparent_60%)] pointer-events-none" />
-          <h2 className="font-serif text-3xl md:text-4xl text-white tracking-tight leading-tight mb-3">
+        <div className="mt-14 border-t border-border py-10 md:py-14 text-center">
+          <h2 className="font-serif text-3xl md:text-4xl text-ink-900 leading-tight mb-3">
             Try it with your own idea.
           </h2>
-          <p className="text-clay-50/90 mb-7 max-w-sm mx-auto">
+          <p className="text-ink-500 mb-7 max-w-sm mx-auto">
             Free to start. 7 prompts/week. Built for Claude, Cursor, and ChatGPT.
           </p>
           <Button
             asChild
             size="lg"
-            className="bg-white text-clay-700 hover:bg-cream-50 shadow-xl"
           >
             <Link href="/builder">
               Open the builder

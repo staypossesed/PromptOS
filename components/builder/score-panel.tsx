@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useReducedMotion } from "framer-motion";
 import { AlertTriangle, Loader2, RefreshCw, TrendingUp, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -96,7 +96,7 @@ export function ScorePanel({
     <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
       {/* Header with overall score */}
       <div className="relative px-5 pt-5 pb-4 border-b border-ink-100/60 overflow-hidden">
-        <div className="absolute inset-0 bg-gradient-to-br from-clay-50 via-cream-50 to-cream-100 opacity-60 pointer-events-none" />
+        <div className="absolute inset-0 bg-zinc-50 pointer-events-none" />
         <div className="relative">
           <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.12em] text-ink-400">
@@ -154,6 +154,7 @@ function ScoreDimensionRow({
   dim: PromptScore["dimensions"][number];
   delay: number;
 }) {
+  const reducedMotion = useReducedMotion();
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between gap-2">
@@ -166,7 +167,7 @@ function ScoreDimensionRow({
         <motion.div
           initial={{ width: 0 }}
           animate={{ width: `${dim.score}%` }}
-          transition={{ duration: 0.65, delay, ease: [0.16, 1, 0.3, 1] }}
+          transition={{ duration: reducedMotion ? 0 : 0.25, delay: reducedMotion ? 0 : Math.min(delay, 0.1), ease: "easeOut" }}
           className={cn("h-full rounded-full", scoreBar(dim.score))}
         />
       </div>

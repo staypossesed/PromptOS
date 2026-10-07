@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { X, Zap, Crown, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -12,6 +13,7 @@ interface PaywallModalProps {
 }
 
 export function PaywallModal({ open, onClose }: PaywallModalProps) {
+  const reducedMotion = useReducedMotion();
   const { t } = useTranslations();
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
@@ -19,8 +21,6 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
   useEffect(() => {
     if (open) track("free_limit_reached");
   }, [open]);
-
-  if (!open) return null;
 
   async function startCheckout(offerType: "monthly" | "lifetime") {
     setLoading(offerType);
@@ -51,7 +51,9 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <AnimatePresence>
+    {open && <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+      transition={{ duration: reducedMotion ? 0 : 0.18 }} className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-ink-900/40 backdrop-blur-sm"
@@ -59,7 +61,9 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
       />
 
       {/* Modal */}
-      <div className="relative w-full max-w-md rounded-2xl border border-ink-100/70 bg-card shadow-2xl p-6">
+      <motion.div initial={{ opacity: 0, y: 8, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 4, scale: 0.98 }} transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
+        className="relative w-full max-w-md rounded-lg border border-ink-100/70 bg-card shadow-2xl p-6">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 rounded-lg p-1.5 text-ink-400 hover:text-ink-700 hover:bg-cream-100 transition-colors"
@@ -149,8 +153,9 @@ export function PaywallModal({ open, onClose }: PaywallModalProps) {
           <Clock className="size-3.5" />
           {t("billing.paywallMaybeLater")}
         </button>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>}
+    </AnimatePresence>
   );
 }
 

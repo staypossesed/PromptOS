@@ -8,7 +8,7 @@ import type { PromptSummary } from "@/types/prompt";
 
 const TOOL_META: Record<string, { label: string; dot: string }> = {
   claude:  { label: "Claude",  dot: "bg-clay-500" },
-  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  cursor:  { label: "Cursor",  dot: "bg-emerald-600" },
   chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
 };
 

@@ -3,7 +3,7 @@
 import { ChevronDown, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import type { PromptContext } from "@/types/prompt";
 import { useState } from "react";
@@ -14,7 +14,7 @@ interface ContextPanelProps {
   onChange: (next: PromptContext) => void;
 }
 
-type ContextFieldKey = keyof PromptContext;
+type ContextFieldKey = "projectType" | "audience" | "constraints" | "outputFormat" | "examples";
 
 const CONTEXT_FIELD_KEYS: {
   key: ContextFieldKey;
@@ -32,6 +32,7 @@ const CONTEXT_FIELD_KEYS: {
 export function ContextPanel({ value, onChange }: ContextPanelProps) {
   const [expanded, setExpanded] = useState(false);
   const { t } = useTranslations();
+  const reducedMotion = useReducedMotion();
 
   const filledCount = CONTEXT_FIELD_KEYS.filter((f) => !!value[f.key]?.trim()).length;
 
@@ -44,6 +45,7 @@ export function ContextPanel({ value, onChange }: ContextPanelProps) {
     <div className="rounded-xl border border-ink-200/50 bg-white/60 overflow-hidden">
       <button
         type="button"
+        aria-expanded={expanded}
         onClick={() => setExpanded(!expanded)}
         className="w-full flex items-center justify-between px-4 py-3 hover:bg-cream-50 transition-colors"
       >
@@ -67,7 +69,7 @@ export function ContextPanel({ value, onChange }: ContextPanelProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: "auto", opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
             <div className="px-4 pb-4 pt-1 space-y-3.5 border-t border-ink-100/60">

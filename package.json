@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "node --test tests/*.test.cjs",
+    "eval:outcomes": "node scripts/evaluate-outcomes.cjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.2.12",

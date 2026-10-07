@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { Copy, Check, Loader2, ArrowRight } from "lucide-react";
+import { useId, useState } from "react";
+import { motion, useReducedMotion } from "framer-motion";
+import { Copy, Loader2, ArrowRight } from "lucide-react";
+import { ActionIcon } from "@/components/ui/action-icon";
 import { cn } from "@/lib/utils";
 import type { PromptPack } from "@/types/prompt-pack";
 import { track } from "@/lib/analytics";
@@ -11,7 +13,7 @@ import { useTranslations } from "@/lib/i18n/use-translations";
 
 const TOOL_META: Record<string, { label: string; dot: string }> = {
   claude:  { label: "Claude",  dot: "bg-clay-500" },
-  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  cursor:  { label: "Cursor",  dot: "bg-emerald-600" },
   chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
 };
 
@@ -116,9 +118,9 @@ function PromptRenderer({ text }: { text: string }) {
             );
           case "code":
             return (
-              <div key={i} className="rounded-lg overflow-hidden border border-ink-100/80 bg-[#F7F5F2]">
+              <div key={i} className="rounded-lg overflow-hidden border border-ink-100/80 bg-zinc-50">
                 {block.lang && (
-                  <div className="px-3 py-1 border-b border-ink-100/70 bg-[#F3F0EC]">
+                  <div className="px-3 py-1 border-b border-ink-100/70 bg-zinc-100">
                     <span className="text-[9.5px] font-mono text-ink-400">{block.lang}</span>
                   </div>
                 )}
@@ -148,7 +150,7 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
 
   if (isGenerating) {
     return (
-      <div className="rounded-2xl border border-ink-100/70 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3 text-center">
+      <div className="generation-pulse rounded-lg border border-emerald-300 bg-card card-soft flex flex-col items-center justify-center py-20 gap-3 text-center" aria-busy="true">
         <Loader2 className="size-6 text-clay-500 animate-spin" />
         <p className="text-sm font-medium text-ink-700">{t("promptPack.buildingPack")}</p>
         <p className="text-[12px] text-ink-400 max-w-[220px] leading-relaxed">{t("promptPack.buildingSubtitle")}</p>
@@ -184,7 +186,7 @@ export function PromptPackOutput({ pack, isGenerating, error }: PromptPackOutput
   }
 
   return (
-    <div className="space-y-3">
+    <div className="prompt-reveal space-y-3">
       {/* Pack header */}
       <div className="flex items-start justify-between gap-4">
         <div>
@@ -224,6 +226,8 @@ function PromptCard({
 }) {
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(true);
+  const reducedMotion = useReducedMotion();
+  const bodyId = useId();
   const { t } = useTranslations();
   const tool = TOOL_META[prompt.target_tool] ?? { label: prompt.target_tool, dot: "bg-ink-300" };
 
@@ -241,6 +245,8 @@ function PromptCard({
       <div className="flex items-center justify-between gap-3 px-4 py-3 border-b border-ink-100/60">
         <button
           type="button"
+          aria-expanded={expanded}
+          aria-controls={bodyId}
           onClick={() => setExpanded((v) => !v)}
           className="flex items-center gap-2.5 min-w-0 flex-1 text-left"
         >
@@ -259,21 +265,24 @@ function PromptCard({
             onClick={handleCopy}
             className="flex items-center gap-1.5 text-[11px] font-medium text-ink-500 hover:text-ink-800 transition-colors rounded-lg px-2.5 py-1.5 hover:bg-cream-100 border border-transparent hover:border-ink-100"
           >
-            {copied ? (
-              <><Check className="size-3.5 text-clay-500" /><span className="text-clay-600">{t("promptPack.copied")}</span></>
-            ) : (
-              <><Copy className="size-3.5" />{t("promptPack.copy")}</>
-            )}
+            <ActionIcon success={copied} icon={Copy} />
+            <span className="grid">
+              <span aria-hidden="true" className="invisible col-start-1 row-start-1">{t("promptPack.copy")}</span>
+              <span aria-hidden="true" className="invisible col-start-1 row-start-1">{t("promptPack.copied")}</span>
+              <span aria-live="polite" className="col-start-1 row-start-1">{t(copied ? "promptPack.copied" : "promptPack.copy")}</span>
+            </span>
           </button>
         </div>
       </div>
 
       {/* Card body */}
-      {expanded && (
+      <motion.div id={bodyId} initial={false} aria-hidden={!expanded}
+        animate={{ height: expanded ? "auto" : 0, opacity: expanded ? 1 : 0 }}
+        transition={{ duration: reducedMotion ? 0 : 0.2 }} className="overflow-hidden">
         <div className="px-4 py-3.5 max-h-64 overflow-y-auto border-t border-ink-100/30">
           <PromptRenderer text={prompt.prompt_text} />
         </div>
-      )}
+      </motion.div>
     </div>
   );
 }

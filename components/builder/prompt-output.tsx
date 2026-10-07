@@ -2,17 +2,19 @@
 
 import { Copy, Download, RefreshCw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { ActionIcon } from "@/components/ui/action-icon";
+import { useEffect, useRef, useState } from "react";
 import type { ToolId } from "@/lib/mock-data";
 import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { cn } from "@/lib/utils";
+import { composerCopy } from "@/lib/composer-copy";
 
 // ── Tool metadata ─────────────────────────────────────────────────────────────
 
 const TOOL_META: Record<ToolId, { label: string; dot: string }> = {
   claude:  { label: "Claude",  dot: "bg-clay-500" },
-  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  cursor:  { label: "Cursor",  dot: "bg-emerald-600" },
   chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
 };
 
@@ -130,7 +132,7 @@ function PromptRenderer({ text }: { text: string }) {
           case "h2":
             return (
               <div key={i} className="flex items-center gap-2.5 pt-4 first:pt-1">
-                <span className="text-[9.5px] font-bold uppercase tracking-[0.18em] text-ink-400 shrink-0">
+                <span className="min-w-0 break-words text-xs font-semibold uppercase text-ink-400">
                   {block.text}
                 </span>
                 <div className="flex-1 h-px bg-ink-100/80" />
@@ -178,9 +180,9 @@ function PromptRenderer({ text }: { text: string }) {
             );
           case "code":
             return (
-              <div key={i} className="rounded-xl overflow-hidden border border-ink-100/80 bg-[#F7F5F2]">
+              <div key={i} className="rounded-lg overflow-hidden border border-ink-100/80 bg-zinc-50">
                 {block.lang && (
-                  <div className="px-3.5 py-1.5 border-b border-ink-100/70 bg-[#F3F0EC]">
+                  <div className="px-3.5 py-1.5 border-b border-ink-100/70 bg-zinc-100">
                     <span className="text-[10px] font-mono text-ink-400">{block.lang}</span>
                   </div>
                 )}
@@ -206,6 +208,7 @@ interface PromptOutputProps {
   isGenerating?: boolean;
   isOptimizing?: boolean;
   onRegenerate?: () => void;
+  universal?: boolean;
 }
 
 export function PromptOutput({
@@ -215,15 +218,25 @@ export function PromptOutput({
   isGenerating,
   isOptimizing,
   onRegenerate,
+  universal = false,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
+  const copy = composerCopy(language);
+  const [copyError, setCopyError] = useState(false);
+  const copyTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const copyLabel = universal ? copy.copy : t("promptOutput.copy");
+  useEffect(() => () => clearTimeout(copyTimeout.current), []);
 
-  function handleCopy() {
-    navigator.clipboard.writeText(prompt);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-    track("prompt_copied", { target_tool: targetTool });
+  async function handleCopy() {
+    try {
+      await navigator.clipboard.writeText(prompt);
+      setCopyError(false);
+      setCopied(true);
+      clearTimeout(copyTimeout.current);
+      copyTimeout.current = setTimeout(() => setCopied(false), 1500);
+      track("prompt_copied", { target_tool: targetTool });
+    } catch { setCopyError(true); }
   }
 
   function handleDownload() {
@@ -258,13 +271,13 @@ export function PromptOutput({
     : "text-ink-500 bg-cream-100 border-ink-100/60";
 
   return (
-    <div className="flex h-full flex-col rounded-2xl border border-ink-100/70 bg-card card-soft overflow-hidden">
+    <div className={cn("flex h-full flex-col rounded-lg border bg-card card-soft overflow-hidden transition-colors duration-200", isGenerating || isOptimizing ? "generation-pulse border-emerald-300" : "border-ink-100/70")} aria-busy={isGenerating || isOptimizing}>
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100/60 bg-cream-50/50">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="flex items-center gap-1.5 shrink-0 rounded-full border border-ink-100/60 bg-white px-2.5 py-1">
             <span className={cn("size-1.5 rounded-full", toolMeta.dot)} />
-            <span className="text-[11px] font-medium text-ink-600">{toolMeta.label}</span>
+            <span className="text-[11px] font-medium text-ink-600">{universal ? copy.portable : toolMeta.label}</span>
           </div>
           {wordCount > 0 && !isGenerating && (
             <span className="text-[11px] text-ink-400 tabular-nums">
@@ -278,6 +291,7 @@ export function PromptOutput({
             statusClass
           )}>
             {(isGenerating || isOptimizing) && <Loader2 className="size-2.5 animate-spin" />}
+            {isSaved && !isGenerating && !isOptimizing && <ActionIcon success icon={Copy} className="size-3 [&_svg]:size-3" />}
             {statusLabel}
           </span>
         )}
@@ -313,14 +327,15 @@ export function PromptOutput({
           </div>
         ) : (
           /* Formatted document view */
-          <div className="px-5 py-4">
+          <div className="prompt-reveal px-5 py-4">
             <PromptRenderer text={prompt} />
           </div>
         )}
       </div>
 
+      {copyError && <p role="alert" className="px-4 pb-3 text-xs text-red-600">Could not copy. Select the prompt text to copy it manually.</p>}
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2 px-4 py-2.5 border-t border-ink-100/60 bg-cream-50/40">
+      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-t border-ink-100/60 bg-cream-50/40">
         <Button
           variant="ghost"
           size="sm"
@@ -340,15 +355,20 @@ export function PromptOutput({
             className="text-ink-500"
           >
             <Download className="size-3.5" />
-            .md
+            <span className="sr-only">Download prompt</span>
           </Button>
           <Button
             size="sm"
             onClick={handleCopy}
             disabled={isEmpty || isGenerating}
+            className={copied ? "action-confirm" : undefined}
           >
-            <Copy className="size-3.5" />
-            {copied ? t("promptOutput.copied") : t("promptOutput.copy")}
+            <ActionIcon success={copied} icon={Copy} />
+            <span className="grid">
+              <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copyLabel}</span>
+              <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.copied}</span>
+              <span aria-live="polite" className="col-start-1 row-start-1">{copied ? copy.copied : copyLabel}</span>
+            </span>
           </Button>
         </div>
       </div>

@@ -1,502 +1,244 @@
 # Umprompt
 
-**Turn rough ideas into execution-ready AI prompts — scored, optimized, and saved.**
+Turn rough ideas into clear, ready-to-use AI prompts.
 
-Umprompt is a prompt engineering workspace for developers, automation builders, and AI power users. Describe what you want in plain language, pick your target AI tool, and get a structured prompt that actually performs — scored across six quality dimensions, one-click optimized, and saved to your account.
+Umprompt helps people describe what they want without learning prompt engineering. Start with a messy idea, add essential details when needed, and copy a structured request into your preferred AI chatbot. The default workflow is organized around the task, not the chatbot vendor.
 
----
+## Product Experience
 
-## Features
+- **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
+- **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
+- **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
+- **Focused clarification:** ambiguous ideas can receive up to two follow-up questions. Clear requests proceed directly, and users can skip clarification.
+- **Portable prompts:** generation preserves the user's intent and supplied details without requiring a vendor-specific template. Existing tool-specific prompts and prompt packs remain supported.
+- **Optional quality review:** scoring and optimization are available without interrupting the main idea-to-prompt workflow. Prompt scores are estimates, not proof of better answers.
+- **Saved workspace:** save, reopen, refine, copy, and download prompts; browse history and templates.
+- **Consistent design:** a neutral interface with emerald accents across the workspace, authentication, and pricing pages.
+- **Accessible motion:** staggered suggestions, sliding category selection, expanding panels, generation feedback, and copy/save confirmations respect reduced-motion preferences.
+- **Account and billing:** Google, GitHub, and email-link sign-in; monthly and lifetime plans through Stripe.
 
-| Feature | What it does |
+## Architecture
+
+| Layer | Implementation |
 |---|---|
-| **Generate** | Describe your goal in plain English. Umprompt applies tool-specific profiles (Cursor, Claude, ChatGPT) to produce a structured, execution-ready prompt. |
-| **Score** | Every prompt is scored 0–100 across Clarity, Context, Constraints, Examples, Output Format, and Tool Fit. Each dimension includes one actionable improvement tip. |
-| **Optimize** | Click "Optimize weak dimensions" to rewrite the prompt targeting every low-scoring dimension automatically. Confirms improvement with a before → after score. |
-| **Save & Reopen** | Prompts are saved to your account with full score data. Reopen any prompt from History to refine and update it. |
-| **Context Panel** | Optionally supply project type, audience, constraints, output format, and examples — fed directly into generation and restored when you reopen a saved prompt. |
+| Application | Next.js 15 App Router, React 18, TypeScript |
+| Interface | Tailwind CSS 3, Radix UI, Lucide icons |
+| Motion | Framer Motion and CSS animations |
+| Authentication and data | Supabase Auth, PostgreSQL, row-level security |
+| AI | Vercel AI SDK 4 with Anthropic and OpenRouter providers |
+| Billing | Stripe Checkout, Customer Portal, and webhooks |
+| Rate limiting | Upstash Redis, with an in-memory development fallback |
+| Analytics | Optional PostHog integration |
+| Hosting | Vercel |
 
----
+## Getting Started
 
-## Tech Stack
+### Requirements
 
-| Layer | Technology |
-|---|---|
-| Framework | Next.js 15 (App Router) |
-| Language | TypeScript (strict) |
-| Styling | Tailwind CSS v4 |
-| Auth & DB | Supabase (magic link auth, Postgres + RLS) |
-| AI SDK | Vercel AI SDK v4 |
-| AI Models | Anthropic Claude (Sonnet 4.6 default) |
-| Fonts | Geist Sans, Geist Mono, Fraunces |
-| Animations | Framer Motion |
-| Deployment | Vercel (recommended) |
+- Node.js 22+ and npm.
+- A Supabase project with its URL and public key.
+- Credentials for the configured AI provider.
+- Stripe test-mode configuration only if testing payments locally.
 
----
-
-## Local Setup
-
-### Prerequisites
-
-- Node.js 20+
-- A [Supabase](https://supabase.com) project (free tier is fine)
-- An [Anthropic](https://console.anthropic.com) API key
-
-### 1. Clone and install
+### Install
 
 ```bash
-git clone <your-repo-url>
-cd promptos
-npm install
+git clone https://github.com/staypossesed/PromptOS.git
+cd PromptOS
+npm ci
 ```
 
-### 2. Configure environment
+Create the local environment file only if it does not already exist:
+
+```powershell
+if (-not (Test-Path .env.local)) {
+    Copy-Item .env.example .env.local
+}
+```
+
+On macOS or Linux, use `cp -n .env.example .env.local`. Populate the required values described below. Never commit local environment files or secret keys.
+
+### Database Setup
+
+For a new Supabase project, run the SQL files in the Supabase SQL editor in this order:
+
+1. `supabase/schema.sql`: profiles, prompts, generation records, triggers, and access policies.
+2. `supabase/feedback.sql`: user feedback.
+3. `supabase/prompt-packs.sql`: saved prompt packs and context.
+4. `supabase/model-comparisons.sql`: model comparison results.
+5. `supabase/billing.sql`: customers, subscriptions, promo redemptions, and usage tracking.
+6. `supabase/generation-runs.sql`: generation diagnostics.
+7. `supabase/admin-audit-logs.sql`: audit records for administrative actions.
+
+Review migrations before applying them to an existing database. Keep row-level security enabled. The service-role key is server-only and is required for administrative and billing synchronization operations.
+
+### Authentication Setup
+
+Enable the desired Google, GitHub, and email providers in Supabase. Configure Google and GitHub provider credentials in the Supabase dashboard.
+
+Under **Authentication > URL Configuration**, add these app callback URLs:
+
+| Environment | App callback |
+|---|---|
+| Local | `http://localhost:3000/auth/callback` |
+| Production | `https://www.umprompt.com/auth/callback` or the exact deployed app origin |
+| Preview | The approved preview origin followed by `/auth/callback` |
+
+Keep the production Site URL pointed at the production app. Add local and preview origins to the redirect allowlist rather than replacing the production Site URL. OAuth provider dashboards use the Supabase provider callback; the URLs above are the final app destinations.
+
+The app uses the bare `/auth/callback` URL for OAuth and email links. A short-lived cookie stores the validated destination inside the app. External destinations are rejected.
+
+Use port **3000** locally. A different port needs its own callback allowlist entry. An unapproved callback can send users to the production Site URL instead.
+
+### Run Locally
 
 ```bash
-cp .env.example .env.local
+npm run dev -- --port 3000
 ```
 
-Open `.env.local` and fill in all values (see table below). The file is gitignored — never commit it.
+Open [localhost:3000](http://localhost:3000). The home page is public; generation, saved prompts, and account pages require sign-in.
 
-### 3. Set up Supabase
+Development uses `.next-dev`; production builds use `.next`. Separate build directories prevent production builds from replacing the running development server's files. Both directories are excluded from source control, and `.vercelignore` also excludes the custom development cache from uploads.
 
-1. Create a new project at [supabase.com](https://supabase.com).
-2. Open **SQL Editor** in your Supabase dashboard.
-3. Paste the full contents of `supabase/schema.sql` and click **Run**.
-   This creates the `profiles`, `prompts`, and `prompt_generations` tables, RLS policies, indexes, and triggers in one pass. It is safe to re-run.
-4. Paste the full contents of `supabase/feedback.sql` and click **Run**.
-   This adds the `feedback` table with RLS. It is safe to re-run.
-5. Paste the full contents of `supabase/prompt-packs.sql` and click **Run**.
-   This adds the `prompt_packs` table. It is safe to re-run.
-6. Paste the full contents of `supabase/model-comparisons.sql` and click **Run**.
-   This adds the `model_comparisons` evaluation dataset table. It is safe to re-run.
-7. Go to **Authentication → Providers → Email** and enable **Magic Link**.
-6. Go to **Authentication → URL Configuration** and set:
-   - **Site URL**: `http://localhost:3000`
-   - **Redirect URLs**: add `http://localhost:3000/auth/callback`
+## Environment Configuration
 
-### 4. Start the dev server
+Local `.env.local` values and Vercel environment variables are independent. A working production checkout does not configure payments on localhost.
+
+### Application and AI
+
+| Variable | Requirement | Purpose |
+|---|---|---|
+| `NEXT_PUBLIC_SUPABASE_URL` | Required | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Required | Supabase public key; access is governed by row-level security |
+| `NEXT_PUBLIC_SITE_URL` | Required | App origin used by billing return URLs and provider metadata |
+| `SUPABASE_SERVICE_ROLE_KEY` | Server operations | Billing synchronization, usage recording, and administration |
+| `ANTHROPIC_API_KEY` | Anthropic requests | Server-only Anthropic credential |
+| `OPENROUTER_API_KEY` | OpenRouter requests | Server-only OpenRouter credential |
+| `DEFAULT_AI_PROVIDER` | Optional | `anthropic` or `openrouter`; model registry determines the matching provider |
+| `DEFAULT_AI_MODEL` | Optional | Registered generation model; defaults to `claude-sonnet-4-6` |
+| `SCORE_AI_MODEL` | Optional | Registered scoring and optimization model; defaults to `claude-sonnet-4-6` |
+| `ADMIN_EMAILS` | Administration | Comma-separated allowlist for `/admin` and `/model-lab` |
+
+Registered models are defined in `lib/ai/providers.ts`: `claude-sonnet-4-6`, `claude-opus-4-7`, `claude-haiku-4-5`, and `moonshotai/kimi-k2.6`. Availability depends on provider access. Keep generation, scoring, and evaluation provider credentials aligned with the selected models.
+
+### Payments
+
+| Variable | Purpose |
+|---|---|
+| `STRIPE_SECRET_KEY` | Server-side Stripe access |
+| `STRIPE_WEBHOOK_SECRET` | Signature verification for the configured webhook endpoint |
+| `STRIPE_PRICE_PRO_MONTHLY` | Standard recurring monthly price |
+| `STRIPE_PRICE_FOUNDER_MONTHLY` | Founder recurring monthly price |
+| `STRIPE_PRICE_LIFETIME` | Standard one-time lifetime price |
+| `STRIPE_PRICE_FOUNDER_LIFETIME` | Founder one-time lifetime price |
+
+Use test-mode credentials and matching test-mode price IDs for development. Preview deployments are not automatically payment sandboxes: inspect their environment configuration before testing checkout. Never copy live payment settings into a test environment by default.
+
+The `UMPROMPT` promo code selects founder prices when the founder limit has not been reached. Monthly prices must be recurring; lifetime prices must be one-time. The selected price ID is required before a checkout session can be created.
+
+The webhook route is `/api/stripe/webhook`. Its handler supports `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`. Configure the endpoint secret for the environment receiving those events.
+
+`NEXT_PUBLIC_SITE_URL` controls checkout success, cancellation, and portal return destinations. Verify it for each environment. Restart the local server after changing environment values; redeploy after changing Vercel values.
+
+### Optional Integrations
+
+| Variable | Purpose |
+|---|---|
+| `NEXT_PUBLIC_POSTHOG_KEY` | Enables client-side analytics |
+| `NEXT_PUBLIC_POSTHOG_HOST` | PostHog host; defaults to `https://us.i.posthog.com` |
+| `UPSTASH_REDIS_REST_URL` | Redis REST endpoint for shared rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | Redis REST credential |
+
+The analytics wrapper tracks named events without adding prompt or answer text to event properties. Review PostHog project settings, autocapture, and session-recording configuration separately before launch. Account identification includes the signed-in user's ID and email.
+
+Configure both Upstash variables for shared limits across serverless instances. The in-memory fallback is suitable for local development, not reliable enforcement across production instances.
+
+## Development and Verification
+
+| Command | Purpose |
+|---|---|
+| `npm run dev -- --port 3000` | Start the development server |
+| `npm run build` | Compile production output and check types |
+| `npm run start` | Serve the production build locally |
+| `npm run lint` | Run the configured ESLint checks |
+| `npm test` | Run the offline regression suite |
+| `npm run eval:outcomes -- --dry-run` | Inspect synthetic evaluation tasks without provider calls |
+| `npm run eval:outcomes -- --limit 2` | Run a limited, billable answer-outcome evaluation |
+| `node scripts/smoke-generation.cjs` | Run billable clarification and generation smoke checks |
+
+The regression suite covers suggestion relevance and rotation, localization, context validation, portable prompt assembly, safe auth redirects, and refreshed or cleared session cookies on normal responses and redirects.
+
+Provider-backed scripts use synthetic tasks, not saved user prompts, and incur API usage. See [Answer Outcome Evaluation](docs/outcome-evaluation.md) for methodology and limitations. Do not present prompt scores or a small model-judged sample as proof of improved answers.
+
+### Manual Smoke Checks
+
+- Open the public composer, enter an idea, switch categories, and refresh suggestions.
+- Sign in with each enabled provider and confirm return to the intended app page.
+- Generate from both a clear request and an ambiguous idea; check follow-up answers and the skip path.
+- Copy, download, save, and reopen a prompt; verify text and context survive.
+- Open optional quality review and test optimization separately.
+- Check pricing, account, feedback, history, and templates on desktop and a narrow mobile viewport.
+- Check keyboard navigation and reduced-motion behavior.
+- In a payment sandbox, verify checkout, success synchronization, webhook updates, and portal return URLs.
+
+## Deployment
+
+The application is deployed with Vercel. The existing linked project is named `prompt-os`; its public product name is Umprompt.
 
 ```bash
-npm run dev
+vercel login
+vercel env ls
+vercel deploy --yes
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with your email.
+The last command creates a **preview**, not a production deployment. Check environment scopes, callback allowlists, return URLs, and payment mode before testing integrations.
 
----
-
-## Environment Variables
-
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | **Yes** | Supabase project URL (safe for browser) |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | **Yes** | Supabase anon/public key (safe for browser) |
-| `NEXT_PUBLIC_SITE_URL` | **Yes** | App base URL — used for magic link redirects |
-| `ANTHROPIC_API_KEY` | **Yes** | Anthropic API key — **server-only, never expose to browser** |
-| `DEFAULT_AI_PROVIDER` | No | `anthropic` or `openrouter` (default: `anthropic`) |
-| `DEFAULT_AI_MODEL` | No | Registered model ID (default: `claude-sonnet-4-6`) |
-| `SCORE_AI_MODEL` | No | Model used for scoring + optimization (default: `claude-sonnet-4-6`) |
-| `OPENROUTER_API_KEY` | No | Required only when `DEFAULT_AI_PROVIDER=openrouter` |
-
-Copy `.env.example` for the full template with comments.
-
----
-
-## Commands
+After reviewing the preview, production can be deployed explicitly:
 
 ```bash
-npm run dev      # Development server at http://localhost:3000
-npm run build    # Production build (also runs type check)
-npm run start    # Serve the production build locally
-npm run lint     # ESLint
+vercel deploy --prod
 ```
 
----
+Run that command only when a production release is intended. If the Git integration is enabled, pushing to Vercel's configured production branch can also trigger a production deployment. Use a feature branch for preview-only review.
 
-## Project Structure
+Vercel-protected previews may require a Vercel account to view. Do not disable deployment protection or expose secrets simply to share a preview.
 
-```
-promptos/
-├── app/
-│   ├── api/prompts/         # API routes
-│   │   ├── route.ts         # GET list / POST create
-│   │   ├── [id]/route.ts    # GET / PATCH / DELETE single prompt
-│   │   ├── generate/        # POST — streaming AI generation
-│   │   ├── score/           # POST — structured quality scoring
-│   │   └── optimize/        # POST — AI rewrite targeting weak dimensions
-│   ├── builder/             # Prompt builder (create + edit)
-│   ├── dashboard/           # Saved prompts grid
-│   ├── history/             # Full history with search
-│   ├── login/               # Magic link auth
-│   ├── privacy/             # Privacy policy
-│   ├── terms/               # Terms of service
-│   └── page.tsx             # Landing page
-├── components/
-│   ├── builder/             # IdeaInput, ToolSelector, ContextPanel, PromptOutput, ScorePanel
-│   ├── layout/              # AppShell, Sidebar, Topbar, MobileNav
-│   ├── marketing/           # Landing page sections
-│   └── ui/                  # Base UI (Button, Badge, Card, …)
-├── lib/
-│   ├── ai/                  # generate-prompt, score-prompt, optimize-prompt, tool-profiles, config, providers
-│   └── supabase/            # Browser + server client helpers
-├── types/
-│   └── prompt.ts            # Core types and validation helpers
-└── supabase/
-    └── schema.sql           # Full DB schema — paste into Supabase SQL Editor
+## Project Layout
+
+```text
+app/                    Pages, API routes, and auth callback
+components/builder/     Composer, output, prompt packs, and quality review
+components/auth/        Sign-in form
+components/billing/     Upgrade flow
+components/layout/      Workspace navigation and account controls
+components/providers/   Motion and analytics providers
+components/ui/          Shared controls, disclosures, and action feedback
+hooks/                  Session-aware idea suggestions
+lib/ai/                 Clarification, generation, scoring, and model registry
+lib/i18n/               Interface localization
+lib/supabase/           Browser, server, and middleware auth clients
+lib/                    Suggestions, context validation, billing, and analytics
+supabase/               Database setup scripts and access policies
+scripts/                Synthetic smoke checks and outcome evaluation
+tests/                  Offline regression tests
+docs/                   Evaluation methodology
+public/                 Static product assets
 ```
 
----
+## Troubleshooting
 
-## Supported Models
+### Invalid Refresh Token
 
-Registered in `lib/ai/providers.ts`. Override via env vars:
+An expired, revoked, or unrecognized saved session cannot be recovered as an authenticated session. Refresh the page and sign in again. Middleware propagates refreshed or cleared cookies to both normal responses and redirects; it must not return an older response object after authentication runs.
 
-| Model ID | Provider | Notes |
-|---|---|---|
-| `claude-sonnet-4-6` | Anthropic | Default — best quality/cost balance |
-| `claude-opus-4-7` | Anthropic | Highest quality, higher cost |
-| `claude-haiku-4-5` | Anthropic | Fastest, lowest cost |
-| `moonshotai/kimi-k2.6` | OpenRouter | Requires `OPENROUTER_API_KEY` |
+### Checkout Is Not Configured
 
-To add a new model: add an entry to `MODEL_REGISTRY` in `lib/ai/providers.ts`.
+The checkout route returns `MISSING_CONFIG` when the selected plan's price ID is absent. Check the corresponding `STRIPE_PRICE_*` variable, the Stripe key, payment mode, and the environment scope. Production values are not loaded into local development automatically.
 
----
+### Sign-In Returns to Production
 
-## Model Lab
+Confirm that the exact current origin plus `/auth/callback` is allowed in Supabase. For localhost, use port 3000. For a preview, approve its callback without changing the production Site URL.
 
-`/model-lab` is an internal testing tool for comparing model outputs side by side. It is auth-protected and not linked from public pages.
+### Animations Are Not Visible
 
-### Purpose
-
-Compare Claude and cheaper alternatives (Kimi K2.6 via OpenRouter) on the same idea and tool, with scoring and latency. Used to evaluate whether a cheaper model can replace Claude for production traffic without degrading output quality.
-
-**⚠️ Do not set Kimi as the default model until you have run enough comparisons to be confident in quality parity.**
-
-### Setup
-
-1. Get an [OpenRouter](https://openrouter.ai/keys) API key.
-2. Add to `.env.local` (and Vercel env vars):
-
-```
-OPENROUTER_API_KEY=sk-or-v1-...
-KIMI_MODEL=moonshotai/kimi-k2.6
-```
-
-3. Navigate to `/model-lab` while signed in.
-
-### How it works
-
-- Select 1–4 models to compare (Sonnet, Haiku, Kimi).
-- Enter an idea and target tool.
-- Click "Generate comparison" — all models run in parallel.
-- Each result shows: generated prompt, quality score (0–100), latency (ms), estimated cost (USD).
-- Click "Use this" on any result to carry it into the Builder.
-
-### Rate limit
-
-30 comparisons per user per day (independent of the normal generate limit). Higher than the production limits because Model Lab is an internal/beta tool used to build the evaluation dataset — not exposed to end users.
-
-### Cost estimates
-
-| Model | Input | Output |
-|---|---|---|
-| Claude Sonnet 4.6 | $3 / MTok | $15 / MTok |
-| Claude Haiku 4.5 | $1 / MTok | $5 / MTok |
-| Kimi K2.6 | $0.74 / MTok | $3.49 / MTok |
-
-### Running comparisons and building the evaluation dataset
-
-1. Navigate to `/model-lab`.
-2. Enter an idea and target tool.
-3. Select Claude Sonnet and Kimi K2.6 (or any combination of 1–4 models).
-4. Click **Generate comparison** — all models run in parallel. Each comparison is automatically saved to your account.
-5. Review the outputs side by side: quality score (0–100), latency, and estimated cost are shown per result.
-6. Click **Mark as winner** on the result card you would actually ship, then pick the reason.
-
-### Judging quality
-
-| Reason | When to pick |
-|---|---|
-| **Better structure** | Output uses clearer sections, XML tags, or logical flow |
-| **More specific** | Concrete names, paths, and formats instead of generic placeholders |
-| **Less bloated** | Tighter prompt without unnecessary preamble |
-| **Better Cursor fit** | Accurate file paths, stack refs, and acceptance criteria |
-| **Better examples** | Relevant, runnable examples included |
-| **Cheaper** | Cost is meaningfully lower and quality is acceptable |
-| **Faster** | Latency is meaningfully lower and quality is acceptable |
-
-### Decision criteria before switching the default model
-
-Before setting Kimi (or any other model) as the default for all users, **all four rules must hold**:
-
-| Rule | Threshold |
-|---|---|
-| **Win/tie rate** | Kimi wins or ties ≥ 70% of comparisons (quality wins, not only cost/speed) |
-| **Cost savings** | Kimi saves meaningful cost per run vs. Claude Sonnet on average |
-| **Timeout rate** | Kimi times out in < 10% of comparisons |
-| **Score parity** | Average Kimi score is within 5 points of Claude Sonnet across all comparisons |
-
-If any rule is not met — especially timeout rate — **keep Claude as the default**.
-
-Minimum sample size: 20–30 comparisons across different idea types and target tools.
-
-When all criteria are met, set in `.env.local` (and Vercel env vars):
-
-```
-DEFAULT_AI_PROVIDER=openrouter
-DEFAULT_AI_MODEL=moonshotai/kimi-k2.6
-```
-
-**⚠️ Do not flip this switch until all four rules are met. A model that times out often will silently degrade the free tier.**
-
----
-
-## API Routes
-
-| Endpoint | Method | Auth | Description |
-|---|---|---|---|
-| `/api/prompts` | GET | Required | List the signed-in user's prompts |
-| `/api/prompts` | POST | Required | Save a new prompt |
-| `/api/prompts/[id]` | GET | Required | Fetch a single prompt |
-| `/api/prompts/[id]` | PATCH | Required | Update title, prompt, score, or context |
-| `/api/prompts/[id]` | DELETE | Required | Delete a prompt |
-| `/api/prompts/generate` | POST | Required | Stream an AI-generated prompt (text/plain) |
-| `/api/prompts/score` | POST | Required | Score a prompt across 6 dimensions |
-| `/api/prompts/optimize` | POST | Required | Rewrite prompt targeting weak dimensions |
-| `/api/model-lab/compare` | POST | Required | Compare N models on the same idea (10/day limit) |
-| `/api/model-lab/comparisons` | GET | Required | List last 10 saved comparisons (metadata only) |
-| `/api/model-lab/comparisons` | POST | Required | Save a comparison result to the dataset |
-| `/api/model-lab/comparisons/[id]` | PATCH | Required | Set winner and reason on a saved comparison |
-
----
-
-## Deployment (Vercel)
-
-### Step-by-step
-
-1. Push this repo to GitHub (if you haven't already).
-2. Go to [vercel.com](https://vercel.com) → **Add New Project** → import the GitHub repo.
-3. Leave the build settings at their defaults (Next.js is auto-detected).
-4. In **Environment Variables**, add every variable from the table below — paste all seven before the first deploy.
-5. Click **Deploy**. Wait for the build to finish.
-6. Copy your Vercel domain (e.g. `https://umprompt.vercel.app` or your custom domain).
-7. **Update `NEXT_PUBLIC_SITE_URL`** in Vercel env vars to that exact domain. Redeploy for it to take effect.
-8. In Supabase → **Authentication → URL Configuration**:
-   - Set **Site URL** to your Vercel domain (e.g. `https://umprompt.vercel.app`)
-   - Under **Redirect URLs**, add: `https://umprompt.vercel.app/auth/callback`
-   - Keep `http://localhost:3000/auth/callback` in the list for local dev.
-9. Test a magic link login on the production URL (see smoke test below).
-
-### Vercel environment variables
-
-Paste these into **Project Settings → Environment Variables**:
-
-| Variable | Value |
-|---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | Your Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Your Supabase anon/public key |
-| `NEXT_PUBLIC_SITE_URL` | Your Vercel domain, e.g. `https://umprompt.vercel.app` |
-| `ANTHROPIC_API_KEY` | Your Anthropic API key (server-only — never use `NEXT_PUBLIC_`) |
-| `DEFAULT_AI_PROVIDER` | `anthropic` |
-| `DEFAULT_AI_MODEL` | `claude-sonnet-4-6` |
-| `SCORE_AI_MODEL` | `claude-sonnet-4-6` |
-| `OPENROUTER_API_KEY` | OpenRouter key for Kimi (optional — only needed for Model Lab) |
-| `KIMI_MODEL` | `moonshotai/kimi-k2.6` (informational — actual ID is hardcoded in registry) |
-
-> **Important:** `ANTHROPIC_API_KEY` must NOT have the `NEXT_PUBLIC_` prefix — it is server-only and must never be exposed to the browser.
-
-### Supabase URL Configuration (after first deploy)
-
-Go to **Supabase → Authentication → URL Configuration** and set:
-
-| Field | Value |
-|---|---|
-| **Site URL** | `https://<your-vercel-domain>` |
-| **Redirect URLs** | `https://<your-vercel-domain>/auth/callback` |
-
-Keep `http://localhost:3000/auth/callback` in Redirect URLs for local development.
-
----
-
-## Production Smoke Test
-
-After deploying, verify each item manually:
-
-- [ ] Landing page loads at the root URL
-- [ ] "Start building free" CTA links to `/builder`
-- [ ] `/login` loads; entering email sends a magic link
-- [ ] Clicking the magic link in email redirects to `/dashboard`
-- [ ] `/builder` opens; idea input is focusable
-- [ ] Generate prompt → prompt streams in
-- [ ] Score panel shows after generation
-- [ ] Optimize weak dimensions → improved prompt appears with toast
-- [ ] Save prompt → "Saved" badge appears
-- [ ] `/history` shows the saved prompt
-- [ ] Clicking a history item reopens it in `/builder`
-- [ ] `/settings` loads and shows the signed-in email
-- [ ] `/privacy`, `/terms`, `/help` all load without auth
-- [ ] Visiting `/dashboard` while signed out redirects to `/login`
-- [ ] No `console.error` in browser DevTools during the above flows
-
----
-
-## Production Hardening
-
-### Analytics (PostHog)
-
-Umprompt uses [PostHog](https://posthog.com) for client-side event tracking. All calls are silent noops if `NEXT_PUBLIC_POSTHOG_KEY` is not set — the app works without analytics.
-
-**Setup:**
-1. Create a free project at [posthog.com](https://posthog.com)
-2. Copy the **Project API Key** (starts with `phc_`)
-3. Add to Vercel env vars: `NEXT_PUBLIC_POSTHOG_KEY=phc_...`
-4. Optionally add `NEXT_PUBLIC_POSTHOG_HOST` (default: `https://us.i.posthog.com`)
-
-**Events tracked** (safe metadata only — no prompt content, no API keys):
-
-| Event | Trigger | Properties |
-|---|---|---|
-| `landing_view` | Landing page load | — |
-| `signup_started` | Magic link form submitted | — |
-| `builder_opened` | Builder page mount | — |
-| `prompt_generated` | Generation stream completes | `target_tool` |
-| `prompt_scored` | Score API returns | `target_tool`, `score_overall` |
-| `prompt_optimized` | Optimization completes | `target_tool`, `score_overall` |
-| `prompt_saved` | Save/update succeeds | `target_tool`, `action_type` |
-| `prompt_reopened` | Existing prompt loaded in builder | `target_tool` |
-| `prompt_copied` | Copy button clicked | `target_tool` |
-| `prompt_downloaded` | Download button clicked | `target_tool` |
-| `history_opened` | History page mount | — |
-| `settings_opened` | Settings page mount | — |
-| `feedback_submitted` | Feedback modal submitted | — |
-
-**Launch funnel** (track conversion through these events in PostHog):
-
-```
-landing_view → signup_started → builder_opened → prompt_generated → prompt_scored → prompt_optimized → prompt_saved
-```
-
-Use PostHog **Funnels** to identify where users drop off. The critical step is `landing_view → signup_started` (top-of-funnel conversion) and `prompt_generated → prompt_saved` (activation).
-
-**PostHog configuration note:** Autocapture is disabled by default (`capture_pageview: false`). This keeps the event stream clean and ensures only meaningful, named events appear in your dashboard. Do not enable autocapture — it creates high-volume noise that drowns out the custom events above.
-
----
-
-### Rate Limiting
-
-Default: **in-memory per-process**. Works locally and in single-instance deployments, but resets on cold starts and is **not reliable** across concurrent serverless invocations.
-
-**Production (required for correctness): Upstash Redis** — persistent sliding-window limits that work across all Vercel function instances.
-
-> **Without `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` set, rate limits will not hold under concurrent load.** Add both before going public.
-
-**Free-tier limits (per user per day):**
-
-| Endpoint | Limit | Notes |
-|---|---|---|
-| `/api/prompts/generate` | 20 | |
-| `/api/prompts/score` | 50 | |
-| `/api/prompts/optimize` | 10 | |
-| `/api/model-lab/compare` | 30 | Internal/beta — not shown to end users |
-
-**Setup:**
-1. Create a free Redis database at [upstash.com](https://upstash.com)
-2. Copy **REST URL** and **REST Token** from the database dashboard
-3. Add **both** to Vercel env vars:
-   ```
-   UPSTASH_REDIS_REST_URL=https://...upstash.io
-   UPSTASH_REDIS_REST_TOKEN=...
-   ```
-
-**Testing rate limits locally:**
-```bash
-# Trigger in-memory limiter (generate limit is 20/day):
-for i in $(seq 1 21); do
-  curl -X POST http://localhost:3000/api/prompts/generate \
-    -H "Content-Type: application/json" \
-    -d '{"idea":"test","target_tool":"claude"}' \
-    -b "your-session-cookie"
-done
-# The 21st request returns HTTP 429 with a user-friendly error message.
-```
-
----
-
-### New env vars for production hardening
-
-Add these to Vercel **Project Settings → Environment Variables**:
-
-| Variable | Required | Description |
-|---|---|---|
-| `NEXT_PUBLIC_POSTHOG_KEY` | Optional | PostHog project API key — enables analytics |
-| `NEXT_PUBLIC_POSTHOG_HOST` | Optional | PostHog ingest host (default: `https://us.i.posthog.com`) |
-| `UPSTASH_REDIS_REST_URL` | Optional | Upstash Redis URL — enables persistent rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | Optional | Upstash Redis token |
-
----
-
-## Launch Checklist
-
-### Where to share
-
-| Channel | Notes |
-|---|---|
-| Twitter / X | Post a short demo GIF or screenshot of the before/after score. Tag with `#buildinpublic`, `#cursor`, `#claude`. |
-| Indie Hackers | Post in "Show IH" — emphasize the score + optimize loop, not just generation. |
-| Reddit: r/ChatGPT, r/ClaudeAI | Show a concrete before/after example with real output. No self-promo tone. |
-| Reddit: r/webdev, r/nextjs | Frame as a dev tool — Cursor use case performs well here. |
-| Hacker News: Show HN | Submit as "Show HN: Umprompt — Score and optimize AI prompts before you run them". Keep it factual. |
-| Product Hunt | Schedule a launch day. Add a demo GIF and 5 screenshots minimum. |
-| Discord servers (Cursor, Claude, AI builders) | Share as a tool tip in context, not a cold promo link. |
-
-### Pre-launch demo checklist
-
-- [ ] Visit `/demo` — all 5 steps render correctly, before/after scores show
-- [ ] Landing page loads at root — hero CTA reads "Try Umprompt free"
-- [ ] `/builder` opens without auth redirect
-- [ ] Generate → score → optimize → save flow completes end-to-end
-- [ ] History shows saved prompt; clicking reopens in builder
-- [ ] Feedback button appears in sidebar; modal opens and saves to Supabase
-- [ ] PostHog Live Events shows events firing during the above flow
-- [ ] `/privacy`, `/terms`, `/help`, `/demo` all load without auth
-- [ ] Mobile layout works on 390px viewport
-- [ ] No `console.error` during any of the above
-
-### First-user feedback checklist
-
-After your first 10 users, check these in PostHog and Supabase:
-
-| Signal | What to look for |
-|---|---|
-| `landing_view → signup_started` funnel | Conversion rate. If < 10%, the hero or CTA needs work. |
-| `builder_opened → prompt_generated` | Drop here = friction in the idea input or tool selection. |
-| `prompt_generated → prompt_saved` | This is activation. Target > 50% for retained users. |
-| `prompt_optimized` rate | Low = users don't see weak scores or don't understand optimize. |
-| Supabase `feedback` table | Read every row. Tag them: bug / UX friction / missing feature. |
-| `feedback_submitted` event count | Low count = users can't find the feedback button or don't trust it. |
-
-### PostHog events to watch on launch day
-
-1. `landing_view` — confirms the page is getting traffic
-2. `signup_started` — measures CTA effectiveness
-3. `builder_opened` — measures auth conversion
-4. `prompt_generated` — first value moment
-5. `prompt_scored` — confirms AI pipeline is running
-6. `prompt_saved` — activation metric
-7. `feedback_submitted` — qualitative signal channel
-
----
-
-## Roadmap
-
-- [ ] Templates library — curated, community-contributed prompts
-- [ ] Prompt versioning — compare each optimization iteration
-- [ ] Team workspaces — share and collaborate on prompts
-- [ ] Additional tool support — Gemini, Perplexity, Windsurf
-- [ ] Usage analytics — track which prompts perform best over time
-
----
-
-## License
-
-MIT
+Reload the updated app and interact with the relevant controls. Suggestions animate on entry and refresh; confirmations animate after successful actions. Reduced-motion preferences intentionally disable movement and CSS animations.

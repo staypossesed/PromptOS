@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { X, MessageSquare, Loader2, CheckCircle2 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -21,6 +21,7 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
   const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { t } = useTranslations();
+  const reducedMotion = useReducedMotion();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -64,16 +65,17 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18 }}
             className="fixed inset-0 z-50 bg-ink-900/30 backdrop-blur-sm"
             onClick={handleClose}
           />
+          <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center px-4">
           <motion.div
             initial={{ opacity: 0, scale: 0.97, y: 8 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.97, y: 4 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 px-4"
+            transition={{ duration: reducedMotion ? 0 : 0.2, ease: "easeOut" }}
+            className="pointer-events-auto w-full max-w-md"
           >
             <div className="rounded-2xl border border-ink-100/80 bg-white shadow-2xl p-6">
               <div className="flex items-start justify-between mb-4">
@@ -129,6 +131,7 @@ export function FeedbackModal({ open, onClose, page }: FeedbackModalProps) {
               )}
             </div>
           </motion.div>
+          </div>
         </>
       )}
     </AnimatePresence>

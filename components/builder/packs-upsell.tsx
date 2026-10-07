@@ -40,7 +40,7 @@ export function PacksUpsell() {
   return (
     <div className="space-y-5 max-w-4xl">
       {/* Value prop */}
-      <div className="rounded-2xl border border-clay-200/50 bg-gradient-to-br from-clay-50/70 to-cream-50 p-8 md:p-10">
+      <div className="border-y border-border bg-white py-8 md:py-10">
         <div className="max-w-xl mx-auto text-center">
           <div className="inline-flex items-center gap-1.5 rounded-full bg-clay-500/10 border border-clay-200/50 px-3 py-1 text-xs font-semibold text-clay-700 mb-5">
             <Crown className="size-3" />

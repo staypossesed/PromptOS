@@ -13,6 +13,11 @@
 import posthog from "posthog-js";
 
 export type AnalyticsEvent =
+  | "category_selected"
+  | "idea_suggestion_selected"
+  | "clarification_shown"
+  | "clarification_answered"
+  | "answer_outcome_feedback"
   | "landing_view"
   | "signup_started"
   | "login_success"
@@ -60,6 +65,9 @@ export type AnalyticsEvent =
   | "upgrade_cta_dismissed";
 
 export interface EventProperties {
+  category?: string;
+  suggestion_id?: string;
+  improved?: boolean;
   target_tool?: string;
   score_overall?: number;
   action_type?: string;

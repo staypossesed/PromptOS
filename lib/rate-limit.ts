@@ -19,7 +19,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-export type RateLimitAction = "generate" | "score" | "optimize" | "pack" | "model_lab";
+export type RateLimitAction = "generate" | "score" | "optimize" | "pack" | "model_lab" | "clarify";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -29,6 +29,7 @@ export interface RateLimitResult {
 }
 
 const LIMITS: Record<RateLimitAction, { max: number; windowMs: number; window: string }> = {
+  clarify:   { max: 30, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   generate:  { max: 20, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   score:     { max: 50, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   optimize:  { max: 10, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
@@ -47,6 +48,7 @@ function getUpstashLimiters(): Map<RateLimitAction, Ratelimit> | null {
   try {
     const redis = Redis.fromEnv();
     _upstashLimiters = new Map([
+      ["clarify", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 d"), prefix: "umprompt:rl:clarify", analytics: false })],
       ["generate", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.generate.max, LIMITS.generate.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:generate", analytics: false })],
       ["score",    new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.score.max,    LIMITS.score.window    as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:score",    analytics: false })],
       ["optimize", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.optimize.max, LIMITS.optimize.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:optimize", analytics: false })],

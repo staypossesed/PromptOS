@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useMemo } from "react";
+import { useState, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -10,19 +10,20 @@ import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
+import { prepareAuthRedirect, safeAuthNext } from "@/lib/auth-redirect";
 
 type Stage = "idle" | "sent";
 
 export function LoginForm() {
   const searchParams = useSearchParams();
-  const next = searchParams.get("next") ?? "/dashboard";
+  const next = safeAuthNext(searchParams.get("next"));
   const urlError = searchParams.get("error");
   const { t } = useTranslations();
 
   const [email, setEmail] = useState("");
   const [stage, setStage] = useState<Stage>("idle");
   const [errorMsg, setErrorMsg] = useState<string | null>(urlError);
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
   const [isGooglePending, setIsGooglePending] = useState(false);
   const [isGithubPending, setIsGithubPending] = useState(false);
 
@@ -30,36 +31,33 @@ export function LoginForm() {
   const supabase = useMemo(() => createClient(), []);
 
   async function handleGoogleSignIn() {
-    setIsGooglePending(true);
-    setErrorMsg(null);
-    track("google_signin_started");
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true,
-      },
-    });
-    if (error) { setErrorMsg(error.message); setIsGooglePending(false); return; }
-    if (data.url) window.location.href = data.url;
+    await handleProviderSignIn("google");
   }
 
   async function handleGithubSignIn() {
-    setIsGithubPending(true);
-    setErrorMsg(null);
-    track("github_signin_started");
-    const { data, error } = await supabase.auth.signInWithOAuth({
-      provider: "github",
-      options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
-        skipBrowserRedirect: true,
-      },
-    });
-    if (error) { setErrorMsg(error.message); setIsGithubPending(false); return; }
-    if (data.url) window.location.href = data.url;
+    await handleProviderSignIn("github");
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleProviderSignIn(provider: "google" | "github") {
+    const setPending = provider === "google" ? setIsGooglePending : setIsGithubPending;
+    setPending(true);
+    setErrorMsg(null);
+    try {
+      track(provider === "google" ? "google_signin_started" : "github_signin_started");
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider,
+        options: { redirectTo: prepareAuthRedirect(window.location.origin, next), skipBrowserRedirect: true },
+      });
+      if (error) throw error;
+      if (!data.url) throw new Error("The sign-in provider did not respond. Please try again.");
+      window.location.assign(data.url);
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Could not start sign-in. Please try again.");
+      setPending(false);
+    }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const trimmed = email.trim().toLowerCase();
     if (!trimmed || !trimmed.includes("@")) {
@@ -68,19 +66,22 @@ export function LoginForm() {
     }
     setErrorMsg(null);
     track("signup_started");
-    startTransition(async () => {
+    setIsPending(true);
+    try {
       const { error } = await supabase.auth.signInWithOtp({
         email: trimmed,
         options: {
-          // PKCE verifier is stored in localStorage here (browser client),
-          // so clicking the link in the same browser always works.
-          emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
+          emailRedirectTo: prepareAuthRedirect(window.location.origin, next),
           shouldCreateUser: true,
         },
       });
       if (error) setErrorMsg(error.message);
       else setStage("sent");
-    });
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Could not send the sign-in link. Please try again.");
+    } finally {
+      setIsPending(false);
+    }
   }
 
   return (
@@ -90,9 +91,8 @@ export function LoginForm() {
       transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       className="w-full max-w-md"
     >
-      <div className="rounded-3xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden">
-        <div className="h-1 bg-gradient-to-r from-clay-400 via-clay-500 to-clay-600" />
-        <div className="p-8 md:p-10">
+      <div className="rounded-lg border border-zinc-200 bg-white overflow-hidden shadow-sm">
+        <div className="p-6 sm:p-8">
           <AnimatePresence mode="wait">
             {stage === "sent" ? (
               <SentState key="sent" email={email} t={t} />
@@ -115,19 +115,19 @@ export function LoginForm() {
         </div>
       </div>
 
-      <div className="mt-4 flex items-center justify-center gap-4 text-[11px] text-ink-400">
+      <div className="mt-4 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-[11px] text-zinc-500">
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="size-3 text-clay-500" />
+          <CheckCircle2 className="size-3 text-emerald-600" />
           {t("auth.noCreditCard")}
         </span>
         <span className="text-ink-200">·</span>
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="size-3 text-clay-500" />
+          <CheckCircle2 className="size-3 text-emerald-600" />
           {t("auth.freePlan")}
         </span>
         <span className="text-ink-200">·</span>
         <span className="flex items-center gap-1">
-          <CheckCircle2 className="size-3 text-clay-500" />
+          <CheckCircle2 className="size-3 text-emerald-600" />
           {t("auth.twentyPrompts")}
         </span>
       </div>
@@ -160,11 +160,11 @@ function FormState({
   return (
     <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 8 }} transition={{ duration: 0.22 }}>
       <div className="mb-8">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-clay-500/10 px-3 py-1 text-xs font-medium text-clay-700 mb-4">
-          <span className="size-1.5 rounded-full bg-clay-500" />
+        <div className="flex items-center gap-1.5 text-xs font-medium text-emerald-700 mb-4">
+          <CheckCircle2 className="size-3.5" />
           {t("auth.noPasswordRequired")}
         </div>
-        <h1 className="font-serif text-3xl font-medium text-ink-900 leading-tight">{t("auth.signInTitle")}</h1>
+        <h1 className="text-2xl font-semibold text-zinc-900 leading-tight">{t("auth.signInTitle")}</h1>
         <p className="mt-2 text-sm text-ink-500 leading-relaxed">{t("auth.signInSubtitle")}</p>
       </div>
 
@@ -174,7 +174,7 @@ function FormState({
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}
             className="mb-5 overflow-hidden"
           >
-            <div className="flex items-start gap-2.5 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            <div role="alert" className="flex items-start gap-2.5 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
               <AlertCircle className="size-4 mt-0.5 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -190,11 +190,11 @@ function FormState({
             <Input
               id="email" type="email" placeholder={t("auth.emailPlaceholder")}
               value={email} onChange={(e) => setEmail(e.target.value)}
-              className="pl-10 h-11 rounded-xl" autoComplete="email" autoFocus required disabled={isPending}
+              className="pl-10 h-11 rounded-lg border-zinc-300 bg-white" autoComplete="email" required disabled={isPending || isGooglePending || isGithubPending}
             />
           </div>
         </div>
-        <Button type="submit" size="lg" className="w-full" disabled={isPending || !email.trim()}>
+        <Button type="submit" size="lg" className="w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white shadow-none" disabled={isPending || isGooglePending || isGithubPending || !email.trim()}>
           {isPending ? (
             <><Loader2 className="size-4 animate-spin" />{t("auth.sendingLink")}</>
           ) : (
@@ -210,12 +210,12 @@ function FormState({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <Button variant="outline" size="lg" className="w-full" onClick={onGoogleSignIn} disabled={isGooglePending || isGithubPending || isPending} type="button">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGoogleSignIn} disabled={isGooglePending || isGithubPending || isPending} type="button">
           {isGooglePending ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
           {isGooglePending ? t("common.redirecting") : t("auth.continueWithGoogle")}
         </Button>
-        <Button variant="outline" size="lg" className="w-full" onClick={onGithubSignIn} disabled={isGithubPending || isGooglePending || isPending} type="button">
+        <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGithubSignIn} disabled={isGithubPending || isGooglePending || isPending} type="button">
           {isGithubPending ? <Loader2 className="size-4 animate-spin" /> : <GitHubIcon />}
           {isGithubPending ? t("common.redirecting") : t("auth.continueWithGithub")}
         </Button>
@@ -231,27 +231,27 @@ function SentState({ email, t }: { email: string; t: (key: string) => string }) 
       <motion.div
         initial={{ scale: 0 }} animate={{ scale: 1 }}
         transition={{ type: "spring", stiffness: 280, damping: 22, delay: 0.08 }}
-        className="mx-auto mb-6 size-16 rounded-2xl bg-clay-500/10 flex items-center justify-center"
+        className="mx-auto mb-6 size-16 rounded-lg bg-emerald-50 flex items-center justify-center"
       >
-        <CheckCircle2 className="size-8 text-sage-600" />
+        <CheckCircle2 className="size-8 text-emerald-600" />
       </motion.div>
-      <h2 className="font-serif text-2xl font-medium text-ink-900 mb-2">{t("auth.checkInbox")}</h2>
+      <h2 className="text-2xl font-semibold text-zinc-900 mb-2">{t("auth.checkInbox")}</h2>
       <p className="text-sm text-ink-500 leading-relaxed max-w-xs mx-auto">
         {t("auth.sentLinkTo")}{" "}
         <span className="font-medium text-ink-800">{email}</span>.{" "}
         {t("auth.clickAndIn")}
       </p>
-      <div className="mt-7 rounded-xl border border-ink-100/70 bg-cream-50 p-4 text-left space-y-2">
+      <div className="mt-7 border-t border-zinc-200 pt-4 text-left space-y-2">
         {tips.map((tip) => (
           <div key={tip} className="flex items-start gap-2 text-xs text-ink-500">
-            <span className="size-1.5 rounded-full bg-clay-400/60 mt-1.5 shrink-0" />
+            <CheckCircle2 className="size-3 text-emerald-600 mt-0.5 shrink-0" />
             {tip}
           </div>
         ))}
       </div>
       <button
         onClick={() => window.location.reload()}
-        className="mt-6 text-sm text-ink-500 hover:text-clay-600 transition-colors underline underline-offset-2"
+        className="mt-6 text-sm text-zinc-500 hover:text-emerald-700 transition-colors underline underline-offset-2"
       >
         {t("auth.useDifferentEmail")}
       </button>

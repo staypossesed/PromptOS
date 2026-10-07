@@ -10,31 +10,8 @@ import { cn } from "@/lib/utils";
 
 const TOOL_META: Record<string, { label: string; dot: string }> = {
   claude:  { label: "Claude",  dot: "bg-clay-500" },
-  cursor:  { label: "Cursor",  dot: "bg-blue-400" },
+  cursor:  { label: "Cursor",  dot: "bg-emerald-600" },
   chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
-};
-
-// Soft accent per category for the card top strip
-const CATEGORY_ACCENT: Record<TemplateCategory, string> = {
-  Cursor:   "bg-blue-50 border-blue-100/60",
-  Claude:   "bg-clay-50 border-clay-100/60",
-  ChatGPT:  "bg-emerald-50 border-emerald-100/60",
-  n8n:      "bg-amber-50 border-amber-100/60",
-  Airtable: "bg-indigo-50 border-indigo-100/60",
-  Sales:    "bg-rose-50 border-rose-100/60",
-  Content:  "bg-purple-50 border-purple-100/60",
-  Research: "bg-teal-50 border-teal-100/60",
-};
-
-const CATEGORY_LABEL_COLOR: Record<TemplateCategory, string> = {
-  Cursor:   "text-blue-700",
-  Claude:   "text-clay-700",
-  ChatGPT:  "text-emerald-700",
-  n8n:      "text-amber-700",
-  Airtable: "text-indigo-700",
-  Sales:    "text-rose-700",
-  Content:  "text-purple-700",
-  Research: "text-teal-700",
 };
 
 export function TemplateGrid() {
@@ -69,8 +46,8 @@ export function TemplateGrid() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((template) => {
           const tool = TOOL_META[template.target_tool] ?? { label: template.target_tool, dot: "bg-ink-300" };
-          const accentClass = CATEGORY_ACCENT[template.category] ?? "bg-cream-100 border-ink-100/60";
-          const labelColor = CATEGORY_LABEL_COLOR[template.category] ?? "text-ink-600";
+          const accentClass = "bg-emerald-50 border-emerald-100/60";
+          const labelColor = "text-emerald-700";
 
           return (
             <Link

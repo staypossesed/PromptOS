@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { FeedbackModal } from "@/components/feedback/feedback-modal";
@@ -23,6 +23,7 @@ interface TopbarProps {
 export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
   const router = useRouter();
   const { t } = useTranslations();
+  const reducedMotion = useReducedMotion();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -129,7 +130,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                 setMenuOpen(next);
                 if (next) track("account_menu_opened");
               }}
-              className="size-9 rounded-full bg-gradient-to-br from-clay-300 to-clay-500 text-white text-xs font-semibold flex items-center justify-center ring-2 ring-white/60 hover:ring-clay-200 transition-all focus-visible:outline-none focus-visible:ring-clay-400"
+              className="size-9 rounded-full bg-primary text-white text-xs font-semibold flex items-center justify-center ring-2 ring-white/60 hover:ring-emerald-200 transition-all focus-visible:outline-none focus-visible:ring-ring"
               aria-label={t("topbar.accountMenu")}
               aria-expanded={menuOpen}
               aria-haspopup="true"
@@ -143,13 +144,13 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                   initial={{ opacity: 0, scale: 0.95, y: -6 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.95, y: -6 }}
-                  transition={{ duration: 0.14, ease: "easeOut" }}
+                  transition={{ duration: reducedMotion ? 0 : 0.24, ease: "easeOut" }}
                   className="absolute right-0 top-11 z-50 w-60 rounded-2xl border border-ink-100/70 bg-card card-soft-lg overflow-hidden"
                 >
                   {/* User info */}
                   <div className="px-4 py-3.5 border-b border-ink-100/60">
                     <div className="flex items-center gap-2.5">
-                      <div className="size-8 rounded-full bg-gradient-to-br from-clay-300 to-clay-500 flex items-center justify-center text-white text-xs font-semibold shrink-0">
+                      <div className="size-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-semibold shrink-0">
                         {initials}
                       </div>
                       <div className="min-w-0">
