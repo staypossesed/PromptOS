@@ -29,17 +29,23 @@ interface Props {
   busy?: boolean;
   generating?: boolean;
   result?: React.ReactNode;
+  resultActions?: React.ReactNode;
+  nextActions?: React.ReactNode;
+  upgrade?: React.ReactNode;
   quality?: React.ReactNode;
   hasResult?: boolean;
   onSave?: () => void;
   saving?: boolean;
   saved?: boolean;
+  outcomeEligible?: boolean;
 }
 
-export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, quality, hasResult, onSave, saving, saved }: Props) {
+export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, resultActions, nextActions, upgrade, quality, hasResult, onSave, saving, saved, outcomeEligible }: Props) {
   const { language } = useTranslations();
   const copy = composerCopy(language);
   const reducedMotion = useReducedMotion();
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
   const categoryGroup = useId();
   const category = isTaskCategory(context.category) ? context.category : "auto";
   const { seed, refresh } = useIdeaSuggestions();
@@ -57,6 +63,7 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
   const locked = !!busy || checking;
 
   useEffect(() => () => requestRef.current?.abort(), []);
+  useEffect(() => { if (!outcomeEligible) setFeedback(null); }, [outcomeEligible]);
   useEffect(() => { setQuestions([]); setAnswers([]); setNotice(""); }, [idea, category]);
   useEffect(() => {
     if (generating || hasResult) resultRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
@@ -173,16 +180,16 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-sm font-medium text-zinc-500">{idea.trim() ? copy.matching : copy.inspiration}</h2>
           <button type="button" onClick={refresh} disabled={locked} title={copy.refresh} aria-label={copy.refresh} className="motion-press flex size-9 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900">
-            <motion.span key={seed} initial={{ rotate: reducedMotion ? 0 : -180, opacity: 0.5 }} animate={{ rotate: 0, opacity: 1 }} transition={{ duration: reducedMotion ? 0 : 0.36 }}><Shuffle className="size-4" /></motion.span>
+            <motion.span key={seed} initial={mounted && !reducedMotion ? { rotate: -180, opacity: 0.5 } : false} animate={{ rotate: 0, opacity: 1 }} transition={{ duration: reducedMotion ? 0 : 0.36 }}><Shuffle className="size-4" /></motion.span>
           </button>
         </div>
         <div className="grid gap-x-6 sm:grid-cols-2" aria-live="polite">
           <AnimatePresence mode="popLayout">
           {suggestions.map((suggestion, index) => {
             const Icon = ICONS[suggestion.category];
-            return <motion.button key={suggestion.id} type="button" disabled={locked}
+            return <motion.button key={suggestion.id} type="button" disabled={locked} tabIndex={0}
               layout={reducedMotion ? false : "position"}
-              initial={{ opacity: 0, y: reducedMotion ? 0 : 12 }} animate={{ opacity: 1, y: 0 }}
+              initial={mounted && !reducedMotion ? { opacity: 0, y: 12 } : false} animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: reducedMotion ? 0 : -6, transition: { duration: reducedMotion ? 0 : 0.12, delay: 0 } }}
               transition={{ duration: reducedMotion ? 0 : 0.28, delay: reducedMotion ? 0 : index * 0.04, layout: { duration: reducedMotion ? 0 : 0.28 } }}
               whileHover={reducedMotion || locked ? undefined : { y: -4, transition: { duration: 0.16, delay: 0 } }}
@@ -210,11 +217,14 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
             </span>
           </button>}
         </div>
-        <div className="h-[480px] min-h-[320px]">{result}</div>
+        {resultActions}
+        <div className="h-[min(480px,55dvh)] min-h-[260px]">{result}</div>
+        {upgrade && <div className="mt-4">{upgrade}</div>}
+        {nextActions}
         {quality && <Disclosure label={copy.quality} open={qualityOpen} onOpenChange={setQualityOpen}>
           <p className="my-3 text-xs text-zinc-500">{copy.qualityNote}</p><div className="min-h-[480px]">{quality}</div>
         </Disclosure>}
-        {hasResult && !busy && <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
+        {hasResult && outcomeEligible && !busy && <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
           <span>{feedback === null ? copy.answer : copy.thanks}</span>
           {feedback === null && ([true, false] as const).map((value) => <button key={String(value)} type="button" aria-label={value ? copy.yes : copy.no} title={value ? copy.yes : copy.no}
             onClick={() => { setFeedback(value); track("answer_outcome_feedback", { category, improved: value }); }} className="flex size-9 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100">{value ? <ThumbsUp className="size-4" /> : <ThumbsDown className="size-4" />}</button>)}

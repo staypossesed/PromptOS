@@ -17,6 +17,8 @@ interface UpgradeCTAProps {
   onDismiss?: () => void;
   /** Source page for analytics */
   sourcePage?: string;
+  returnTo?: string;
+  onNavigate?: () => boolean;
 }
 
 const STORAGE_KEYS: Record<UpgradeCTAVariant, string> = {
@@ -79,11 +81,13 @@ export function UpgradeCTA({
   compact = false,
   onDismiss,
   sourcePage,
+  returnTo,
+  onNavigate,
 }: UpgradeCTAProps) {
   const [visible, setVisible] = useState(false);
   const key = STORAGE_KEYS[variant];
   const content = getContent(variant, remainingThisWeek);
-  const planUrl = "/plan?promo=UMPROMPT";
+  const planUrl = `/plan?promo=UMPROMPT${returnTo ? `&returnTo=${encodeURIComponent(returnTo)}` : ""}`;
 
   // Check dismissal on mount (client-only)
   useEffect(() => {
@@ -130,7 +134,7 @@ export function UpgradeCTA({
             className="h-7 text-xs px-3 flex-1"
             onClick={handleClick}
           >
-            <Link href={planUrl}>{content.cta}</Link>
+            <Link href={planUrl} onClick={(event) => { if (onNavigate && !onNavigate()) event.preventDefault(); }}>{content.cta}</Link>
           </Button>
           <button
             onClick={handleDismiss}
@@ -146,7 +150,7 @@ export function UpgradeCTA({
 
   // ── Full variant ─────────────────────────────────────────────────────────
   return (
-    <div className="relative rounded-2xl border border-clay-500/25 bg-clay-500/5 p-5">
+    <div className="relative rounded-lg border border-clay-500/25 bg-clay-500/5 p-5">
       {/* Dismiss button */}
       <button
         onClick={handleDismiss}
@@ -160,7 +164,7 @@ export function UpgradeCTA({
       <div className="flex items-center gap-1.5 mb-3">
         <Crown className="size-3.5 text-clay-600" />
         <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-clay-600">
-          Founder offer
+          {variant === "low_remaining" ? "Umprompt Pro" : "Founder offer"}
         </span>
       </div>
 
@@ -171,7 +175,7 @@ export function UpgradeCTA({
 
       <div className="flex items-center gap-3">
         <Button asChild size="sm" onClick={handleClick}>
-          <Link href={planUrl}>{content.cta}</Link>
+          <Link href={planUrl} onClick={(event) => { if (onNavigate && !onNavigate()) event.preventDefault(); }}>{content.cta}</Link>
         </Button>
         <button
           onClick={handleDismiss}

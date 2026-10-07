@@ -9,6 +9,7 @@ import {
   Home,
   Wand2,
   History,
+  BookOpen,
   Sparkles,
   HelpCircle,
   Plus,
@@ -22,8 +23,8 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
+import { clearCheckoutDraft } from "@/lib/checkout-draft";
 import { FeedbackModal } from "@/components/feedback/feedback-modal";
-import { UpgradeCTA } from "@/components/billing/upgrade-cta";
 import type { User } from "@supabase/supabase-js";
 import { useTranslations } from "@/lib/i18n/use-translations";
 
@@ -64,6 +65,7 @@ export function Sidebar() {
   const PRIMARY_NAV: NavItem[] = [
     { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
     { href: "/history", labelKey: "nav.history", icon: History },
+    { href: "/library", labelKey: "nav.library", icon: BookOpen },
   ];
 
   const SECONDARY_NAV: NavItem[] = [
@@ -170,6 +172,7 @@ export function Sidebar() {
         <form action={signOut}>
           <button
             type="submit"
+            onClick={clearCheckoutDraft}
             className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-ink-400 hover:bg-cream-100 hover:text-destructive transition-colors mt-0.5"
           >
             <LogOut className="size-[15px]" />
@@ -226,17 +229,10 @@ export function Sidebar() {
                   ? t("plan.free")
                   : t("plan.promptsLeftThisWeek", { count: remainingThisWeek ?? 0 })}
               </div>
-              {!usageLoading && (remainingThisWeek ?? 7) <= 2 && (
-                <UpgradeCTA
-                  variant="low_remaining"
-                  remainingThisWeek={remainingThisWeek ?? 0}
-                  compact
-                  sourcePage="sidebar"
-                />
-              )}
             </div>
           )}
         </Link>
+
 
         {/* Legal links */}
         <div className="mt-3 flex items-center justify-center gap-3 pb-1">

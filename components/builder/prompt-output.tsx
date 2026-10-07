@@ -209,6 +209,7 @@ interface PromptOutputProps {
   isOptimizing?: boolean;
   onRegenerate?: () => void;
   universal?: boolean;
+  onCopied?: () => void;
 }
 
 export function PromptOutput({
@@ -219,6 +220,7 @@ export function PromptOutput({
   isOptimizing,
   onRegenerate,
   universal = false,
+  onCopied,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const { t, language } = useTranslations();
@@ -236,6 +238,7 @@ export function PromptOutput({
       clearTimeout(copyTimeout.current);
       copyTimeout.current = setTimeout(() => setCopied(false), 1500);
       track("prompt_copied", { target_tool: targetTool });
+      onCopied?.();
     } catch { setCopyError(true); }
   }
 

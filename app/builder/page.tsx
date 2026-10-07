@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from "react";
+import { useEffect, useState, useCallback, useTransition, useRef } from "react";
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -31,6 +31,12 @@ import { UpgradeCTA } from "@/components/billing/upgrade-cta";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
+import { BuilderLibrary } from "@/components/workspace/builder-library";
+import { ResultActions, NextTaskActions } from "@/components/workspace/result-actions";
+import { CHECKOUT_DRAFT_KEY, parseCheckoutDraft } from "@/lib/checkout-draft";
+import { rememberVersion, nextStepIdea, shouldOfferUpgrade, promptFingerprint, type Refinement, type PromptVersion, type Playbook } from "@/lib/workspace";
+import { workspaceCopy } from "@/lib/workspace-copy";
+import { inferTaskCategory } from "@/lib/idea-suggestions";
 
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
@@ -53,6 +59,13 @@ function BuilderInner() {
   const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const [hasCopied, setHasCopied] = useState(false);
+  const [savedThisSession, setSavedThisSession] = useState(false);
+  const savedFingerprint = useRef<string | null>(null);
+  const generationLock = useRef(false);
+  const initializedDraft = useRef(false);
+  const generationController = useRef<AbortController | null>(null);
+  useEffect(() => () => generationController.current?.abort(), []);
 
   // ── Pack save state ─────────────────────────────────────────────────────
   const [savedPackId, setSavedPackId] = useState<string | null>(null);
@@ -75,7 +88,8 @@ function BuilderInner() {
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
-  const [isSaving, startSaveTransition] = useTransition();
+  const [isSaving, setIsSaving] = useState(false);
+  const saveLock = useRef(false);
   const [isDeleting, startDeleteTransition] = useTransition();
   const [isSavingPack, startSavingPackTransition] = useTransition();
   const [isDeletingPack, startDeletingPackTransition] = useTransition();
@@ -93,12 +107,35 @@ function BuilderInner() {
 
   const { t, language } = useTranslations();
   const copy = composerCopy(language);
+  const workspaceText = workspaceCopy(language);
   const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
+  const resumeLoaded = useRef(false);
+  useEffect(() => {
+    if (searchParams.get("resume") !== "checkout" || resumeLoaded.current || promptId || packId) return;
+    resumeLoaded.current = true;
+    try {
+      const draft = parseCheckoutDraft(sessionStorage.getItem(CHECKOUT_DRAFT_KEY));
+      sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      if (draft) {
+        setIdea(draft.idea); setContext(draft.context); setTool(draft.tool); setGeneratedPrompt(draft.prompt);
+        setSavedId(draft.savedId); setHasCopied(draft.copied); setIsSaved(draft.saved);
+        if (draft.saved) savedFingerprint.current = promptFingerprint({ idea: draft.idea, context: draft.context, target_tool: draft.tool, generated_prompt: draft.prompt, score: null });
+      }
+    } catch { /* Storage may be unavailable; saved prompts remain in History. */ }
+  }, [searchParams, promptId, packId]);
+  function preserveCheckoutDraft() {
+    try {
+      sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({ idea, context, prompt: generatedPrompt, tool, savedId, copied: hasCopied, saved: isSaved, createdAt: Date.now() }));
+    } catch { showToast("error", "Save your prompt before leaving; browser storage is unavailable."); return false; }
+    return true;
+  }
 
   // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
+    if (initializedDraft.current) return;
+    initializedDraft.current = true;
     track("builder_opened");
-    if (promptId || templateId || packId) return;
+    if (promptId || templateId || packId || searchParams.get("resume") === "checkout") return;
     try {
       const draft = sessionStorage.getItem("ump:idea_draft");
       if (draft) {
@@ -108,7 +145,7 @@ function BuilderInner() {
         sessionStorage.removeItem("ump:idea_draft");
       }
     } catch { /* A malformed draft must not prevent opening the builder. */ }
-  }, [promptId, templateId, packId]);
+  }, [promptId, templateId, packId, searchParams]);
 
   // ── Prefill from Model Lab "Use this output" ──────────────────────────────
   // Reads sessionStorage once on mount. Runs before other load effects so that
@@ -162,7 +199,8 @@ function BuilderInner() {
     if (!promptId) return;
 
     setIsLoading(true);
-    fetch(`/api/prompts/${promptId}`)
+    const controller = new AbortController();
+    fetch(`/api/prompts/${promptId}`, { signal: controller.signal })
       .then((r) => r.json())
       .then(({ data, error }: { data?: PromptRecord; error?: string }) => {
         if (error || !data) {
@@ -171,6 +209,8 @@ function BuilderInner() {
         }
         setIdea(data.idea);
         setTool(data.target_tool);
+        savedFingerprint.current = promptFingerprint({ ...data, context: data.context ?? {} });
+        setHasCopied(false); setSavedThisSession(false);
         setContext(data.context ?? {});
         setGeneratedPrompt(data.generated_prompt);
         setScore(data.score);
@@ -178,8 +218,9 @@ function BuilderInner() {
         setIsSaved(true);
         track("prompt_reopened", { target_tool: data.target_tool });
       })
-      .catch(() => showToast("error", "Failed to load prompt."))
-      .finally(() => setIsLoading(false));
+      .catch(() => { if (!controller.signal.aborted) showToast("error", "Failed to load prompt."); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
+    return () => controller.abort();
   }, [promptId]);
 
   // ── Prefill from ?template= param (only when not loading an existing prompt)
@@ -231,9 +272,9 @@ function BuilderInner() {
 
   // ── Mark as "unsaved" whenever the user edits after loading ─────────────
   useEffect(() => {
-    if (savedId) setIsSaved(false);
+    if (savedId) setIsSaved(savedFingerprint.current === promptFingerprint({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idea, tool, context, generatedPrompt]);
+  }, [idea, tool, context, generatedPrompt, score, savedId]);
 
   // ── Score helper (shared by generate flow, manual retry, and optimize) ─────
   const runScoring = useCallback(async (
@@ -276,7 +317,7 @@ function BuilderInner() {
 
   // ── Optimize weak dimensions ─────────────────────────────────────────────
   const handleOptimize = useCallback(async () => {
-    if (!generatedPrompt || !score || isOptimizing || isGenerating || isScoring) return;
+    if (!generatedPrompt || !score || isOptimizing || isGenerating || isScoring || isSaving) return;
 
     const prevOverall = score.overall;
     setIsOptimizing(true);  // stays true through optimize + re-score
@@ -303,11 +344,15 @@ function BuilderInner() {
         return;
       }
       const improved: string = json.data?.improved_prompt;
-      if (!improved) {
-        setOptimizeError("Optimization returned an empty prompt.");
+      if (!improved || improved.length > 16000) {
+        setOptimizeError(improved ? "The optimized prompt is too long. Try a smaller task." : "Optimization returned an empty prompt.");
         return;
       }
       setGeneratedPrompt(improved);
+      setContext({ ...context, versions: rememberVersion(context.versions, generatedPrompt, "Quality optimization") });
+      setHasCopied(false);
+      setSavedThisSession(false);
+      setGenerateRequestId(null);
       // isOptimizing stays true during re-scoring so the button stays locked
       const newScore = await runScoring(improved);
       // Before/after toast
@@ -324,7 +369,7 @@ function BuilderInner() {
     } finally {
       setIsOptimizing(false);
     }
-  }, [generatedPrompt, score, idea, tool, context, language, isOptimizing, isGenerating, isScoring, runScoring]);
+  }, [generatedPrompt, score, idea, tool, context, language, isOptimizing, isGenerating, isScoring, isSaving, runScoring]);
 
   // ── Generate Pack ────────────────────────────────────────────────────────
   const handleGeneratePack = useCallback(async () => {
@@ -372,12 +417,20 @@ function BuilderInner() {
   }, [idea, packType, context, language, isGeneratingPack, savedPackId, t]);
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
-  const handleGenerate = useCallback(async (nextContext?: PromptContext) => {
+  const handleGenerate = useCallback(async (nextContext?: PromptContext, refinement?: Refinement) => {
     if (!idea.trim()) {
       showToast("error", t("builder.addIdeaFirst"));
       return;
     }
-    if (isGenerating || isScoring || isOptimizing) return;
+    if (generationLock.current || isGenerating || isScoring || isOptimizing || isSaving) return;
+    generationLock.current = true;
+    const originalPrompt = generatedPrompt;
+    const originalScore = score;
+    const wasSaved = isSaved;
+    const wasCopied = hasCopied;
+    const wasSavedThisSession = savedThisSession;
+    const previousRequestId = generateRequestId;
+    let completed = false;
     const effectiveContext = nextContext ?? { ...context, universal: true, category: context.category ?? "auto" };
     setContext(effectiveContext);
 
@@ -385,17 +438,22 @@ function BuilderInner() {
     track("prompt_language_detected", { inputLanguage: outputLanguage, outputLanguage } as never);
 
     setIsGenerating(true);
-    setGeneratedPrompt("");
-    setScore(null);
+    if (!refinement) { setGeneratedPrompt(""); setScore(null); }
+    setHasCopied(false);
+    setSavedThisSession(false);
     setScoreError(null);
     setIsSaved(false);
     setGenerateRequestId(null);
 
+    const controller = new AbortController();
+    generationController.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 90000);
     try {
       const res = await fetch("/api/prompts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, target_tool: tool, context: effectiveContext, outputLanguage }),
+        signal: controller.signal,
+        body: JSON.stringify({ idea, target_tool: tool, context: effectiveContext, outputLanguage, refinement: refinement ? { action: refinement, prompt: originalPrompt } : undefined }),
       });
 
       if (!res.ok) {
@@ -434,7 +492,12 @@ function BuilderInner() {
 
       accumulated += decoder.decode();
       if (!accumulated.trim()) throw new Error("No prompt was returned. Please try again.");
+      if (accumulated.length > 16000) throw new Error("The generated prompt is too long. Please try a smaller task.");
+      completed = true;
       setGeneratedPrompt(accumulated);
+      setContext({ ...effectiveContext, versions: refinement ? rememberVersion(effectiveContext.versions, originalPrompt, refinement) : [] });
+      setScore(null);
+      if (refinement) track("prompt_refined", { action_type: refinement, category: effectiveContext.category });
 
       // Capture request_id from header for linking to saved prompt
       const reqId = res.headers.get("X-Request-Id");
@@ -446,21 +509,34 @@ function BuilderInner() {
       window.dispatchEvent(new Event("prompt_usage_refresh"));
       await runScoring(accumulated, { universal: effectiveContext.universal });
     } catch (err) {
+      setGeneratedPrompt(originalPrompt);
+      setScore(originalScore);
+      setIsSaved(wasSaved);
       const message = err instanceof Error ? err.message : "Generation failed.";
       showToast("error", message);
     } finally {
+      if (!completed) {
+        setGeneratedPrompt(originalPrompt); setScore(originalScore); setIsSaved(wasSaved);
+        setHasCopied(wasCopied); setGenerateRequestId(previousRequestId);
+        setSavedThisSession(wasSavedThisSession);
+      }
+      clearTimeout(timeout);
+      generationLock.current = false;
+      generationController.current = null;
       setIsGenerating(false); // safety reset if streaming itself threw
     }
-  }, [idea, tool, context, language, isGenerating, isScoring, isOptimizing, runScoring, t]);
+  }, [idea, tool, context, language, isGenerating, isScoring, isOptimizing, isSaving, generatedPrompt, score, isSaved, hasCopied, savedThisSession, generateRequestId, runScoring, t]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
+    if (saveLock.current || isGenerating || isScoring || isOptimizing) return;
     if (!idea.trim() || !generatedPrompt.trim()) {
       showToast("error", t("builder.generateFirst"));
       return;
     }
 
-    startSaveTransition(async () => {
+    saveLock.current = true;
+    setIsSaving(true);
       const body = {
         idea,
         target_tool: tool,
@@ -480,7 +556,9 @@ function BuilderInner() {
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Update failed.");
+          savedFingerprint.current = promptFingerprint(body);
           setIsSaved(true);
+          setSavedThisSession(true);
           showToast("success", t("builder.promptUpdated"));
           track("prompt_saved", { target_tool: tool, action_type: "update" });
         } else {
@@ -492,8 +570,10 @@ function BuilderInner() {
           });
           const json = await res.json();
           if (!res.ok) throw new Error(json.error ?? "Save failed.");
+          savedFingerprint.current = promptFingerprint(body);
           setSavedId(json.data.id);
           setIsSaved(true);
+          setSavedThisSession(true);
           // Update URL without a full navigation so the page knows its ID
           router.replace(`/builder?id=${json.data.id}`, { scroll: false });
           showToast("success", t("builder.promptSaved"));
@@ -502,9 +582,30 @@ function BuilderInner() {
         }
       } catch (err) {
         showToast("error", err instanceof Error ? err.message : "Save failed.");
+      } finally {
+        saveLock.current = false;
+        setIsSaving(false);
       }
-    });
-  }, [idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId]);
+  }, [idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId, isGenerating, isScoring, isOptimizing]);
+
+  const startTask = useCallback((nextIdea: string, nextContext: PromptContext): boolean => {
+    if (generationLock.current || isGenerating || isScoring || isOptimizing || isSaving) return false;
+    if (generatedPrompt && !isSaved && !window.confirm(workspaceText.confirmReplace)) return false;
+    setIdea(nextIdea); setContext(nextContext); setGeneratedPrompt(""); setScore(null);
+    savedFingerprint.current = null;
+    setSavedId(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+    setScoreError(null); setIsLoading(false);
+    router.replace("/builder", { scroll: false });
+    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    return true;
+  }, [generatedPrompt, isSaved, isGenerating, isScoring, isOptimizing, isSaving, workspaceText.confirmReplace, router, reducedMotion]);
+  const applyPlaybook = useCallback((playbook: Playbook) => startTask(playbook.idea, { ...playbook.context, universal: true }), [startTask]);
+  function restoreVersion(version: PromptVersion) {
+    if (isGenerating || isScoring || isOptimizing || isSaving) return;
+    setContext({ ...context, versions: rememberVersion((context.versions ?? []).filter((v) => v !== version), generatedPrompt, "Restored version") });
+    setGeneratedPrompt(version.prompt); setScore(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+    track("prompt_version_restored"); showToast("success", workspaceText.restored);
+  }
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
@@ -789,34 +890,26 @@ function BuilderInner() {
             </div>
           </div>
         ) : (
+          <>
+          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isScoring || isOptimizing || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
           <IdeaComposer idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
-            onGenerate={handleGenerate} busy={isGenerating || isScoring || isOptimizing}
+            onGenerate={handleGenerate} busy={isGenerating || isScoring || isOptimizing || isSaving}
             generating={isGenerating || isOptimizing} hasResult={!!generatedPrompt.trim()}
             onSave={handleSave} saving={isSaving} saved={isSaved}
-            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal isSaved={isSaved} isGenerating={isGenerating} isOptimizing={isOptimizing} onRegenerate={() => void handleGenerate()} />}
+            outcomeEligible={hasCopied}
+            resultActions={!!generatedPrompt && !isGenerating && <ResultActions busy={isScoring || isOptimizing || isSaving} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
+            nextActions={!!generatedPrompt && !isGenerating && <NextTaskActions busy={isScoring || isOptimizing || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
+              const { versions: _versions, clarifications: _answers, ...reusable } = context;
+              if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category: context.category, option: String(index) });
+            }} />}
+            upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && !isOptimizing && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
+            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal isSaved={isSaved} isGenerating={isGenerating} isOptimizing={isOptimizing} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
             quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeError={optimizeError} />}
           />
+          </>
         )}
 
 
-        {/* Upgrade CTA — after save (higher priority) or after first generate */}
-        {!isPaid && !usageLoading && mode === "single" && generatedPrompt && !isGenerating && !isScoring && (
-          <div className="mx-auto mt-6 max-w-3xl">
-            {isSaved ? (
-              <UpgradeCTA
-                variant="saved_prompt"
-                remainingThisWeek={remainingThisWeek ?? 7}
-                sourcePage="builder"
-              />
-            ) : (
-              <UpgradeCTA
-                variant="first_prompt"
-                remainingThisWeek={remainingThisWeek ?? 7}
-                sourcePage="builder"
-              />
-            )}
-          </div>
-        )}
       </main>
     </AppShell>
   );

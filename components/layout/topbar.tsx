@@ -8,6 +8,7 @@ import { useRouter } from "next/navigation";
 import { MobileNav } from "@/components/layout/mobile-nav";
 import { createClient } from "@/lib/supabase/client";
 import { signOut } from "@/app/actions/auth";
+import { clearCheckoutDraft } from "@/lib/checkout-draft";
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -190,7 +191,7 @@ export function Topbar({ title, breadcrumb, actions }: TopbarProps) {
                     <form action={signOut}>
                       <button
                         type="submit"
-                        onClick={() => track("signout_clicked")}
+                        onClick={() => { clearCheckoutDraft(); track("signout_clicked"); }}
                         className="w-full flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm text-destructive hover:bg-destructive/5 transition-colors"
                       >
                         <LogOut className="size-4 shrink-0" />
