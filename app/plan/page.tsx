@@ -7,6 +7,8 @@ import { Check, Crown, Zap, Infinity, ArrowLeft, AlertCircle } from "lucide-reac
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { track } from "@/lib/analytics";
+import { checkoutReturn, checkoutPrice } from "@/lib/checkout";
+import { usePromptUsage } from "@/hooks/usePromptUsage";
 
 const FOUNDER_LIMIT = 100;
 
@@ -15,23 +17,29 @@ export default function PlanPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("checkout") === "cancelled";
+  const returnTo = checkoutReturn(searchParams.get("returnTo"));
+  const { isPaid, isLoading: usageLoading } = usePromptUsage();
+  const checkoutLock = useRef(false);
 
   const [promoInput, setPromoInput] = useState("");
   const [promoApplied, setPromoApplied] = useState(false);
   const [promoAutoApplied, setPromoAutoApplied] = useState(false);
   const [promoError, setPromoError] = useState(false);
   const [founderCount, setFounderCount] = useState<number | null>(null);
+  const [founderLoading, setFounderLoading] = useState(true);
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const autoAppliedRef = useRef(false);
 
   useEffect(() => {
     track("plan_page_viewed");
+    if (cancelled) track("checkout_cancelled");
     fetch("/api/billing/founder-count")
       .then((r) => r.json())
       .then((data) => { if (typeof data?.count === "number") setFounderCount(data.count); })
-      .catch(() => null);
-  }, []);
+      .catch(() => null)
+      .finally(() => setFounderLoading(false));
+  }, [cancelled]);
 
   // Auto-apply promo code from URL (?promo=UMPROMPT)
   useEffect(() => {
@@ -58,25 +66,26 @@ export default function PlanPage() {
   }
 
   async function startCheckout(offerType: "monthly" | "lifetime") {
+    if (checkoutLock.current || usageLoading || isPaid || (promoApplied && founderLoading)) return;
+    checkoutLock.current = true;
+    let redirecting = false;
     setLoading(offerType);
     setCheckoutError(null);
-    track("upgrade_clicked", { offer_type: offerType, is_founder: promoApplied });
+    track("upgrade_clicked", { offer_type: offerType, is_founder: founderPrice });
     try {
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           offerType,
-          promoCode: promoApplied ? "UMPROMPT" : undefined,
+          promoCode: founderPrice ? "UMPROMPT" : undefined,
+          returnTo,
         }),
       });
       const json = await res.json();
-      if (process.env.NODE_ENV === "development") {
-        console.log("[checkout] response", res.status, json);
-      }
-
-      if (json.url) {
-        track("checkout_started", { offer_type: offerType, is_founder: promoApplied });
+      if (res.ok && typeof json.url === "string" && new URL(json.url).origin === "https://checkout.stripe.com") {
+        redirecting = true;
+        track("checkout_started", { offer_type: offerType, is_founder: founderPrice });
         window.location.href = json.url;
         return;
       }
@@ -84,11 +93,23 @@ export default function PlanPage() {
       // Handle structured error codes
       const code = json.error as string | undefined;
       if (code === "AUTH_REQUIRED") {
-        router.push("/login?next=/plan");
+        const next = `/plan?${new URLSearchParams({ returnTo, ...(promoApplied ? { promo: "UMPROMPT" } : {}) })}`;
+        router.push(`/login?next=${encodeURIComponent(next)}`);
         return;
       }
+      track("checkout_failed", { reason: code ?? "UNKNOWN", offer_type: offerType });
       if (code === "MISSING_CONFIG") {
-        setCheckoutError("Checkout is not configured yet. Please contact support.");
+        setCheckoutError("Payments are temporarily unavailable. Your prompt is safe; you can return to it below.");
+      } else if (code === "OFFER_UNAVAILABLE") {
+        setPromoApplied(false); setPromoAutoApplied(false);
+        setFounderCount(FOUNDER_LIMIT);
+        setCheckoutError("The founder offer has ended. Please review the regular prices before continuing.");
+      } else if (code === "ALREADY_PAID") {
+        router.push("/account");
+      } else if (code === "PRICE_MISMATCH") {
+        setCheckoutError("This price is being updated. Checkout is paused so you are not charged an unexpected amount.");
+      } else if (code === "OFFER_CHECK_FAILED") {
+        setCheckoutError("We couldn't confirm this offer. Please retry; no checkout has started.");
       } else if (code === "STRIPE_ERROR") {
         setCheckoutError("Stripe checkout could not start. Please try again.");
       } else {
@@ -99,18 +120,23 @@ export default function PlanPage() {
       if (process.env.NODE_ENV === "development") console.error("[checkout] fetch error:", err);
       setCheckoutError("Checkout could not start. Please try again.");
       setLoading(null);
+      track("checkout_failed", { reason: "NETWORK", offer_type: offerType });
+    } finally {
+      if (!redirecting) { checkoutLock.current = false; setLoading(null); }
     }
   }
 
   const spotsLeft = founderCount !== null ? Math.max(0, FOUNDER_LIMIT - founderCount) : null;
-  const isAnyLoading = loading !== null;
+  const isAnyLoading = loading !== null || usageLoading || isPaid || (promoApplied && founderLoading);
+  const founderAvailable = founderCount !== null && founderCount < FOUNDER_LIMIT;
+  const founderPrice = promoApplied && founderAvailable;
 
   return (
     <div className="min-h-screen bg-paper">
       <div className="max-w-4xl mx-auto px-4 py-10 md:py-16">
         {/* Back */}
         <Link
-          href="/dashboard"
+          href={returnTo}
           className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-ink-700 transition-colors mb-8"
         >
           <ArrowLeft className="size-3.5" />
@@ -126,23 +152,24 @@ export default function PlanPage() {
         </div>
 
         {/* Auto-applied founder unlock notice */}
-        {promoAutoApplied && (
+        {promoAutoApplied && founderAvailable && (
           <div className="mb-6 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <Crown className="size-4 shrink-0 mt-0.5 text-emerald-700" />
             <p><span className="font-semibold">Founder prices unlocked.</span>{" "}You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</p>
           </div>
         )}
+        {promoApplied && !founderLoading && founderCount === null && <p role="status" className="mb-6 text-center text-sm text-ink-500">Founder availability could not be confirmed. Regular prices are shown.</p>}
 
         {/* Cancelled notice */}
         {cancelled && (
           <div className="mb-6 flex items-center gap-2 rounded-xl border border-ink-100 bg-cream-100/60 px-4 py-3 text-sm text-ink-600">
             <AlertCircle className="size-4 shrink-0 text-ink-400" />
-            Checkout was cancelled. No charges were made.
+            Checkout was cancelled. Your plan has not changed.
           </div>
         )}
 
         {/* Founder banner */}
-        <div className="mb-8 border-y border-border py-5">
+        {founderAvailable && <div className="mb-8 border-y border-border py-5">
           <div className="flex items-start gap-3">
             <div className="size-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
               <Crown className="size-4 text-clay-600" />
@@ -187,7 +214,8 @@ export default function PlanPage() {
           {promoError && (
             <p className="mt-2 text-xs text-destructive">{t("billing.codeInvalid")}</p>
           )}
-        </div>
+        </div>}
+        {isPaid && <p role="status" className="mb-6 text-center text-sm text-emerald-800">You already have a paid plan. <Link href="/account" className="underline">Manage billing</Link></p>}
 
         {/* Pricing grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -203,17 +231,17 @@ export default function PlanPage() {
               t("billing.featureTemplates"),
             ]}
             cta={t("billing.getStartedFree")}
-            ctaHref="/dashboard"
+            ctaHref={returnTo}
             variant="neutral"
           />
 
           {/* Monthly */}
           <PricingCard
-            name={promoApplied ? t("billing.founderMonthlyName") : t("billing.proMonthlyName")}
-            price={promoApplied ? "$4.99" : "$9.99"}
+            name={founderPrice ? t("billing.founderMonthlyName") : t("billing.proMonthlyName")}
+            price={`$${(checkoutPrice("monthly", founderPrice) / 100).toFixed(2)}`}
             period="/mo"
-            originalPrice={promoApplied ? "$9.99/mo" : undefined}
-            description={promoApplied ? t("billing.featureFirstHundred") : "Full access, monthly billing."}
+            originalPrice={founderPrice ? "$9.99/mo" : undefined}
+            description="Billed monthly. Cancel future renewals anytime."
             features={[
               t("billing.featureUnlimited"),
               t("billing.featurePacks"),
@@ -225,16 +253,16 @@ export default function PlanPage() {
             loading={loading === "monthly"}
             disabled={isAnyLoading}
             variant="primary"
-            founderBadge={promoApplied}
+            founderBadge={founderPrice}
           />
 
           {/* Lifetime */}
           <PricingCard
-            name={promoApplied ? t("billing.founderLifetimeName") : t("billing.lifetimeName")}
-            price={promoApplied ? "$34.99" : "$99.99"}
+            name={founderPrice ? t("billing.founderLifetimeName") : t("billing.lifetimeName")}
+            price={`$${(checkoutPrice("lifetime", founderPrice) / 100).toFixed(2)}`}
             period=""
-            originalPrice={promoApplied ? "$99.99" : undefined}
-            description={promoApplied ? t("billing.featureFirstHundred") : "Pay once, use forever."}
+            originalPrice={founderPrice ? "$99.99" : undefined}
+            description="One payment. No recurring subscription."
             features={[
               t("billing.featureUnlimited"),
               t("billing.featureLifetime"),
@@ -247,17 +275,18 @@ export default function PlanPage() {
             disabled={isAnyLoading}
             variant="accent"
             bestValueBadge
-            founderBadge={promoApplied}
+            founderBadge={founderPrice}
           />
         </div>
 
         {/* Checkout error */}
         {checkoutError && (
-          <div className="mb-4 flex items-center gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="size-4 shrink-0" />
             {checkoutError}
           </div>
         )}
+        <div className="mb-6 text-center"><Link href={returnTo} className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"><ArrowLeft className="size-4" />Back to workspace</Link></div>
 
         {/* Fine print */}
         <p className="text-center text-xs text-ink-400">

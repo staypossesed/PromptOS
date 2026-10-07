@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { fulfillCheckout, CheckoutVerificationError } from "@/lib/fulfill-checkout";
 
 export const runtime = "nodejs";
 
@@ -28,7 +29,8 @@ export async function POST(request: NextRequest) {
 
   try {
     switch (event.type) {
-      case "checkout.session.completed": {
+      case "checkout.session.completed":
+      case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         await handleCheckoutCompleted(supabase, session);
         break;
@@ -63,98 +65,14 @@ export async function POST(request: NextRequest) {
 
 type AdminClient = ReturnType<typeof createAdminClient>;
 
-async function handleCheckoutCompleted(
-  supabase: AdminClient,
-  session: Stripe.Checkout.Session
-) {
-  const userId = session.metadata?.user_id;
-  const plan = session.metadata?.plan;
-  const isFounder = session.metadata?.is_founder === "true";
-  const promoCode = session.metadata?.promo_code;
-
-  if (!userId || !plan) {
-    console.error("[webhook] checkout.session.completed: missing metadata", session.id);
-    return;
+async function handleCheckoutCompleted(_supabase: AdminClient, session: Stripe.Checkout.Session) {
+  try {
+    await fulfillCheckout(session.id);
+  } catch (error) {
+    // Delayed payments get another event when funds settle. Never grant access early.
+    if (error instanceof CheckoutVerificationError && ["PAYMENT_PENDING", "PLAN_INACTIVE"].includes(error.code)) return;
+    throw error;
   }
-
-  const customerId =
-    typeof session.customer === "string" ? session.customer : session.customer?.id ?? null;
-
-  if (session.mode === "subscription") {
-    const stripeSubId =
-      typeof session.subscription === "string"
-        ? session.subscription
-        : session.subscription?.id ?? null;
-
-    // Fetch subscription details to get period_end (on items in API v2026+)
-    let periodEnd: string | null = null;
-    if (stripeSubId) {
-      try {
-        const stripeSub = await stripe.subscriptions.retrieve(stripeSubId);
-        const itemPeriodEnd = stripeSub.items?.data?.[0]?.current_period_end;
-        if (itemPeriodEnd) periodEnd = new Date(itemPeriodEnd * 1000).toISOString();
-      } catch {}
-    }
-
-    await supabase.from("billing_subscriptions").upsert(
-      {
-        user_id: userId,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: stripeSubId,
-        stripe_checkout_session_id: session.id,
-        stripe_price_id: session.metadata?.plan ?? null,
-        plan,
-        status: "active",
-        is_lifetime: false,
-        is_founder: isFounder,
-        current_period_end: periodEnd,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "stripe_checkout_session_id" }
-    );
-  } else if (session.mode === "payment") {
-    // One-time lifetime purchase
-    await supabase.from("billing_subscriptions").upsert(
-      {
-        user_id: userId,
-        stripe_customer_id: customerId,
-        stripe_subscription_id: null,
-        stripe_checkout_session_id: session.id,
-        stripe_price_id: session.metadata?.plan ?? null,
-        plan,
-        status: "active",
-        is_lifetime: true,
-        is_founder: isFounder,
-        current_period_end: null,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "stripe_checkout_session_id" }
-    );
-  }
-
-  // Upsert customer mapping
-  if (customerId) {
-    await supabase.from("billing_customers").upsert(
-      { user_id: userId, stripe_customer_id: customerId, updated_at: new Date().toISOString() },
-      { onConflict: "user_id" }
-    );
-  }
-
-  // Mark promo redemption succeeded
-  if (isFounder && promoCode && session.id) {
-    await supabase
-      .from("promo_redemptions")
-      .update({ status: "succeeded", updated_at: new Date().toISOString() })
-      .eq("stripe_checkout_session_id", session.id);
-  }
-
-  console.info("[webhook] checkout.session.completed fulfilled", {
-    userId,
-    plan,
-    isFounder,
-    mode: session.mode,
-    sessionId: session.id,
-  });
 }
 
 async function handleSubscriptionUpdated(
@@ -169,7 +87,7 @@ async function handleSubscriptionUpdated(
   const itemPeriodEnd = sub.items?.data?.[0]?.current_period_end;
   const periodEnd = itemPeriodEnd ? new Date(itemPeriodEnd * 1000).toISOString() : null;
 
-  await supabase
+  const { error } = await supabase
     .from("billing_subscriptions")
     .update({
       status,
@@ -177,16 +95,18 @@ async function handleSubscriptionUpdated(
       updated_at: new Date().toISOString(),
     })
     .eq("stripe_subscription_id", sub.id);
+  if (error) throw new Error("Could not update subscription status.");
 }
 
 async function handleSubscriptionDeleted(
   supabase: AdminClient,
   sub: Stripe.Subscription
 ) {
-  await supabase
+  const { error } = await supabase
     .from("billing_subscriptions")
     .update({ status: "cancelled", updated_at: new Date().toISOString() })
     .eq("stripe_subscription_id", sub.id);
+  if (error) throw new Error("Could not cancel subscription access.");
 }
 
 async function handlePaymentFailed(
@@ -202,8 +122,9 @@ async function handlePaymentFailed(
 
   if (!subId) return;
 
-  await supabase
+  const { error } = await supabase
     .from("billing_subscriptions")
     .update({ status: "past_due", updated_at: new Date().toISOString() })
     .eq("stripe_subscription_id", subId);
+  if (error) throw new Error("Could not record failed payment.");
 }

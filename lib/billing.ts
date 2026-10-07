@@ -173,13 +173,9 @@ export async function recordUsageEvent(
 // ── Founder eligibility ─────────────────────────────────────────────────────
 
 export async function getFounderCount(supabase: SupabaseClient): Promise<number> {
-  try {
-    const { data, error } = await supabase.rpc("get_founder_count");
-    if (error) throw error;
-    return (data as number) ?? 0;
-  } catch {
-    return 0;
-  }
+  const { data, error } = await supabase.rpc("get_founder_count");
+  if (error || typeof data !== "number" || !Number.isInteger(data) || data < 0) throw new Error("Founder availability could not be verified.");
+  return data;
 }
 
 export async function isFounderEligible(
@@ -214,10 +210,12 @@ export async function getOrCreateStripeCustomer(
   });
 
   // Persist mapping (use upsert in case of race condition)
-  await supabase.from("billing_customers").upsert(
+  const { error } = await createAdminClient().from("billing_customers").upsert(
     { user_id: userId, stripe_customer_id: customer.id, updated_at: new Date().toISOString() },
     { onConflict: "user_id" }
   );
+
+  if (error) throw new Error("Could not save the billing customer.");
 
   return customer.id;
 }
