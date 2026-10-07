@@ -54,14 +54,25 @@ export function hashSeed(value: string): number {
   return hash >>> 0;
 }
 
+function relevance(words: string[], suggestion: IdeaSuggestion): number {
+  return words.reduce((score, word) => score + suggestion.keywords.reduce((sum, keyword) =>
+    sum + (keyword === word ? 5 : word.length >= 2 && keyword.startsWith(word) ? 2 : 0), 0), 0);
+}
+
+export function inferTaskCategory(query: string, language = "en"): TaskCategory {
+  const words = query.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
+  const catalog = language === "ru" || language === "es" ? LOCALIZED_IDEAS[language] : IDEA_SUGGESTIONS;
+  const ranked = catalog.map((suggestion) => ({ category: suggestion.category, score: relevance(words, suggestion) })).sort((a, b) => b.score - a.score);
+  return ranked[0]?.score > 0 ? ranked[0].category : "auto";
+}
+
 export function getSuggestions(query: string, category: TaskCategory, seed: number, limit = 6, language = "en"): IdeaSuggestion[] {
   const words = query.toLocaleLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [];
   const catalog = language === "ru" || language === "es" ? LOCALIZED_IDEAS[language] : IDEA_SUGGESTIONS;
   const pool = catalog.filter((s) => category === "auto" || s.category === category);
   const ranked = pool.map((suggestion) => ({
     suggestion,
-    relevance: words.reduce((score, word) => score + suggestion.keywords.reduce((sum, keyword) =>
-      sum + (keyword === word ? 5 : word.length >= 2 && keyword.startsWith(word) ? 2 : 0), 0), 0),
+    relevance: relevance(words, suggestion),
     order: hashSeed(`${seed}:${suggestion.id}`),
   })).sort((a, b) => b.relevance - a.relevance || a.order - b.order);
   if (words.length && ranked.some((item) => item.relevance > 0)) {

@@ -20,7 +20,8 @@ import { createClient } from "@/lib/supabase/server";
 import { optimizePrompt } from "@/lib/ai/optimize-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
-import type { PromptScore, PromptContext } from "@/types/prompt";
+import type { PromptScore } from "@/types/prompt";
+import { parsePromptContext, modelContext } from "@/lib/prompt-context";
 import { rateLimit, retryAfterMessage } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
@@ -93,14 +94,13 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  const context = parsePromptContext(b.context);
+  if (!context.data) return NextResponse.json({ error: context.error }, { status: 422 });
   try {
     const improved_prompt = await optimizePrompt({
       idea: b.idea,
       target_tool: b.target_tool,
-      context:
-        typeof b.context === "object" && b.context !== null
-          ? (b.context as PromptContext)
-          : undefined,
+      context: modelContext(context.data),
       generated_prompt: b.generated_prompt,
       score: b.score as PromptScore,
       outputLanguage: typeof b.outputLanguage === "string" ? b.outputLanguage : undefined,

@@ -25,7 +25,8 @@ import { createClient } from "@/lib/supabase/server";
 import { streamGeneratedPrompt, type GenerateInput } from "@/lib/ai/generate-prompt";
 import { isValidToolId } from "@/types/prompt";
 import { ProviderConfigError } from "@/lib/ai/providers";
-import { parsePromptContext } from "@/lib/prompt-context";
+import { parsePromptContext, modelContext } from "@/lib/prompt-context";
+import { isRefinement } from "@/lib/workspace";
 import { getBillingStatus, checkUsageLimits, recordUsageEvent } from "@/lib/billing";
 import {
   newRequestId,
@@ -61,14 +62,22 @@ function validateBody(
   if (typeof b.model === "string") modelOverride.model = b.model;
   const hasOverride = Object.keys(modelOverride).length > 0;
   const context = parsePromptContext(b.context);
-  if (context.error) return { valid: false, error: context.error };
+  if (!context.data) return { valid: false, error: context.error };
+  let refinement: GenerateInput["refinement"];
+  if (b.refinement !== undefined) {
+    if (!b.refinement || typeof b.refinement !== "object") return { valid: false, error: "Invalid refinement." };
+    const r = b.refinement as Record<string, unknown>;
+    if (!isRefinement(r.action) || typeof r.prompt !== "string" || !r.prompt.trim() || r.prompt.length > 16000) return { valid: false, error: "Invalid refinement or prompt (max 16000 characters)." };
+    refinement = { action: r.action, prompt: r.prompt };
+  }
 
   return {
     valid: true,
     data: {
+      refinement,
       idea: (b.idea as string).trim(),
       target_tool: b.target_tool,
-      context: context.data,
+      context: modelContext(context.data),
       modelOverride: hasOverride ? modelOverride : undefined,
       outputLanguage: typeof b.outputLanguage === "string" ? b.outputLanguage : undefined,
     },
@@ -133,7 +142,7 @@ export async function POST(request: NextRequest) {
 
   // 6. Stream — let the generator throw if config is broken.
   try {
-    const { stream, choice } = streamGeneratedPrompt(validation.data);
+    const { stream, choice } = streamGeneratedPrompt({ ...validation.data, signal: request.signal });
 
     // Record usage event after successfully starting the stream
     void recordUsageEvent(supabase, user.id, "generate", "prompt");

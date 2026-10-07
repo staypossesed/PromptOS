@@ -92,7 +92,7 @@ export async function optimizePrompt(input: OptimizeInput): Promise<string> {
     context && Object.keys(context).length > 0
       ? Object.entries(context)
           .filter(([, v]) => v && String(v).trim())
-          .map(([k, v]) => `${k}: ${v}`)
+          .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : v}`)
           .join("\n")
       : "None provided.";
 
