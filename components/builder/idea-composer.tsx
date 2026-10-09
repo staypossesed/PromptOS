@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useId, useRef, useState } from "react";
-import { AnimatePresence, LayoutGroup, motion, useReducedMotion } from "framer-motion";
+import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
 import { ArrowUp, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, ThumbsUp, ThumbsDown } from "lucide-react";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { Disclosure } from "@/components/ui/disclosure";
+import { IdeaPlaceholder } from "@/components/builder/idea-placeholder";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { composerCopy } from "@/lib/composer-copy";
 import { TASK_CATEGORIES, isTaskCategory } from "@/lib/task-categories";
-import { getSuggestions } from "@/lib/idea-suggestions";
+import { getSuggestions, getStarterSuggestions } from "@/lib/idea-suggestions";
 import { useIdeaSuggestions } from "@/hooks/useIdeaSuggestions";
 import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
 import type { ClarificationQuestion } from "@/lib/ai/clarify-idea";
@@ -49,7 +50,9 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
   const categoryGroup = useId();
   const category = isTaskCategory(context.category) ? context.category : "auto";
   const { seed, refresh } = useIdeaSuggestions();
-  const suggestions = getSuggestions(idea, category, seed, 6, language);
+  const suggestions = guest && !idea.trim() && category === "auto"
+    ? getStarterSuggestions(seed, language)
+    : getSuggestions(idea, category, seed, 6, language);
   const [questions, setQuestions] = useState<ClarificationQuestion[]>([]);
   const [answers, setAnswers] = useState<string[]>([]);
   const [checking, setChecking] = useState(false);
@@ -57,10 +60,13 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
   const [feedback, setFeedback] = useState<boolean | null>(null);
   const [qualityOpen, setQualityOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const locked = !!busy || checking;
+  const showExamples = !idea && !inputFocused && !locked;
 
   useEffect(() => () => requestRef.current?.abort(), []);
   useEffect(() => { if (!outcomeEligible) setFeedback(null); }, [outcomeEligible]);
@@ -113,46 +119,23 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
 
   return (
     <div className="mx-auto w-full max-w-3xl text-zinc-900">
-      <LayoutGroup id={categoryGroup}>
-      <div className="mb-7 flex flex-wrap gap-1 border-b border-zinc-200 pb-3" aria-label="Task category">
-        {TASK_CATEGORIES.map((item) => {
-          const Icon = ICONS[item];
-          return <button key={item} type="button" disabled={locked} aria-pressed={category === item}
-            onClick={() => { onContextChange({ ...context, category: item, universal: true, clarifications: undefined }); track("category_selected", { category: item }); }}
-            className={cn("motion-press relative isolate flex min-h-10 items-center gap-2 rounded-md px-3 text-sm disabled:opacity-50", category === item ? "text-white" : "text-zinc-600 hover:bg-zinc-100")}>
-            {category === item && <motion.span aria-hidden="true" layoutId="category-highlight" initial={false}
-              transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }} className="absolute inset-0 -z-10 rounded-md bg-emerald-700" />}
-            <Icon className={cn("size-4 shrink-0 transition-colors", category !== item && "text-emerald-700")} />{copy.categories[item]}
-          </button>;
-        })}
-      </div>
-      </LayoutGroup>
-
+      <label htmlFor="studio-idea" className="mb-3 block text-lg font-medium">{copy.idea}</label>
       <form onSubmit={(e) => { e.preventDefault(); void prepare(); }} className="relative rounded-lg border border-zinc-300 bg-white shadow-sm transition-shadow focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/10">
-        <label htmlFor="studio-idea" className="sr-only">{copy.idea}</label>
+        <div className="relative">
         <textarea ref={inputRef} id="studio-idea" value={idea} maxLength={4000} disabled={locked}
-          onChange={(e) => editIdea(e.target.value)} placeholder={copy.placeholder} rows={5}
-          className="block min-h-[180px] w-full resize-y rounded-t-lg border-0 bg-transparent p-5 text-base leading-relaxed text-zinc-900 outline-none placeholder:text-zinc-400 disabled:opacity-70 sm:p-6" />
+          onChange={(e) => editIdea(e.target.value)} placeholder={inputFocused ? "" : copy.placeholder} rows={5}
+          onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)}
+          className={cn("block min-h-[180px] w-full resize-y rounded-t-lg border-0 bg-transparent p-5 text-base leading-relaxed text-zinc-900 outline-none disabled:opacity-70 sm:p-6", showExamples ? "placeholder:text-transparent" : "placeholder:text-zinc-500")} />
+        <IdeaPlaceholder key={language} active={showExamples} examples={copy.placeholderIdeas} pauseLabel={copy.pauseExamples} resumeLabel={copy.resumeExamples} />
+        </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-4 py-3 sm:px-5">
-          <span className="text-xs tabular-nums text-zinc-400">{idea.length} / 4000</span>
-          <button type="submit" disabled={locked || !idea.trim()} className={cn("motion-press flex min-h-11 items-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40", (checking || generating) && "generation-pulse")}>
-            {checking || busy ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
-            {checking ? copy.checking : generating ? copy.generating : copy.create}
+          <span className="text-xs tabular-nums text-zinc-500">{idea.length} / 4000</span>
+          <button type="submit" disabled={locked || !idea.trim()} className={cn("motion-press flex min-h-11 max-w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-base font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40", (checking || generating) && "generation-pulse")}>
+            {checking || busy ? <Loader2 className="size-4 shrink-0 animate-spin" /> : <ArrowUp className="size-4 shrink-0" />}
+            <span>{checking ? copy.checking : generating ? copy.generating : guest ? copy.guestCreate : copy.create}</span>
           </button>
         </div>
       </form>
-
-      <Disclosure label={copy.context} open={contextOpen} onOpenChange={setContextOpen}>
-        <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          {([ ["audience", copy.audience], ["outputFormat", copy.format], ["constraints", copy.constraints] ] as const).map(([key, label]) => (
-            <label key={key} className={cn("space-y-2 text-sm text-zinc-600", key === "constraints" && "sm:col-span-2")}>
-              <span className="block">{label}</span>
-              <input disabled={locked} maxLength={1200} value={context[key] ?? ""} onChange={(e) => onContextChange({ ...context, [key]: e.target.value, clarifications: undefined })}
-                className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-zinc-900 outline-none focus:border-emerald-600" />
-            </label>
-          ))}
-        </div>
-      </Disclosure>
 
       {notice && <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <span>{notice}</span><button disabled={locked} type="button" className="font-medium underline" onClick={() => void generate({ ...context, universal: true, category })}>{copy.skip}</button>
@@ -178,19 +161,17 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
 
       {!hasResult && !generating && !questions.length && <section className="mt-7">
         <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-medium text-zinc-500">{idea.trim() ? copy.matching : copy.inspiration}</h2>
-          <button type="button" onClick={refresh} disabled={locked} title={copy.refresh} aria-label={copy.refresh} className="motion-press flex size-9 shrink-0 items-center justify-center rounded-md text-zinc-400 hover:bg-zinc-100 hover:text-zinc-900">
+          <h2 className="text-base font-medium text-zinc-700">{idea.trim() ? copy.matching : copy.inspiration}</h2>
+          <button type="button" onClick={refresh} disabled={locked} title={copy.refresh} aria-label={copy.refresh} className="motion-press flex size-11 shrink-0 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900">
             <motion.span key={seed} initial={mounted && !reducedMotion ? { rotate: -180, opacity: 0.5 } : false} animate={{ rotate: 0, opacity: 1 }} transition={{ duration: reducedMotion ? 0 : 0.36 }}><Shuffle className="size-4" /></motion.span>
           </button>
         </div>
-        <div className="grid gap-x-6 sm:grid-cols-2" aria-live="polite">
-          <AnimatePresence mode="popLayout">
+        <div key={`${language}:${suggestions.map((suggestion) => suggestion.id).join(",")}`} className="grid gap-x-6 sm:grid-cols-2" aria-live="polite">
           {suggestions.map((suggestion, index) => {
             const Icon = ICONS[suggestion.category];
             return <motion.button key={suggestion.id} type="button" disabled={locked} tabIndex={0}
               layout={reducedMotion ? false : "position"}
               initial={mounted && !reducedMotion ? { opacity: 0, y: 12 } : false} animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: reducedMotion ? 0 : -6, transition: { duration: reducedMotion ? 0 : 0.12, delay: 0 } }}
               transition={{ duration: reducedMotion ? 0 : 0.28, delay: reducedMotion ? 0 : index * 0.04, layout: { duration: reducedMotion ? 0 : 0.28 } }}
               whileHover={reducedMotion || locked ? undefined : { y: -4, transition: { duration: 0.16, delay: 0 } }}
               whileTap={reducedMotion || locked ? undefined : { scale: 0.98, transition: { duration: 0.12, delay: 0 } }} onClick={() => {
@@ -198,13 +179,41 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
               track("idea_suggestion_selected", { category: suggestion.category, suggestion_id: suggestion.id }); inputRef.current?.focus();
             }} className="group flex min-h-[76px] items-center gap-3 border-b border-zinc-100 py-3 text-left disabled:opacity-40">
               <Icon className="size-5 shrink-0 text-emerald-700" />
-              <span className="min-w-0 flex-1"><span className="block text-sm font-medium leading-snug text-zinc-800 group-hover:text-emerald-700">{suggestion.title}</span><span className="mt-1 block text-xs text-zinc-400">{copy.categories[suggestion.category]}</span></span>
+              <span className="min-w-0 flex-1"><span className="block text-base font-medium leading-snug text-zinc-800 group-hover:text-emerald-700">{suggestion.title}</span></span>
               <ArrowUpRight className="size-4 shrink-0 text-zinc-300 transition-transform duration-200 motion-safe:group-hover:-translate-y-0.5 motion-safe:group-hover:translate-x-0.5 group-hover:text-emerald-700" />
             </motion.button>;
           })}
-          </AnimatePresence>
         </div>
       </section>}
+
+      <Disclosure label={category === "auto" ? copy.category : `${copy.category}: ${copy.categories[category]}`} open={categoryOpen} onOpenChange={setCategoryOpen}>
+      <LayoutGroup id={categoryGroup}>
+      <div className="mt-3 flex flex-wrap gap-1" aria-label={copy.category}>
+        {TASK_CATEGORIES.map((item) => {
+          const Icon = ICONS[item];
+          return <button key={item} type="button" disabled={locked} aria-pressed={category === item}
+            onClick={() => { onContextChange({ ...context, category: item, universal: true, clarifications: undefined }); track("category_selected", { category: item }); }}
+            className={cn("motion-press relative isolate flex min-h-11 items-center gap-2 rounded-md px-3 text-sm disabled:opacity-50", category === item ? "text-white" : "text-zinc-600 hover:bg-zinc-100")}>
+            {category === item && <motion.span aria-hidden="true" layoutId="category-highlight" initial={false}
+              transition={{ duration: reducedMotion ? 0 : 0.3, ease: [0.22, 1, 0.36, 1] }} className="absolute inset-0 -z-10 rounded-md bg-emerald-700" />}
+            <Icon className={cn("size-4 shrink-0 transition-colors", category !== item && "text-emerald-700")} />{copy.categories[item]}
+          </button>;
+        })}
+      </div>
+      </LayoutGroup>
+      </Disclosure>
+
+      <Disclosure label={copy.context} open={contextOpen} onOpenChange={setContextOpen}>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {([ ["audience", copy.audience], ["outputFormat", copy.format], ["constraints", copy.constraints] ] as const).map(([key, label]) => (
+            <label key={key} className={cn("space-y-2 text-sm text-zinc-600", key === "constraints" && "sm:col-span-2")}>
+              <span className="block">{label}</span>
+              <input disabled={locked} maxLength={1200} value={context[key] ?? ""} onChange={(e) => onContextChange({ ...context, [key]: e.target.value, clarifications: undefined })}
+                className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-zinc-900 outline-none focus:border-emerald-600" />
+            </label>
+          ))}
+        </div>
+      </Disclosure>
 
       {(hasResult || generating) && <section ref={resultRef} className="prompt-reveal mt-9 scroll-mt-24">
         <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">{copy.result}</h2>

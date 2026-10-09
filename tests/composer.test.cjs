@@ -1,7 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { loadTS } = require("../scripts/load-ts.cjs");
-const { getSuggestions, hashSeed, IDEA_SUGGESTIONS } = loadTS("lib/idea-suggestions.ts");
+const { getSuggestions, getStarterSuggestions, hashSeed, IDEA_SUGGESTIONS } = loadTS("lib/idea-suggestions.ts");
 const { buildMetaPrompt } = loadTS("lib/ai/generate-prompt.ts");
 const { isTaskCategory } = loadTS("lib/task-categories.ts");
 const { parsePromptContext } = loadTS("lib/prompt-context.ts");
@@ -10,6 +10,38 @@ test("empty ideas show six distinct kinds of work", () => {
   const suggestions = getSuggestions("", "auto", 12);
   assert.equal(suggestions.length, 6);
   assert.equal(new Set(suggestions.map((s) => s.category)).size, 6);
+});
+
+test("first-time examples are familiar, localized, stable and refreshable", () => {
+  for (const language of ["en", "es", "ru"]) {
+    const first = getStarterSuggestions(12, language);
+    assert.equal(first.length, 6);
+    assert.equal(new Set(first.map((s) => s.id)).size, 6);
+    assert.ok(first.every((s) => s.category !== "coding"));
+    assert.deepEqual(first, getStarterSuggestions(12, language));
+    assert.notDeepEqual(first, getStarterSuggestions(43, language));
+    if (language === "ru") assert.ok(first.every((s) => /[А-Яа-я]/.test(s.title)));
+    if (language === "es") assert.ok(first.every((s) => !IDEA_SUGGESTIONS.some((en) => en.title === s.title)));
+  }
+  assert.equal(getSuggestions("debug", "auto", 12)[0].category, "coding");
+});
+
+test("beginner labels distinguish the prepared request from the chatbot's answer", () => {
+  const { composerCopy } = loadTS("lib/composer-copy.ts");
+  const en = composerCopy("en");
+  assert.match(en.title, /ChatGPT/);
+  assert.match(en.startTitle, /Simplify your work/);
+  assert.equal(en.placeholderIdeas.length, 6);
+  assert.equal(new Set(en.placeholderIdeas).size, 6);
+  assert.match(en.result, /request/);
+  assert.match(en.guestCreate, /Sign in/);
+  assert.match(en.category, /optional/);
+  assert.equal(en.copy, "Copy request");
+  for (const language of ["es", "ru"]) {
+    assert.deepEqual(Object.keys(composerCopy(language)).sort(), Object.keys(en).sort());
+    assert.equal(composerCopy(language).placeholderIdeas.length, 6);
+    assert.ok(composerCopy(language).placeholderIdeas.every((idea) => idea.length < 100));
+  }
 });
 test("the first word ranks related tasks before unrelated inspiration", () => {
   assert.equal(getSuggestions("debug", "auto", 12)[0].id, "debug");

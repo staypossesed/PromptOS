@@ -18,7 +18,7 @@ export function Disclosure({ label, open, onOpenChange, children }: {
     <div className="mt-4 border-b border-zinc-200 pb-4">
       <button type="button" aria-expanded={open} aria-controls={id}
         onClick={() => onOpenChange(!open)}
-        className="motion-press flex min-h-9 items-center gap-2 text-sm text-zinc-500 hover:text-emerald-700 transition-colors">
+        className="motion-press flex min-h-11 items-center gap-2 text-base text-zinc-600 hover:text-emerald-700 transition-colors">
         <ChevronDown className={`size-4 transition-transform duration-200 ${open ? "rotate-180" : ""}`} />
         {label}
       </button>

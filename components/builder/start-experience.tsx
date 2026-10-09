@@ -15,9 +15,8 @@ export function StartExperience() {
   const router = useRouter();
   return <>
     <div className="mx-auto mb-8 max-w-3xl">
-      <h1 className="font-serif text-3xl font-semibold text-zinc-900">Umprompt</h1>
-      <h2 className="mt-5 text-xl font-medium text-zinc-800">{copy.title}</h2>
-      <p className="mt-2 text-sm text-zinc-500">{copy.subtitle}</p>
+      <h1 className="text-3xl font-semibold leading-tight text-zinc-900">{copy.startTitle}</h1>
+      <p className="mt-3 text-base leading-relaxed text-zinc-600">{copy.startSubtitle}</p>
     </div>
     <IdeaComposer guest idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
       onGenerate={(nextContext) => {

@@ -94,7 +94,7 @@ let browser;
     await page.goto(`${base}/interaction-check?id=${id}`);
     await page.getByRole("heading", { name: "Keep building" }).waitFor();
     const refineY = await page.getByRole("heading", { name: "Refine your prompt" }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    const outputY = await page.getByRole("button", { name: "Copy prompt", exact: true }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    const outputY = await page.getByRole("button", { name: "Copy request", exact: true }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
     assert.ok(refineY < outputY, "Refinement must be above the result footer");
     assert.equal(await page.getByRole("link", { name: "New profile", exact: true }).getAttribute("href"), "/library?new=profile");
     await page.getByRole("link", { name: "Keep building", exact: true }).click();
@@ -135,7 +135,7 @@ let browser;
     assert.equal(items[0].kind, "playbook");
     assert.equal(items[0].payload.context.profile, undefined);
     assert.equal(items[0].payload.context.versions, undefined);
-    await page.getByRole("button", { name: "Copy prompt", exact: true }).click();
+    await page.getByRole("button", { name: "Copy request", exact: true }).click();
     await page.getByRole("heading", { name: "2 free prompts left this week." }).waitFor();
     assert.equal(await page.evaluate(() => navigator.clipboard.readText()), original);
     // Update an existing saved result; inspect only the mocked request.

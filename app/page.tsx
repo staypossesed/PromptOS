@@ -20,7 +20,7 @@ export default function LandingPage() {
       <main className="workspace-enter px-5 py-10 sm:px-8 sm:py-14"><StartExperience /></main>
       <footer className="mt-6 border-t border-zinc-200 bg-white">
         <div className="mx-auto flex max-w-3xl flex-wrap items-center justify-between gap-4 px-5 py-6 text-xs text-zinc-500">
-          <span>Free to start · 7 prompts per week</span>
+            <span>Free to start · 7 requests per week</span>
           <div className="flex flex-wrap gap-5"><Link href="/help">Help</Link><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></div>
         </div>
       </footer>
