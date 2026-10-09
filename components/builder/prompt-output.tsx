@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Download, RefreshCw, Loader2 } from "lucide-react";
+import { Copy, Download, RefreshCw, Loader2, WandSparkles, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { useEffect, useRef, useState } from "react";
@@ -108,7 +108,7 @@ function renderInline(text: string): React.ReactNode[] {
       return <strong key={i} className="font-semibold text-ink-900">{part.slice(2, -2)}</strong>;
     if (/^`[^`]+`$/.test(part))
       return (
-        <code key={i} className="font-mono text-[11.5px] bg-cream-200/80 border border-ink-100/60 px-1 py-0.5 rounded text-ink-700">
+        <code key={i} className="font-mono text-sm bg-cream-200/80 border border-ink-100/60 px-1 py-0.5 rounded text-ink-700">
           {part.slice(1, -1)}
         </code>
       );
@@ -125,14 +125,14 @@ function PromptRenderer({ text }: { text: string }) {
         switch (block.kind) {
           case "h1":
             return (
-              <h1 key={i} className="font-serif text-base font-medium text-ink-900 pt-2">
+              <h2 key={i} className="text-lg font-semibold text-ink-900 pt-2">
                 {block.text}
-              </h1>
+              </h2>
             );
           case "h2":
             return (
               <div key={i} className="flex items-center gap-2.5 pt-4 first:pt-1">
-                <span className="min-w-0 break-words text-xs font-semibold uppercase text-ink-400">
+                <span className="min-w-0 break-words text-base font-semibold text-ink-700">
                   {block.text}
                 </span>
                 <div className="flex-1 h-px bg-ink-100/80" />
@@ -140,13 +140,13 @@ function PromptRenderer({ text }: { text: string }) {
             );
           case "h3":
             return (
-              <h3 key={i} className="text-sm font-semibold text-ink-700 pt-2">
+              <h3 key={i} className="text-base font-semibold text-ink-700 pt-2">
                 {block.text}
               </h3>
             );
           case "p":
             return (
-              <p key={i} className="text-[13.5px] leading-relaxed text-ink-700">
+              <p key={i} className="text-base leading-relaxed text-ink-700">
                 {renderInline(block.text)}
               </p>
             );
@@ -155,8 +155,8 @@ function PromptRenderer({ text }: { text: string }) {
               <ul key={i} className="space-y-1.5 pl-0.5">
                 {block.items.map((item, j) => (
                   <li key={j} className="flex items-start gap-2.5">
-                    <span className="mt-[7px] size-1 rounded-full bg-clay-400 shrink-0" />
-                    <span className="text-[13.5px] leading-relaxed text-ink-700">
+                    <span className="mt-[10px] size-1 rounded-full bg-clay-400 shrink-0" />
+                    <span className="min-w-0 text-base leading-relaxed text-ink-700">
                       {renderInline(item)}
                     </span>
                   </li>
@@ -168,10 +168,10 @@ function PromptRenderer({ text }: { text: string }) {
               <ol key={i} className="space-y-2 pl-0.5">
                 {block.items.map((item, j) => (
                   <li key={j} className="flex items-start gap-2.5">
-                    <span className="text-[11px] font-mono text-ink-400 tabular-nums mt-0.5 shrink-0 min-w-[1.25rem]">
+                    <span className="text-sm font-mono text-ink-500 tabular-nums mt-0.5 shrink-0 min-w-[1.25rem]">
                       {j + 1}.
                     </span>
-                    <span className="text-[13.5px] leading-relaxed text-ink-700">
+                    <span className="min-w-0 text-base leading-relaxed text-ink-700">
                       {renderInline(item)}
                     </span>
                   </li>
@@ -183,10 +183,10 @@ function PromptRenderer({ text }: { text: string }) {
               <div key={i} className="rounded-lg overflow-hidden border border-ink-100/80 bg-zinc-50">
                 {block.lang && (
                   <div className="px-3.5 py-1.5 border-b border-ink-100/70 bg-zinc-100">
-                    <span className="text-[10px] font-mono text-ink-400">{block.lang}</span>
+                    <span className="text-sm font-mono text-ink-500">{block.lang}</span>
                   </div>
                 )}
-                <pre className="p-3.5 font-mono text-[12px] leading-[1.65] text-ink-800 overflow-x-auto whitespace-pre-wrap break-words">
+                <pre className="p-3.5 font-mono text-sm leading-[1.65] text-ink-800 overflow-x-auto whitespace-pre-wrap break-words">
                   {block.lines.join("\n")}
                 </pre>
               </div>
@@ -207,6 +207,9 @@ interface PromptOutputProps {
   isSaved?: boolean;
   isGenerating?: boolean;
   isOptimizing?: boolean;
+  busy?: boolean;
+  onOptimize?: () => void;
+  optimizeError?: string | null;
   onRegenerate?: () => void;
   universal?: boolean;
   onCopied?: () => void;
@@ -218,6 +221,9 @@ export function PromptOutput({
   isSaved,
   isGenerating,
   isOptimizing,
+  busy,
+  onOptimize,
+  optimizeError,
   onRegenerate,
   universal = false,
   onCopied,
@@ -229,6 +235,11 @@ export function PromptOutput({
   const copyTimeout = useRef<ReturnType<typeof setTimeout>>();
   const copyLabel = universal ? copy.copy : t("promptOutput.copy");
   useEffect(() => () => clearTimeout(copyTimeout.current), []);
+  useEffect(() => {
+    clearTimeout(copyTimeout.current);
+    setCopied(false);
+    setCopyError(false);
+  }, [prompt]);
 
   async function handleCopy() {
     try {
@@ -254,6 +265,7 @@ export function PromptOutput({
   }
 
   const isEmpty = !prompt.trim();
+  const locked = !!busy || isGenerating || isOptimizing;
   const toolMeta = TOOL_META[targetTool];
   const wordCount = prompt.split(/\s+/).filter(Boolean).length;
 
@@ -274,23 +286,23 @@ export function PromptOutput({
     : "text-ink-500 bg-cream-100 border-ink-100/60";
 
   return (
-    <div className={cn("flex h-full flex-col rounded-lg border bg-card card-soft overflow-hidden transition-colors duration-200", isGenerating || isOptimizing ? "generation-pulse border-emerald-300" : "border-ink-100/70")} aria-busy={isGenerating || isOptimizing}>
+    <div data-prompt-output className={cn("flex h-full flex-col rounded-lg border bg-card card-soft overflow-hidden transition-colors duration-200", isGenerating || isOptimizing ? "generation-pulse border-emerald-300" : "border-ink-100/70")} aria-busy={locked}>
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-ink-100/60 bg-cream-50/50">
-        <div className="flex items-center gap-2.5 min-w-0">
-          <div className="flex items-center gap-1.5 shrink-0 rounded-full border border-ink-100/60 bg-white px-2.5 py-1">
-            <span className={cn("size-1.5 rounded-full", toolMeta.dot)} />
-            <span className="text-[11px] font-medium text-ink-600">{universal ? copy.portable : toolMeta.label}</span>
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-ink-100/60 bg-cream-50/50">
+        <div className="flex flex-wrap items-center gap-2.5 min-w-0">
+          <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-ink-100/60 bg-white px-2.5 py-1">
+            <span className={cn("size-1.5 shrink-0 rounded-full", toolMeta.dot)} />
+            <span className="text-sm font-medium text-ink-600">{universal ? copy.portable : toolMeta.label}</span>
           </div>
           {wordCount > 0 && !isGenerating && (
-            <span className="text-[11px] text-ink-400 tabular-nums">
-              {wordCount} {wordCount === 1 ? "word" : "words"}
+            <span className="text-sm text-ink-500 tabular-nums">
+              {wordCount} {wordCount === 1 ? copy.word : copy.words}
             </span>
           )}
         </div>
         {statusLabel && (
           <span className={cn(
-            "flex items-center gap-1.5 text-[11px] font-medium rounded-full border px-2.5 py-0.5 shrink-0",
+            "flex items-center gap-1.5 text-sm font-medium rounded-md border px-2.5 py-0.5 shrink-0",
             statusClass
           )}>
             {(isGenerating || isOptimizing) && <Loader2 className="size-2.5 animate-spin" />}
@@ -301,7 +313,7 @@ export function PromptOutput({
       </div>
 
       {/* Body */}
-      <div className="flex-1 overflow-y-auto">
+      <div data-prompt-content className="min-h-0 flex-1 overflow-y-auto break-words">
         {isGenerating && isEmpty ? (
           <div className="p-5">
             <StreamingPlaceholder />
@@ -309,9 +321,7 @@ export function PromptOutput({
         ) : isEmpty ? (
           <div className="h-full flex flex-col items-center justify-center text-center px-8 py-12">
             <div className="w-10 h-10 mb-4 rounded-xl bg-cream-100 border border-ink-100/60 flex items-center justify-center">
-              <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className="text-ink-300">
-                <path d="M3 4h12M3 8h8M3 12h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-              </svg>
+              <FileText className="size-5 text-ink-400" />
             </div>
             <p className="text-sm font-semibold text-ink-700 mb-1.5">
               Your prompt will appear here.
@@ -323,7 +333,7 @@ export function PromptOutput({
         ) : isGenerating ? (
           /* Streaming: raw pre with cursor */
           <div className="p-5">
-            <pre className="font-mono text-[12.5px] leading-[1.75] text-ink-800 whitespace-pre-wrap break-words">
+            <pre className="font-mono text-base leading-[1.75] text-ink-800 whitespace-pre-wrap break-words">
               {prompt}
               <span className="inline-block w-1.5 h-[14px] ml-0.5 bg-clay-500 align-middle animate-pulse rounded-sm" />
             </pre>
@@ -336,35 +346,47 @@ export function PromptOutput({
         )}
       </div>
 
-      {copyError && <p role="alert" className="px-4 pb-3 text-xs text-red-600">Could not copy. Select the prompt text to copy it manually.</p>}
+      {copyError && <p role="alert" className="px-4 pb-3 text-sm text-red-700">{copy.copyError}</p>}
+      {optimizeError && <p role="alert" className="px-4 py-3 text-sm text-red-700">{optimizeError}</p>}
       {/* Footer */}
-      <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-2.5 border-t border-ink-100/60 bg-cream-50/40">
+      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-ink-100/60 bg-cream-50/40">
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+        {onOptimize && <Button variant="outline" onClick={onOptimize} disabled={isEmpty || locked} title={copy.optimizeHint} className="h-auto min-h-11 max-w-full whitespace-normal px-3 py-2 text-base text-emerald-800">
+          <ActionIcon pending={isOptimizing} icon={WandSparkles} />
+          <span className="grid">
+            <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.optimize}</span>
+            <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.optimizing}</span>
+            <span aria-live="polite" className="col-start-1 row-start-1">{isOptimizing ? copy.optimizing : copy.optimize}</span>
+          </span>
+        </Button>}
         <Button
           variant="ghost"
           size="sm"
           onClick={onRegenerate}
-          disabled={isEmpty || isGenerating || isOptimizing}
-          className="text-ink-500 hover:text-ink-700"
+          disabled={isEmpty || locked || !onRegenerate}
+          className="h-auto min-h-11 max-w-full whitespace-normal px-3 py-2 text-base text-ink-600 hover:text-ink-800"
         >
           <RefreshCw className="size-3.5" />
           {t("promptOutput.regenerate")}
         </Button>
-        <div className="flex items-center gap-1.5">
+        </div>
+        <div className="flex w-full flex-wrap items-center justify-end gap-2 sm:w-auto">
           <Button
             variant="outline"
             size="sm"
             onClick={handleDownload}
-            disabled={isEmpty || isGenerating}
-            className="text-ink-500"
+            disabled={isEmpty || locked}
+            title={copy.download}
+            className="size-11 shrink-0 p-0 text-ink-600"
           >
             <Download className="size-3.5" />
-            <span className="sr-only">Download prompt</span>
+            <span className="sr-only">{copy.download}</span>
           </Button>
           <Button
             size="sm"
             onClick={handleCopy}
-            disabled={isEmpty || isGenerating}
-            className={copied ? "action-confirm" : undefined}
+            disabled={isEmpty || locked}
+            className={cn("h-auto min-h-11 max-w-full whitespace-normal px-3 py-2 text-base", copied && "action-confirm")}
           >
             <ActionIcon success={copied} icon={Copy} />
             <span className="grid">

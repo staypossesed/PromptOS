@@ -29,7 +29,7 @@ export function ToolStrip() {
         ))}
       </div>
       <div className="text-[11px] text-ink-300">
-        Launching with Cursor, Claude, ChatGPT — more soon.
+        Clear prompts for your preferred AI assistant.
       </div>
     </div>
   );

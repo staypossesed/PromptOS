@@ -12,15 +12,15 @@ export const dynamic = "force-dynamic";
 const FAQS = [
   {
     q: "What is Umprompt?",
-    a: "Umprompt turns rough ideas into execution-ready AI prompts. Describe what you want to build, pick your target tool (Claude, Cursor, or ChatGPT), and Umprompt generates a structured, scored prompt ready to paste.",
+    a: "Umprompt expands rough ideas into clear, structured prompts for your preferred AI assistant. It prepares the instructions, rather than answering the task itself.",
   },
   {
     q: "How does the scoring work?",
     a: "Every generated prompt is scored across 6 dimensions: Clarity, Context, Constraints, Examples, Output Format, and Tool Fit. Each dimension gets a score out of 100, and the weighted average becomes your overall score.",
   },
   {
-    q: "What's the difference between Claude, Cursor, and ChatGPT modes?",
-    a: "Each tool has its own prompt style. Claude mode emphasizes reasoning and structured thinking. Cursor mode produces code-centric prompts with file and workspace context. ChatGPT mode keeps prompts concise and instruction-heavy.",
+    q: "Do I need a particular AI assistant?",
+    a: "No. The default builder creates a portable prompt for your chosen AI assistant. Previously saved tool-specific prompts keep their original settings.",
   },
   {
     q: "Can I edit a saved prompt?",
@@ -44,8 +44,8 @@ const STEPS = [
   },
   {
     icon: Zap,
-    title: "2. Pick your tool",
-    body: "Choose Claude, Cursor, or ChatGPT. Umprompt tailors the structure and tone to match how each tool works best.",
+    title: "2. Add details (optional)",
+    body: "Add an audience, constraints, or desired output format when they matter to your task.",
   },
   {
     icon: TrendingUp,

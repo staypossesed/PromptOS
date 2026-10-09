@@ -63,6 +63,14 @@ test("refinements preserve original task and prompt as task data", () => {
     assert.match(result.system, /Preserve|preserv|losing essential/);
   }
 });
+test("simplification removes jargon without losing supplied constraints or solving the task", () => {
+  const result = buildMetaPrompt({ idea: "Write an email", target_tool: "claude", context: { universal: true }, refinement: { action: "shorter", prompt: "Ask for two days. Do not invent a reason." } });
+  assert.match(result.system, /plain, everyday language/);
+  assert.match(result.system, /without losing essential facts, constraints/);
+  assert.match(result.system, /return a prompt, not an answer/);
+  assert.match(JSON.parse(result.user).existingPrompt, /Do not invent a reason/);
+});
+
 test("next tasks reference project context, not an answer that Umprompt has never seen", () => {
   assert.equal(nextSteps("unknown").length, 3);
   assert.match(nextSteps("coding")[0], /test plan/);

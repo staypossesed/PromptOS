@@ -217,10 +217,10 @@ export const en = {
 
   emptyState: {
     title: "Your prompt workspace is empty.",
-    subtitle: "Start with a rough idea — Umprompt turns it into a scored, optimized prompt ready to paste into Claude, Cursor, or ChatGPT.",
-    buildWithCursor: "Build with Cursor",
-    writeWithChatGPT: "Write with ChatGPT",
-    researchWithClaude: "Research with Claude",
+    subtitle: "Your rough idea, expanded into a clear prompt for your preferred AI assistant.",
+    buildWithCursor: "Build an app",
+    writeWithChatGPT: "Write an email",
+    researchWithClaude: "Research a topic",
     orText: "Or",
     startFromScratch: "start from scratch",
   },
@@ -282,9 +282,9 @@ export const en = {
   onboarding: {
     title: "What are you building today?",
     subtitle: "Pick a starting point. We'll fill in the idea and pick the right tool — edit anything before generating.",
-    buildWithCursor: "Build with Cursor",
-    writeWithChatGPT: "Write with ChatGPT",
-    researchWithClaude: "Research with Claude",
+    buildWithCursor: "Build an app",
+    writeWithChatGPT: "Write an email",
+    researchWithClaude: "Research a topic",
     automateWithN8n: "Automate with n8n",
     salesCopy: "Sales/outreach copy",
     createContent: "Create content",

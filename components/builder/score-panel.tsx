@@ -124,7 +124,7 @@ export function ScorePanel({
       </div>
 
       {/* Optimize CTA */}
-      <div className="border-t border-ink-100/60 p-4 bg-cream-50/40 space-y-2">
+      {onOptimize && <div className="border-t border-ink-100/60 p-4 bg-cream-50/40 space-y-2">
         <Button
           className="w-full"
           variant="default"
@@ -142,7 +142,7 @@ export function ScorePanel({
             {optimizeError}
           </p>
         )}
-      </div>
+      </div>}
     </div>
   );
 }

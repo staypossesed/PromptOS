@@ -59,7 +59,7 @@ export function isRefinement(value: unknown): value is Refinement {
   return typeof value === "string" && REFINEMENTS.includes(value as Refinement);
 }
 export const REFINEMENT_INSTRUCTIONS: Record<Refinement, string> = {
-  shorter: "Make this prompt substantially shorter without losing essential facts, constraints, or the requested deliverable.",
+  shorter: "Make this prompt shorter and easier to understand using plain, everyday language. Remove jargon and repetition without losing essential facts, constraints, or the requested deliverable. Preserve the task; return a prompt, not an answer to it.",
   specific: "Make success criteria and deliverables more concrete using only provided facts. Do not invent details or add unnecessary complexity.",
   steps: "Ask for a practical, ordered action plan with clear deliverables. Preserve the original task and constraints. Do not request hidden chain-of-thought.",
   professional: "Use clear, polished professional language. Preserve the original intent, facts and level of commitment; do not add claims.",

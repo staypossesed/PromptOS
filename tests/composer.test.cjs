@@ -26,21 +26,71 @@ test("first-time examples are familiar, localized, stable and refreshable", () =
   assert.equal(getSuggestions("debug", "auto", 12)[0].category, "coding");
 });
 
-test("beginner labels distinguish the prepared request from the chatbot's answer", () => {
+test("beginner labels distinguish the prepared request from the AI assistant's answer", () => {
   const { composerCopy } = loadTS("lib/composer-copy.ts");
   const en = composerCopy("en");
-  assert.match(en.title, /ChatGPT/);
-  assert.match(en.startTitle, /Simplify your work/);
+  assert.match(en.title, /AI prompt/);
+  assert.match(en.startTitle, /Expand your idea/);
   assert.equal(en.placeholderIdeas.length, 6);
   assert.equal(new Set(en.placeholderIdeas).size, 6);
-  assert.match(en.result, /request/);
+  assert.match(en.result, /expanded AI prompt/);
   assert.match(en.guestCreate, /Sign in/);
   assert.match(en.category, /optional/);
-  assert.equal(en.copy, "Copy request");
+  assert.equal(en.copy, "Copy AI prompt");
   for (const language of ["es", "ru"]) {
     assert.deepEqual(Object.keys(composerCopy(language)).sort(), Object.keys(en).sort());
     assert.equal(composerCopy(language).placeholderIdeas.length, 6);
     assert.ok(composerCopy(language).placeholderIdeas.every((idea) => idea.length < 100));
+  }
+});
+
+test("general assistant labels and starting tasks do not favor an AI provider", () => {
+  const { composerCopy } = loadTS("lib/composer-copy.ts");
+  assert.equal(composerCopy("en").portable, "Ready for your AI assistant");
+  for (const language of ["en", "es", "ru"]) {
+    const copy = composerCopy(language);
+    const dictionary = loadTS(`lib/i18n/dictionaries/${language}.ts`)[language];
+    const labels = [copy.portable, copy.workflow.chatbot, dictionary.emptyState.subtitle];
+    for (const section of [dictionary.emptyState, dictionary.onboarding]) {
+      labels.push(section.buildWithCursor, section.writeWithChatGPT, section.researchWithClaude);
+    }
+    for (const label of labels) {
+      assert.ok(label.length > 0);
+      assert.doesNotMatch(label, /ChatGPT|Claude|Cursor|OpenAI/i);
+    }
+  }
+  const { TOOLS } = loadTS("lib/mock-data.ts");
+  assert.ok(TOOLS.some((tool) => tool.id === "chatgpt" && tool.name === "ChatGPT"), "Real tool labels must still match their stored identifiers");
+});
+
+test("expansion examples demonstrate prompt instructions, not an answer or invented personal facts", () => {
+  const { composerCopy } = loadTS("lib/composer-copy.ts");
+  for (const language of ["en", "es", "ru"]) {
+    const example = composerCopy(language).expansionExample;
+    const expanded = [example.goal, example.details, example.output].join(" ");
+    assert.ok(expanded.length > example.idea.length * 4);
+    assert.match(example.details, /\[[^\]]+\]/);
+    assert.ok(example.badge.length > 0);
+    assert.notEqual(expanded, example.idea);
+  }
+  const prompt = buildMetaPrompt({ idea: "email asking for 2 extra days", target_tool: "chatgpt", context: { universal: true, category: "writing" } });
+  assert.match(prompt.system, /Return the prompt, not the answer/);
+  assert.match(prompt.system, /Never invent personal facts/);
+});
+
+test("result actions and example tabs are distinct and localized", () => {
+  const { composerCopy } = loadTS("lib/composer-copy.ts");
+  const en = composerCopy("en");
+  assert.equal(en.optimize, "Optimize prompt");
+  assert.equal(en.yourPrompt, "Your prompt");
+  assert.equal(en.exampleTab, "Example");
+  assert.match(en.optimizeError, /original is unchanged/);
+  for (const language of ["es", "ru"]) {
+    const copy = composerCopy(language);
+    for (const key of ["optimize", "optimizing", "yourPrompt", "exampleTab", "optimizeError", "optimizeScoreError", "download"]) {
+      assert.notEqual(copy[key], en[key]);
+      assert.ok(copy[key].length > 0);
+    }
   }
 });
 test("the first word ranks related tasks before unrelated inspiration", () => {

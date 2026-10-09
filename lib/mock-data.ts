@@ -191,8 +191,8 @@ export const MOCK_PROMPTS: MockPrompt[] = [
 ];
 
 export const EXAMPLE_IDEAS = [
-  "Build a SaaS client portal with Cursor",
-  "Write a cold email campaign in ChatGPT",
-  "Analyze competitors with Claude",
+  "Build a SaaS client portal",
+  "Write a cold email campaign",
+  "Analyze competitors",
   "Create an n8n lead automation workflow",
 ];

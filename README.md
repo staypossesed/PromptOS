@@ -2,7 +2,7 @@
 
 Turn rough ideas into clear, ready-to-use AI prompts.
 
-Umprompt helps people describe what they want without learning prompt engineering. Start with a messy idea, add essential details when needed, and copy a structured request into your preferred AI chatbot. The default workflow is organized around the task, not the chatbot vendor.
+Umprompt helps people describe what they want without learning prompt engineering. Start with a messy idea, add essential details when needed, and copy a structured request into your preferred AI assistant. The default workflow is organized around the task, not the AI provider.
 
 ## Product Experience
 
@@ -14,11 +14,13 @@ Umprompt helps people describe what they want without learning prompt engineerin
 - **Content-safe measurement:** explicit PostHog events cover refinements, library use, next tasks, copies, feedback, and upgrades. Autocapture and session recording are disabled to keep profile/prompt content out of analytics.
 
 - **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
+- **Visible expansion example:** a rough idea and its structured prompt appear together before generation. The signed-in builder retains a separate Example tab after generation; viewing it never replaces the current task or result.
 - **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
 - **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
 - **Focused clarification:** ambiguous ideas can receive up to two follow-up questions. Clear requests proceed directly, and users can skip clarification.
 - **Portable prompts:** generation preserves the user's intent and supplied details without requiring a vendor-specific template. Existing tool-specific prompts and prompt packs remain supported.
-- **Optional quality review:** scoring and optimization are available without interrupting the main idea-to-prompt workflow. Prompt scores are estimates, not proof of better answers.
+- **Clear result actions:** Optimize prompt is available beside Regenerate without opening quality review. Simplify requests plain language while preserving essential facts and constraints. Failed optimization keeps the original result; successful changes retain a restorable previous version.
+- **Optional quality review:** scoring remains available without interrupting the main idea-to-prompt workflow. Prompt scores are estimates, not proof of better answers.
 - **Saved workspace:** save, reopen, refine, copy, and download prompts; browse history and templates.
 - **Consistent design:** a neutral interface with emerald accents across the workspace, authentication, and pricing pages.
 - **Accessible motion:** staggered suggestions, sliding category selection, expanding panels, generation feedback, and copy/save confirmations respect reduced-motion preferences.
@@ -170,6 +172,7 @@ Configure both Upstash variables for shared limits across serverless instances. 
 | `npm run start` | Serve the production build locally |
 | `npm run lint` | Run the configured ESLint checks |
 | `npm test` | Run the offline regression suite |
+| `node scripts/check-start-ui.cjs` | Check the public composer at desktop/mobile sizes in English, Spanish, and Russian |
 | `node scripts/check-workspace-ui.cjs` | Test desktop/mobile interactions against a running local dev server with synthetic API responses |
 | `npm run eval:outcomes -- --dry-run` | Inspect synthetic evaluation tasks without provider calls |
 | `npm run eval:outcomes -- --limit 2` | Run a limited, billable answer-outcome evaluation |
@@ -190,7 +193,9 @@ Provider-backed scripts use synthetic tasks, not saved user prompts, and incur A
 - Create/edit/delete a profile; cancel and confirm its preview before generation.
 - Save a playbook, reuse it with new task details, and confirm it does not apply a profile automatically.
 - Refine a result, restore an earlier version, save/reopen its history, and check failed-request recovery.
-- Open optional quality review and test optimization separately.
+- Optimize from the result footer, including after restoring a version without a score; check failure recovery and previous versions.
+- Switch between Your prompt and Example after generation; verify the current task, prompt, and clipboard actions stay separate from the example.
+- Open optional quality review and test scoring retries separately.
 - Check pricing, account, feedback, history, and templates on desktop and a narrow mobile viewport.
 - Check keyboard navigation and reduced-motion behavior.
 - In a payment sandbox, verify checkout, success synchronization, webhook updates, and portal return URLs.

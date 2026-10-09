@@ -261,7 +261,7 @@ export default function DemoPage() {
             Try it with your own idea.
           </h2>
           <p className="text-ink-500 mb-7 max-w-sm mx-auto">
-            Free to start. 7 prompts/week. Built for Claude, Cursor, and ChatGPT.
+            Free to start. 7 prompts/week. Ready for your preferred AI assistant.
           </p>
           <Button
             asChild

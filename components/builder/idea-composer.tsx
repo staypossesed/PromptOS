@@ -2,7 +2,8 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { ArrowUp, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, ThumbsUp, ThumbsDown } from "lucide-react";
+import * as Tabs from "@radix-ui/react-tabs";
+import { WandSparkles, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, ThumbsUp, ThumbsDown } from "lucide-react";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { Disclosure } from "@/components/ui/disclosure";
 import { IdeaPlaceholder } from "@/components/builder/idea-placeholder";
@@ -22,6 +23,7 @@ const ICONS = { auto: Sparkles, writing: PenLine, coding: Code2, research: Searc
 
 interface Props {
   guest?: boolean;
+  example?: React.ReactNode;
   idea: string;
   onIdeaChange: (value: string) => void;
   context: PromptContext;
@@ -41,7 +43,7 @@ interface Props {
   outcomeEligible?: boolean;
 }
 
-export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, resultActions, nextActions, upgrade, quality, hasResult, onSave, saving, saved, outcomeEligible }: Props) {
+export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, resultActions, nextActions, upgrade, quality, hasResult, onSave, saving, saved, outcomeEligible }: Props) {
   const { language } = useTranslations();
   const copy = composerCopy(language);
   const reducedMotion = useReducedMotion();
@@ -62,18 +64,20 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
   const [contextOpen, setContextOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [resultView, setResultView] = useState("prompt");
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const locked = !!busy || checking;
   const showExamples = !idea && !inputFocused && !locked;
+  const showInitialExample = !!example && !hasResult && !generating;
 
   useEffect(() => () => requestRef.current?.abort(), []);
   useEffect(() => { if (!outcomeEligible) setFeedback(null); }, [outcomeEligible]);
   useEffect(() => { setQuestions([]); setAnswers([]); setNotice(""); }, [idea, category]);
   useEffect(() => {
     if (generating || hasResult) resultRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-    if (generating) { setFeedback(null); setQualityOpen(false); }
+    if (generating) { setFeedback(null); setQualityOpen(false); setResultView("prompt"); }
   }, [generating, hasResult, reducedMotion]);
 
   async function generate(nextContext: PromptContext) {
@@ -118,24 +122,27 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
   }
 
   return (
-    <div className="mx-auto w-full max-w-3xl text-zinc-900">
+    <div className={cn("mx-auto w-full text-zinc-900", showInitialExample ? "grid max-w-5xl gap-x-8 md:grid-cols-2" : "max-w-3xl")}>
+      <div className="min-w-0">
       <label htmlFor="studio-idea" className="mb-3 block text-lg font-medium">{copy.idea}</label>
       <form onSubmit={(e) => { e.preventDefault(); void prepare(); }} className="relative rounded-lg border border-zinc-300 bg-white shadow-sm transition-shadow focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/10">
         <div className="relative">
         <textarea ref={inputRef} id="studio-idea" value={idea} maxLength={4000} disabled={locked}
-          onChange={(e) => editIdea(e.target.value)} placeholder={inputFocused ? "" : copy.placeholder} rows={5}
+          onChange={(e) => editIdea(e.target.value)} placeholder={inputFocused ? "" : copy.placeholder} rows={guest ? 3 : 5}
           onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)}
-          className={cn("block min-h-[180px] w-full resize-y rounded-t-lg border-0 bg-transparent p-5 text-base leading-relaxed text-zinc-900 outline-none disabled:opacity-70 sm:p-6", showExamples ? "placeholder:text-transparent" : "placeholder:text-zinc-500")} />
+          className={cn("block w-full resize-y rounded-t-lg border-0 bg-transparent p-5 text-base leading-relaxed text-zinc-900 outline-none disabled:opacity-70 sm:p-6", guest ? "min-h-[140px]" : "min-h-[180px]", showExamples ? "placeholder:text-transparent" : "placeholder:text-zinc-500")} />
         <IdeaPlaceholder key={language} active={showExamples} examples={copy.placeholderIdeas} pauseLabel={copy.pauseExamples} resumeLabel={copy.resumeExamples} />
         </div>
         <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-100 px-4 py-3 sm:px-5">
           <span className="text-xs tabular-nums text-zinc-500">{idea.length} / 4000</span>
           <button type="submit" disabled={locked || !idea.trim()} className={cn("motion-press flex min-h-11 max-w-full items-center justify-center gap-2 rounded-md bg-emerald-700 px-4 py-2.5 text-base font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-40", (checking || generating) && "generation-pulse")}>
-            {checking || busy ? <Loader2 className="size-4 shrink-0 animate-spin" /> : <ArrowUp className="size-4 shrink-0" />}
+            {checking || busy ? <Loader2 className="size-4 shrink-0 animate-spin" /> : <WandSparkles className="size-4 shrink-0" />}
             <span>{checking ? copy.checking : generating ? copy.generating : guest ? copy.guestCreate : copy.create}</span>
           </button>
         </div>
       </form>
+      </div>
+      {showInitialExample && <div className="mt-8 min-w-0 md:col-start-2 md:row-span-6 md:row-start-1 md:mt-0">{example}</div>}
 
       {notice && <div role="alert" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-md border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">
         <span>{notice}</span><button disabled={locked} type="button" className="font-medium underline" onClick={() => void generate({ ...context, universal: true, category })}>{copy.skip}</button>
@@ -175,7 +182,7 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
               transition={{ duration: reducedMotion ? 0 : 0.28, delay: reducedMotion ? 0 : index * 0.04, layout: { duration: reducedMotion ? 0 : 0.28 } }}
               whileHover={reducedMotion || locked ? undefined : { y: -4, transition: { duration: 0.16, delay: 0 } }}
               whileTap={reducedMotion || locked ? undefined : { scale: 0.98, transition: { duration: 0.12, delay: 0 } }} onClick={() => {
-              editIdea(suggestion.idea); onContextChange({ ...context, category: suggestion.category, universal: true, clarifications: undefined });
+              editIdea(guest ? suggestion.title : suggestion.idea); onContextChange({ ...context, category: suggestion.category, universal: true, clarifications: undefined });
               track("idea_suggestion_selected", { category: suggestion.category, suggestion_id: suggestion.id }); inputRef.current?.focus();
             }} className="group flex min-h-[76px] items-center gap-3 border-b border-zinc-100 py-3 text-left disabled:opacity-40">
               <Icon className="size-5 shrink-0 text-emerald-700" />
@@ -216,8 +223,8 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
       </Disclosure>
 
       {(hasResult || generating) && <section ref={resultRef} className="prompt-reveal mt-9 scroll-mt-24">
-        <div className="mb-3 flex items-center justify-between gap-3"><h2 className="text-lg font-semibold">{copy.result}</h2>
-          {onSave && <button type="button" disabled={saving || busy || !hasResult} onClick={onSave} className={cn("motion-press flex min-h-10 items-center gap-2 rounded-md px-3 text-sm hover:bg-zinc-100 disabled:opacity-40", saved ? "text-emerald-700" : "text-zinc-600")}>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{copy.result}</h2>
+          {onSave && resultView === "prompt" && <button type="button" disabled={saving || busy || !hasResult} onClick={onSave} className={cn("motion-press flex min-h-11 items-center gap-2 rounded-md px-3 text-base hover:bg-zinc-100 disabled:opacity-40", saved ? "text-emerald-700" : "text-zinc-600")}>
             <ActionIcon pending={saving} success={saved} icon={Save} />
             <span className="grid">
               <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.save}</span>
@@ -226,8 +233,13 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
             </span>
           </button>}
         </div>
+        <Tabs.Root value={resultView} onValueChange={setResultView}>
+        {example && <Tabs.List aria-label={copy.resultViews} className="mb-4 flex border-b border-zinc-200">
+          {[["prompt", copy.yourPrompt], ["example", copy.exampleTab]].map(([value, label]) => <Tabs.Trigger key={value} value={value} className="min-h-12 flex-1 border-b-2 border-transparent px-3 py-2 text-base font-medium text-zinc-600 outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 data-[state=active]:border-emerald-700 data-[state=active]:text-emerald-800">{label}</Tabs.Trigger>)}
+        </Tabs.List>}
+        <Tabs.Content value="prompt" forceMount hidden={resultView !== "prompt"} className="outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
         {resultActions}
-        <div className="h-[min(480px,55dvh)] min-h-[260px]">{result}</div>
+        <div className="h-[min(480px,50dvh)] min-h-[360px]">{result}</div>
         {upgrade && <div className="mt-4">{upgrade}</div>}
         {nextActions}
         {quality && <Disclosure label={copy.quality} open={qualityOpen} onOpenChange={setQualityOpen}>
@@ -236,8 +248,11 @@ export function IdeaComposer({ guest, idea, onIdeaChange, context, onContextChan
         {hasResult && outcomeEligible && !busy && <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
           <span>{feedback === null ? copy.answer : copy.thanks}</span>
           {feedback === null && ([true, false] as const).map((value) => <button key={String(value)} type="button" aria-label={value ? copy.yes : copy.no} title={value ? copy.yes : copy.no}
-            onClick={() => { setFeedback(value); track("answer_outcome_feedback", { category, improved: value }); }} className="flex size-9 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100">{value ? <ThumbsUp className="size-4" /> : <ThumbsDown className="size-4" />}</button>)}
+            onClick={() => { setFeedback(value); track("answer_outcome_feedback", { category, improved: value }); }} className="flex size-11 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100">{value ? <ThumbsUp className="size-4" /> : <ThumbsDown className="size-4" />}</button>)}
         </div>}
+        </Tabs.Content>
+        {example && <Tabs.Content value="example" className="outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">{example}</Tabs.Content>}
+        </Tabs.Root>
       </section>}
     </div>
   );

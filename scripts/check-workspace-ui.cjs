@@ -3,12 +3,14 @@ const assert = require("node:assert/strict");
 const path = require("node:path");
 const fs = require("node:fs");
 const { parseWorkspaceItem } = require("./load-ts.cjs").loadTS("lib/workspace.ts");
+const { composerCopy } = require("./load-ts.cjs").loadTS("lib/composer-copy.ts");
 const base = "http://localhost:3000";
 const screenshots = process.env.UI_SCREENSHOT_DIR;
 const id = "12345678-1234-1234-1234-123456789abc";
 const profileId = "12345678-1234-1234-1234-123456789abd";
 const original = "Write a clear product launch email for students. Preserve supplied facts, avoid invented claims, and return a subject line plus a concise email.";
 const shorter = "Draft a launch email for students, with a subject line. Use only supplied facts.";
+const optimized = "Write a concise product launch email for students. Use only supplied product facts and avoid invented claims. Return a subject line followed by a friendly, professional email.";
 const score = { overall: 82, dimensions: [] };
 const fixture = { id, user_id: "synthetic-owner", title: "Launch email", idea: "Write a product launch email", context: { universal: true, category: "business" }, target_tool: "claude", generated_prompt: original, score };
 // Generate isolated fixture routes for this run, then remove only those files.
@@ -51,6 +53,14 @@ let browser;
     let generated = 0;
     let itemSequence = 0;
     let failNext = false;
+    let failScoreNext = false;
+    let failOptimizeNext = false;
+    let scoreRequests = 0;
+    const optimizeRequests = [];
+    let optimizationResponse = optimized;
+    let holdOptimization = false;
+    let releaseOptimization;
+    let optimizationStarted;
     let saved;
     let checkoutReady = false;
     let verification = "pending";
@@ -79,7 +89,17 @@ let browser;
         assert.equal(body.context.profile.name, "Synthetic studio");
         if (failNext) { failNext = false; status = 503; data = { error: "Synthetic provider unavailable" }; }
         else { await route.fulfill({ status: 200, contentType: "text/plain", body: shorter, headers: { "X-Request-Id": "synthetic-refinement" } }); return; }
-      } else if (url.pathname === "/api/prompts/score") data = { data: score };
+      } else if (url.pathname === "/api/prompts/score") {
+        scoreRequests++;
+        if (failScoreNext) { failScoreNext = false; status = 503; data = { error: "Synthetic scoring unavailable" }; }
+        else data = { data: score };
+      } else if (url.pathname === "/api/prompts/optimize") {
+        optimizeRequests.push(body);
+        assert.deepEqual(body.score, score);
+        if (holdOptimization) { optimizationStarted(); await new Promise((resolve) => { releaseOptimization = resolve; }); }
+        if (failOptimizeNext) { failOptimizeNext = false; status = 503; data = { error: "Synthetic optimization unavailable" }; }
+        else data = { data: { improved_prompt: optimizationResponse } };
+      }
       else if (url.pathname === "/api/billing/founder-count") data = { count: 0 };
       else if (url.pathname === "/api/billing/checkout") {
         checkoutRequests.push(body);
@@ -91,10 +111,40 @@ let browser;
       }
       await route.fulfill({ status, contentType: "application/json", body: JSON.stringify(data) });
     });
+    const copy = composerCopy("en");
+    await page.goto(`${base}/interaction-check`);
+    const initialExample = page.getByRole("complementary", { name: copy.expansionExample.label, exact: true });
+    await initialExample.waitFor();
+    assert.equal(await page.getByLabel(copy.idea, { exact: true }).inputValue(), "");
+    await initialExample.getByRole("button", { name: copy.expansionExample.use, exact: true }).click();
+    assert.equal(await page.getByLabel(copy.idea, { exact: true }).inputValue(), copy.expansionExample.idea);
+    assert.equal(await page.getByLabel(copy.idea, { exact: true }).evaluate((el) => el === document.activeElement), true);
+    assert.equal(await initialExample.getByRole("button", { name: copy.expansionExample.use, exact: true }).count(), 0);
+    assert.equal(generated, 0);
     await page.goto(`${base}/interaction-check?id=${id}`);
     await page.getByRole("heading", { name: "Keep building" }).waitFor();
+    const resultText = page.locator("[data-prompt-content]");
+    await page.locator("[data-prompt-output]").getByText(copy.portable, { exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: copy.quality, exact: true }).getAttribute("aria-expanded"), "false");
+    assert.equal(await page.getByRole("button", { name: copy.optimize, exact: true }).isEnabled(), true, "Optimize must not require opening Quality check");
+    await page.getByRole("tab", { name: copy.exampleTab, exact: true }).click();
+    await page.getByRole("complementary", { name: copy.expansionExample.label, exact: true }).waitFor();
+    assert.equal(await page.getByRole("button", { name: copy.expansionExample.use, exact: true }).count(), 0, "Examples cannot replace an existing task or result");
+    assert.equal(await page.getByRole("button", { name: copy.copy, exact: true }).count(), 0, "Copy cannot accidentally copy an example");
+    await page.getByRole("tab", { name: copy.exampleTab, exact: true }).press("ArrowLeft");
+    await page.getByRole("button", { name: copy.optimize, exact: true }).waitFor();
+    assert.equal(await resultText.textContent(), original);
+    assert.equal(await page.getByLabel(copy.idea, { exact: true }).inputValue(), fixture.idea);
+    assert.equal(scoreRequests, 0);
+    assert.equal(optimizeRequests.length, 0);
+    // A failed optimization leaves both the saved result and its saved status intact.
+    failOptimizeNext = true;
+    await page.getByRole("button", { name: copy.optimize, exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: copy.optimizeError }).waitFor();
+    assert.equal(await resultText.textContent(), original);
+    assert.equal(await page.locator("main").getByRole("button", { name: "Saved", exact: true }).count(), 1);
     const refineY = await page.getByRole("heading", { name: "Refine your prompt" }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
-    const outputY = await page.getByRole("button", { name: "Copy request", exact: true }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
+    const outputY = await page.getByRole("button", { name: "Copy AI prompt", exact: true }).evaluate((el) => el.getBoundingClientRect().top + scrollY);
     assert.ok(refineY < outputY, "Refinement must be above the result footer");
     assert.equal(await page.getByRole("link", { name: "New profile", exact: true }).getAttribute("href"), "/library?new=profile");
     await page.getByRole("link", { name: "Keep building", exact: true }).click();
@@ -112,10 +162,10 @@ let browser;
     assert.equal(await page.getByLabel("Profile", { exact: true }).inputValue(), profileId);
     // A failed refinement must keep the existing result.
     failNext = true;
-    await page.getByRole("button", { name: "Shorter", exact: true }).click();
+    await page.getByRole("button", { name: "Simplify", exact: true }).click();
     await page.getByText("Synthetic provider unavailable", { exact: true }).waitFor();
     assert.ok((await page.locator("main").textContent()).includes(original));
-    await page.getByRole("button", { name: "Shorter", exact: true }).click();
+    await page.getByRole("button", { name: "Simplify", exact: true }).click();
     await page.getByRole("button", { name: "Previous versions (1)", exact: true }).waitFor();
     assert.equal(generated, 2);
     assert.ok((await page.locator("main").textContent()).includes(shorter));
@@ -124,6 +174,45 @@ let browser;
     assert.equal(await page.locator("#prompt-versions pre").textContent(), original);
     await page.getByRole("button", { name: "Restore", exact: true }).click();
     assert.ok((await page.locator("main").textContent()).includes(original));
+    // A restored version has no score: optimize must fetch one, not silently do nothing.
+    const beforeOptimize = optimizeRequests.length;
+    const beforeScore = scoreRequests;
+    failScoreNext = true;
+    await page.getByRole("button", { name: copy.optimize, exact: true }).click();
+    await page.getByRole("alert").filter({ hasText: copy.optimizeScoreError }).waitFor();
+    assert.equal(scoreRequests, beforeScore + 1);
+    assert.equal(optimizeRequests.length, beforeOptimize);
+    assert.equal(await resultText.textContent(), original);
+    for (const invalid of [" ", { unexpected: true }, "x".repeat(16001)]) {
+      optimizationResponse = invalid;
+      await page.getByRole("button", { name: copy.optimize, exact: true }).click();
+      await page.getByRole("alert").filter({ hasText: copy.optimizeError }).waitFor();
+      assert.equal(await resultText.textContent(), original);
+      assert.equal(await page.getByRole("button", { name: copy.optimize, exact: true }).isEnabled(), true);
+    }
+    optimizationResponse = optimized;
+    holdOptimization = true;
+    const started = new Promise((resolve) => { optimizationStarted = resolve; });
+    const beforeDoubleClick = optimizeRequests.length;
+    await page.getByRole("button", { name: copy.optimize, exact: true }).evaluate((el) => { el.click(); el.click(); });
+    await started;
+    assert.equal(optimizeRequests.length, beforeDoubleClick + 1, "Rapid clicks must create only one optimization");
+    for (const label of [copy.optimizing, copy.copy, "Regenerate", "Simplify", "Save"]) {
+      assert.equal(await page.locator("main").getByRole("button", { name: label, exact: true }).isDisabled(), true);
+    }
+    assert.equal(await page.getByLabel(copy.idea, { exact: true }).isDisabled(), true);
+    releaseOptimization();
+    holdOptimization = false;
+    await page.getByRole("button", { name: copy.optimize, exact: true }).waitFor();
+    assert.equal(await resultText.textContent(), optimized);
+    assert.equal(await page.getByRole("alert").filter({ hasText: copy.optimizeError }).count(), 0);
+    assert.equal(optimizeRequests.at(-1).context.profileConsent, true);
+    assert.equal(optimizeRequests.at(-1).context.profile.name, "Synthetic studio");
+    assert.equal(generated, 2);
+    await page.getByLabel("Previous versions", { exact: true }).selectOption("1");
+    assert.equal(await page.locator("#prompt-versions pre").textContent(), original);
+    await page.getByRole("button", { name: "Restore", exact: true }).click();
+    assert.equal(await resultText.textContent(), original);
     page.once("dialog", (d) => d.dismiss());
     await page.getByRole("button", { name: "Draft a customer-facing message", exact: true }).click();
     assert.ok((await page.locator("main").textContent()).includes(original));
@@ -135,7 +224,7 @@ let browser;
     assert.equal(items[0].kind, "playbook");
     assert.equal(items[0].payload.context.profile, undefined);
     assert.equal(items[0].payload.context.versions, undefined);
-    await page.getByRole("button", { name: "Copy request", exact: true }).click();
+    await page.getByRole("button", { name: "Copy AI prompt", exact: true }).click();
     await page.getByRole("heading", { name: "2 free prompts left this week." }).waitFor();
     assert.equal(await page.evaluate(() => navigator.clipboard.readText()), original);
     // Update an existing saved result; inspect only the mocked request.
@@ -145,7 +234,15 @@ let browser;
     assert.equal(saved.generated_prompt, original);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth > innerWidth);
     assert.equal(overflow, false);
-    if (screenshots) { fs.mkdirSync(screenshots, { recursive: true }); await page.screenshot({ path: path.join(screenshots, `workspace-${width}.png`), fullPage: true }); }
+    if (screenshots) { fs.mkdirSync(screenshots, { recursive: true }); await page.evaluate(() => scrollTo(0, 0)); await page.screenshot({ path: path.join(screenshots, `workspace-${width}.png`), fullPage: true }); }
+    if (screenshots) {
+      await page.getByRole("button", { name: copy.optimize, exact: true }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(screenshots, `result-${width}.png`) });
+      await page.getByRole("tab", { name: copy.exampleTab, exact: true }).click();
+      await page.getByRole("complementary", { name: copy.expansionExample.label, exact: true }).scrollIntoViewIfNeeded();
+      await page.screenshot({ path: path.join(screenshots, `example-${width}.png`) });
+      await page.getByRole("tab", { name: copy.yourPrompt, exact: true }).click();
+    }
     // Walk the actual result -> pricing -> hosted redirect -> verified return UI.
     // Stripe is intercepted with a synthetic page; no real session or charge is created.
     await page.route("https://checkout.stripe.com/**", (route) => route.fulfill({ contentType: "text/html", body: "<html><body><h1>Synthetic Stripe checkout</h1></body></html>" }));
@@ -232,7 +329,33 @@ let browser;
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     assert.deepEqual(errors, []);
     assert.deepEqual(consoleErrors, []);
-    console.log(`PASS ${width}px: discoverable refinements/profile creation/next tasks; profile consent; failure recovery; restore/copy/save; checkout failure/retry/redirect/cancel/pending/verified activation; draft return; paid upsell suppression; library CRUD; no console errors or horizontal overflow. All billing responses are synthetic.`);
+    if (width === 390) {
+      await page.setViewportSize({ width: 320, height: 900 });
+      for (const language of ["en", "es", "ru"]) {
+        const localized = composerCopy(language);
+        await page.evaluate((language) => { localStorage.setItem("umprompt_language", language); localStorage.setItem("umprompt_language_manual", "1"); }, language);
+        await page.goto(`${base}/interaction-check?id=${id}`);
+        const optimize = page.getByRole("button", { name: localized.optimize, exact: true });
+        await optimize.waitFor();
+        await page.locator("[data-prompt-output]").getByText(localized.portable, { exact: true }).waitFor();
+        for (const control of [optimize, page.getByRole("button", { name: localized.copy, exact: true }), page.getByRole("tab", { name: localized.exampleTab, exact: true })]) {
+          assert.ok(await control.evaluate((el) => el.getBoundingClientRect().height >= 44));
+          assert.ok(await control.evaluate((el) => parseFloat(getComputedStyle(el).fontSize) >= 16));
+        }
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        assert.equal(await page.locator("[data-prompt-content]").evaluate((el) => el.getBoundingClientRect().height > 80), true, "Wrapped controls must leave a readable prompt area");
+        if (screenshots) { await optimize.scrollIntoViewIfNeeded(); await page.screenshot({ path: path.join(screenshots, `result-${language}-320.png`) }); }
+        await page.getByRole("tab", { name: localized.exampleTab, exact: true }).click();
+        await page.getByRole("complementary", { name: localized.expansionExample.label, exact: true }).waitFor();
+        assert.equal(await page.getByRole("button", { name: localized.copy, exact: true }).count(), 0);
+        assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
+        await page.getByRole("tab", { name: localized.yourPrompt, exact: true }).click();
+        assert.equal(await resultText.textContent(), original);
+      }
+    }
+    assert.deepEqual(errors, []);
+    assert.deepEqual(consoleErrors, []);
+    console.log(`PASS ${width}px: persistent examples and keyboard tabs; visible Optimize; scoring fallback; optimization failure/invalid output/rapid click protection; simplify/restore/copy/save; profile consent; synthetic checkout verification; library CRUD; readable controls; no console errors or overflow.`);
     await context.close();
   }
 })().catch((e) => { console.error(e); process.exitCode = 1; }).finally(async () => { await browser?.close(); cleanupFixtures(); });

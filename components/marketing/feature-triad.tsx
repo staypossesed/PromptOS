@@ -3,8 +3,8 @@ import { Wand2, Gauge, TrendingUp } from "lucide-react";
 const FEATURES = [
   {
     icon: Wand2,
-    title: "Tool-tuned generation",
-    body: "Cursor wants file paths and step-by-step instructions. Claude wants XML tags and explicit success criteria. ChatGPT wants persona and few-shot examples. Umprompt knows the difference — and structures the output accordingly.",
+    title: "Prompts shaped around your task",
+    body: "Coding needs file context and clear steps. Research needs scope and comparison criteria. Writing needs an audience and tone. Umprompt structures your idea around the task, ready for your preferred AI assistant.",
     accent: "from-clay-100/80 to-cream-50",
   },
   {

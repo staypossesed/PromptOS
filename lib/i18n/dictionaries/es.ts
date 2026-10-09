@@ -219,10 +219,10 @@ export const es: Dictionary = {
 
   emptyState: {
     title: "Tu espacio de trabajo está vacío.",
-    subtitle: "Empieza con una idea — Umprompt la convierte en un prompt puntuado y optimizado, listo para Claude, Cursor o ChatGPT.",
-    buildWithCursor: "Crear con Cursor",
-    writeWithChatGPT: "Escribir con ChatGPT",
-    researchWithClaude: "Investigar con Claude",
+    subtitle: "Tu idea inicial, ampliada en un prompt claro para tu asistente de IA preferido.",
+    buildWithCursor: "Crear una app",
+    writeWithChatGPT: "Escribir un correo",
+    researchWithClaude: "Investigar un tema",
     orText: "O",
     startFromScratch: "empezar desde cero",
   },
@@ -284,9 +284,9 @@ export const es: Dictionary = {
   onboarding: {
     title: "¿Qué estás construyendo hoy?",
     subtitle: "Elige un punto de partida. Rellenaremos la idea y elegiremos la herramienta — edita lo que quieras antes de generar.",
-    buildWithCursor: "Crear con Cursor",
-    writeWithChatGPT: "Escribir con ChatGPT",
-    researchWithClaude: "Investigar con Claude",
+    buildWithCursor: "Crear una app",
+    writeWithChatGPT: "Escribir un correo",
+    researchWithClaude: "Investigar un tema",
     automateWithN8n: "Automatizar con n8n",
     salesCopy: "Copy de ventas",
     createContent: "Crear contenido",

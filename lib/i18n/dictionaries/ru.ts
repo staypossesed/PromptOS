@@ -219,10 +219,10 @@ export const ru: Dictionary = {
 
   emptyState: {
     title: "Рабочее пространство пустое.",
-    subtitle: "Начните с идеи — Umprompt превратит её в оценённый, оптимизированный промпт, готовый для Claude, Cursor или ChatGPT.",
-    buildWithCursor: "Создать в Cursor",
-    writeWithChatGPT: "Написать в ChatGPT",
-    researchWithClaude: "Исследовать в Claude",
+    subtitle: "Ваша черновая идея, превращённая в понятный запрос для выбранного ИИ-помощника.",
+    buildWithCursor: "Создать приложение",
+    writeWithChatGPT: "Написать письмо",
+    researchWithClaude: "Изучить тему",
     orText: "Или",
     startFromScratch: "начать с нуля",
   },
@@ -284,9 +284,9 @@ export const ru: Dictionary = {
   onboarding: {
     title: "Что создаём сегодня?",
     subtitle: "Выберите отправную точку. Мы заполним идею и выберем инструмент — отредактируйте что угодно перед генерацией.",
-    buildWithCursor: "Создать в Cursor",
-    writeWithChatGPT: "Написать в ChatGPT",
-    researchWithClaude: "Исследовать в Claude",
+    buildWithCursor: "Создать приложение",
+    writeWithChatGPT: "Написать письмо",
+    researchWithClaude: "Изучить тему",
     automateWithN8n: "Автоматизировать с n8n",
     salesCopy: "Продающий текст",
     createContent: "Создать контент",

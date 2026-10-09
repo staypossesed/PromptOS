@@ -12,31 +12,31 @@ interface UseCase {
 
 const USE_CASES: UseCase[] = [
   {
-    tool: "Cursor",
+    tool: "Coding",
     toolColor: "text-ink-700 bg-cream-100 border-ink-200",
     title: "Build a SaaS feature from a rough idea",
     roughInput:
       "Add a usage dashboard to my SaaS showing daily active users, revenue, and churn",
     expectedOutput:
-      "A step-by-step prompt with file paths, component breakdown, stack constraints, and acceptance criteria — ready to paste into Cursor.",
+      "A step-by-step prompt with file paths, component breakdown, stack constraints, and acceptance criteria, ready for your coding assistant.",
     whyUmprompt:
-      "Cursor needs file-aware context and atomic tasks. Generic prompts produce incomplete code. Umprompt structures your idea into the format Cursor executes reliably.",
+      "A useful coding prompt includes file context, focused tasks, and clear acceptance criteria. Umprompt adds that structure to your rough idea.",
     score: 93,
   },
   {
-    tool: "Claude",
+    tool: "Research",
     toolColor: "text-clay-700 bg-clay-50 border-clay-200/60",
     title: "Research and strategy prompts",
     roughInput:
       "Analyze the top 5 competitors in the AI writing tools space — pricing, positioning, strengths, and gaps",
     expectedOutput:
-      "A structured research prompt with role definition, analysis framework, output sections, and XML format tags — Claude follows it precisely.",
+      "A structured research prompt with a clear goal, scope, comparison criteria, and output sections for your AI assistant.",
     whyUmprompt:
-      "Claude performs best with explicit reasoning structure. Umprompt adds role, scope, and output format that keep the model on track and prevent drift.",
+      "A focused research prompt defines the question, relevant context, and expected output. Umprompt turns these into clear instructions.",
     score: 89,
   },
   {
-    tool: "ChatGPT",
+    tool: "Writing",
     toolColor: "text-ink-600 bg-white border-ink-200",
     title: "Sales, email, and workflow prompts",
     roughInput:
@@ -44,7 +44,7 @@ const USE_CASES: UseCase[] = [
     expectedOutput:
       "A persona-driven prompt with tone guidelines, example emails, and exact deliverables — a full sequence, not a vague instruction.",
     whyUmprompt:
-      "ChatGPT responds to strong personas and few-shot examples. Umprompt builds these automatically from your rough idea, adding the detail most users skip.",
+      "A useful writing prompt identifies the audience, tone, and deliverables. Umprompt makes those instructions clear without tying them to one AI provider.",
     score: 86,
   },
 ];
