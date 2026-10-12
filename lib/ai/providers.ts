@@ -16,6 +16,7 @@
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import type { LanguageModelV1 } from "ai";
+import { boundedProviderFetch } from "./bounded-fetch";
 
 // ─── Type-level surface ────────────────────────────────────────────────────
 
@@ -54,7 +55,7 @@ function getAnthropic() {
         "ANTHROPIC_API_KEY is not set. Add it to .env.local (server-only — do NOT prefix with NEXT_PUBLIC_)."
       );
     }
-    _anthropic = createAnthropic({ apiKey });
+    _anthropic = createAnthropic({ apiKey, fetch: boundedProviderFetch });
   }
   return _anthropic;
 }
@@ -71,6 +72,7 @@ function getOpenRouter() {
     }
     _openrouter = createOpenRouter({
       apiKey,
+      fetch: boundedProviderFetch,
       // OpenRouter recommends including these for analytics/ranking on their side.
       // Harmless if missing.
       headers: {

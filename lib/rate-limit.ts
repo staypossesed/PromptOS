@@ -4,7 +4,7 @@
  * Production: Upstash Redis (persists across serverless invocations).
  *   Requires UPSTASH_REDIS_REST_URL + UPSTASH_REDIS_REST_TOKEN env vars.
  *
- * Fallback: in-memory Map.
+ * Development fallback: in-memory Map. Production fails closed without Redis.
  *   NOT reliable in serverless — resets on cold starts and does not
  *   share state across concurrent function instances. Fine for local dev.
  *
@@ -19,7 +19,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-export type RateLimitAction = "generate" | "score" | "optimize" | "pack" | "model_lab" | "clarify";
+export type RateLimitAction = "generate" | "generate_paid" | "score" | "optimize" | "pack" | "model_lab" | "clarify";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -31,6 +31,7 @@ export interface RateLimitResult {
 const LIMITS: Record<RateLimitAction, { max: number; windowMs: number; window: string }> = {
   clarify:   { max: 30, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   generate:  { max: 20, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
+  generate_paid: { max: 200, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   score:     { max: 50, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   optimize:  { max: 10, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   pack:      { max: 5,  windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
@@ -50,6 +51,7 @@ function getUpstashLimiters(): Map<RateLimitAction, Ratelimit> | null {
     _upstashLimiters = new Map([
       ["clarify", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 d"), prefix: "umprompt:rl:clarify", analytics: false })],
       ["generate", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.generate.max, LIMITS.generate.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:generate", analytics: false })],
+      ["generate_paid", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(200, "1 d"), prefix: "umprompt:rl:generate-paid", analytics: false })],
       ["score",    new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.score.max,    LIMITS.score.window    as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:score",    analytics: false })],
       ["optimize", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.optimize.max, LIMITS.optimize.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:optimize", analytics: false })],
       ["pack",      new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.pack.max,      LIMITS.pack.window      as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:pack",      analytics: false })],
@@ -100,6 +102,7 @@ export async function rateLimit(userId: string, action: RateLimitAction): Promis
     };
   }
 
+  if (process.env.NODE_ENV === "production") throw new Error("Distributed rate limiting is unavailable.");
   return memoryRateLimit(key, action);
 }
 

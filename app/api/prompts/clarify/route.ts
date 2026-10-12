@@ -5,6 +5,7 @@ import { isTaskCategory } from "@/lib/task-categories";
 import { rateLimit } from "@/lib/rate-limit";
 import { getBillingStatus, checkUsageLimits } from "@/lib/billing";
 import { parsePromptContext, modelContext } from "@/lib/prompt-context";
+import { canExpandIdea } from "@/lib/prompt-editing";
 
 export const runtime = "nodejs";
 
@@ -19,6 +20,7 @@ export async function POST(request: NextRequest) {
   }
   const context = parsePromptContext(body.context);
   if (!context.data) return NextResponse.json({ error: context.error }, { status: 422 });
+  if (!canExpandIdea(body.idea)) return NextResponse.json({ error: "Add a few words about what you want help with." }, { status: 422 });
   const usage = checkUsageLimits(await getBillingStatus(supabase, user.id));
   if (!usage.allowed) return NextResponse.json({ error: usage.message, upgradeRequired: usage.errorCode === "FREE_LIMIT_REACHED" }, { status: usage.status });
   const rate = await rateLimit(user.id, "clarify");

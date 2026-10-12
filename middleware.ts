@@ -17,6 +17,9 @@ const AUTH_ONLY_PATHS = ["/login"];
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Extension requests verify their bearer session in the route, never web cookies.
+  if (pathname.startsWith("/api/extension/")) return NextResponse.next({ request });
+
   // Create the Supabase middleware client.
   // IMPORTANT: we must await getUser() before returning supabaseResponse
   // so that any session-refresh cookies are written into the response.

@@ -4,6 +4,7 @@ const { NextRequest, NextResponse } = require("next/server");
 const loadWithImports = require("./load-with-imports.cjs");
 const { loadTS } = require("../scripts/load-ts.cjs");
 const workspace = loadTS("lib/workspace.ts");
+const editing = loadTS("lib/prompt-editing.ts");
 const context = loadTS("lib/prompt-context.ts");
 const types = loadTS("types/prompt.ts");
 const id = "12345678-1234-1234-1234-123456789abc";
@@ -52,20 +53,40 @@ test("missing migration, malformed input and invisible records have honest error
   assert.equal(calls.length, 0);
   assert.equal((await route.DELETE(request("DELETE", null, `?id=${id}`))).status, 404);
 });
-function generation({ user = { id: "owner" }, allowed = true } = {}) {
+function generation({ user = { id: "owner" }, allowed = true, rateAllowed = true, paid = false } = {}) {
   const calls = [];
   class ProviderConfigError extends Error {}
-  const route = loadWithImports("app/api/prompts/generate/route.ts", {
+  const service = loadWithImports("lib/api/generate.ts", {
     "next/server": { NextResponse },
     "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) } }) },
     "@/lib/ai/generate-prompt": { streamGeneratedPrompt: (input) => { calls.push(["generate", input]); return { stream: { toTextStreamResponse: ({ headers }) => new Response("Synthetic prompt", { headers }) }, choice: { config: { shortName: "synthetic" }, provider: "anthropic" } }; } },
-    "@/types/prompt": types, "@/lib/ai/providers": { ProviderConfigError }, "@/lib/prompt-context": context, "@/lib/workspace": workspace,
-    "@/lib/billing": { getBillingStatus: async () => ({ isPaid: false, remainingThisWeek: allowed ? 3 : 0 }), checkUsageLimits: () => allowed ? { allowed: true } : { allowed: false, status: 402, errorCode: "FREE_LIMIT_REACHED", message: "Limit reached" }, recordUsageEvent: async (...args) => { calls.push(["usage", ...args.slice(1)]); } },
+    "@/types/prompt": types, "@/lib/ai/providers": { ProviderConfigError }, "@/lib/prompt-context": context, "@/lib/workspace": workspace, "@/lib/prompt-editing": editing,
+    "@/lib/billing": { getBillingStatus: async () => ({ isPaid: paid, remainingThisWeek: allowed ? 3 : 0 }), checkUsageLimits: () => allowed ? { allowed: true } : { allowed: false, status: 402, errorCode: "FREE_LIMIT_REACHED", message: "Limit reached" }, recordUsageEvent: async (...args) => { calls.push(["usage", ...args.slice(1)]); } },
+    "@/lib/rate-limit": { rateLimit: async (userId, action) => { assert.equal(userId, "owner"); assert.equal(action, paid ? "generate_paid" : "generate"); return { allowed: rateAllowed, remaining: paid ? 199 : 19, limit: paid ? 200 : 20, resetAt: Date.now() + 60000 }; }, retryAfterMessage: () => "1m" },
     "@/lib/generation-runs": { newRequestId: () => "synthetic-request", insertGenerationRun: async () => null, markGenerationSuccess: async () => {}, markGenerationFailed: async () => {} },
+  });
+  const route = loadWithImports("app/api/prompts/generate/route.ts", {
+    "@/lib/api/generate": service,
+    "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) } }) },
   });
   return { route, calls };
 }
 const generationBody = { idea: "Draft a message", target_tool: "claude", context: { universal: true }, refinement: { action: "shorter", prompt: "Synthetic original" } };
+test("generation rate limiting stops provider calls and usage recording", async () => {
+  const { route, calls } = generation({ rateAllowed: false });
+  const response = await route.POST(request("POST", generationBody));
+  assert.equal(response.status, 429);
+  assert.ok(Number(response.headers.get("Retry-After")) > 0);
+  assert.equal(response.headers.get("X-RateLimit-Remaining"), "0");
+  assert.equal((await response.json()).upgradeRequired, undefined);
+  assert.equal(calls.length, 0);
+});
+test("paid generation keeps its existing larger fair-use allowance", async () => {
+  const { route } = generation({ paid: true });
+  const response = await route.POST(request("POST", generationBody));
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("X-RateLimit-Remaining"), "199");
+});
 test("refinements use the existing auth and usage gates", async () => {
   for (const options of [{ user: null }, { allowed: false }]) {
     const { route, calls } = generation(options);
@@ -84,6 +105,16 @@ test("refinements reject invalid actions and oversized originals before calling 
     assert.equal((await route.POST(request("POST", { ...generationBody, refinement }))).status, 422);
     assert.equal(calls.length, 0);
   }
+});
+test("single-character ideas do not start a universal AI generation or consume usage", async () => {
+  for (const idea of ["f", "я", "?", "a !"]) {
+    const { route, calls } = generation();
+    const response = await route.POST(request("POST", { idea, target_tool: "claude", context: { universal: true } }));
+    assert.equal(response.status, 422);
+    assert.equal(calls.length, 0);
+  }
+  const { route } = generation();
+  assert.equal((await route.POST(request("POST", { idea: "AI", target_tool: "claude", context: { universal: true } }))).status, 200);
 });
 test("AI route excludes unconfirmed profiles and all history", async () => {
   const snapshot = { id, name: "Synthetic", details: "Shop", audience: "Students", voice: "", constraints: "" };

@@ -11,6 +11,7 @@
  */
 
 import { createClient } from "@/lib/supabase/server";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveModel } from "@/lib/ai/config";
 import type {
   PromptRecord,
@@ -22,11 +23,11 @@ import { generateTitleFromIdea } from "@/types/prompt";
 
 // ─── List ─────────────────────────────────────────────────────────────────
 
-export async function listPrompts(limit = 50): Promise<{
+export async function listPrompts(limit = 50, client?: SupabaseClient): Promise<{
   data: PromptSummary[];
   error: string | null;
 }> {
-  const supabase = await createClient();
+  const supabase = client ?? await createClient();
 
   const { data, error } = await supabase
     .from("prompts")
