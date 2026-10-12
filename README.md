@@ -8,7 +8,7 @@ Umprompt helps people describe what they want without learning prompt engineerin
 
 - **Private library:** create and edit context profiles and reusable playbooks. Requires `supabase/workspace.sql`; there is no silent device-only fallback.
 - **Explicit profile sharing:** saving a profile is separate from applying it. Applying requires a preview/confirmation explaining Anthropic/OpenRouter sharing. Only the confirmed snapshot is included; playbooks do not embed profiles and analytics events exclude library content.
-- **Interactive results:** refine a prompt, preview/restore up to five previous versions, and prepare relevant next tasks without starting an automatic generation. Save the prompt to persist its version history.
+- **Read-only results by default:** generated and reopened prompts appear as a document. A small Edit control enables manual changes; Done, Copy, or a successful Save returns to read-only view. Typing does not call AI or save to cloud history. Explicit Save persists edits and up to five previous versions.
 - **Value-based upgrades:** the builder offers an upgrade after a copy/save when two or fewer free generations remain. Refinements use the existing generation allowance; subscriptions and lifetime entitlements are unchanged.
 - **Continuous checkout:** return to the same task after upgrading or cancelling. Paid access is confirmed from Stripe's current payment/subscription state; the return screen does not assume a successful charge. See [payment verification](docs/payment-verification.md) for the outstanding isolated Stripe test purchase.
 - **Content-safe measurement:** explicit PostHog events cover refinements, library use, next tasks, copies, feedback, and upgrades. Autocapture and session recording are disabled to keep profile/prompt content out of analytics.
@@ -19,12 +19,41 @@ Umprompt helps people describe what they want without learning prompt engineerin
 - **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
 - **Focused clarification:** ambiguous ideas can receive up to two follow-up questions. Clear requests proceed directly, and users can skip clarification.
 - **Portable prompts:** generation preserves the user's intent and supplied details without requiring a vendor-specific template. Existing tool-specific prompts and prompt packs remain supported.
-- **Clear result actions:** Optimize prompt is available beside Regenerate without opening quality review. Simplify requests plain language while preserving essential facts and constraints. Failed optimization keeps the original result; successful changes retain a restorable previous version.
+- **Request-first optimization:** Optimize my request works on the original idea and selected details, never on an editable error message or generated output. Incomplete one-character requests stay at the input step; old incomplete drafts cannot be mistaken for a current result. Explicit result refinements such as Simplify retain a restorable previous version.
 - **Optional quality review:** scoring remains available without interrupting the main idea-to-prompt workflow. Prompt scores are estimates, not proof of better answers.
 - **Saved workspace:** save, reopen, refine, copy, and download prompts; browse history and templates.
 - **Consistent design:** a neutral interface with emerald accents across the workspace, authentication, and pricing pages.
 - **Accessible motion:** staggered suggestions, sliding category selection, expanding panels, generation feedback, and copy/save confirmations respect reduced-motion preferences.
 - **Account and billing:** Google, GitHub, and email-link sign-in; monthly and lifetime plans through Stripe.
+
+## Chrome Extension
+
+The browser companion opens Umprompt in a side panel with request optimization, read-only results, optional Edit/Done, Simplify, Copy,
+previous versions, explicit Save, and the same private account history. English, Spanish,
+and Russian are supported. It never automatically reads pages or clipboard content.
+
+Recovery release 0.1.2 checks backend availability and the active Chrome connection policy at startup and gives distinct connection,
+session, response, and saving errors without replacing the draft. The live extension backend
+is deployed. `npm run extension:build -- --live-in-place` connects the existing unpacked
+installation to the live website without changing its folder, ID, callback, or stored drafts;
+it no longer requires a local dev server. A Chrome Reload is required to activate the build.
+If Chrome still holds the previous localhost policy, the panel offers **Reload extension**
+before making blocked requests. The in-place update test covers reload, unchanged ID/callback,
+draft preservation, and the real live health endpoint; it does not certify account sign-in.
+
+Run `npm run extension:build -- --local` to build the local installable package, or
+`npm run extension:build` for the production-targeted package. The extension needs its own
+exact Supabase auth callback; website cookies are not reused. New bearer-authenticated backend
+routes reuse the website's AI handlers and entitlements, with no additional SQL migration.
+
+See [installation and release checks](docs/browser-extension.md) and the
+[store submission draft](extension/store-listing.md). Production publishing and real-account
+acceptance checks are separate from fixture-based browser tests.
+
+Chrome Web Store version 0.1.2 was submitted on October 11, 2026 and is **Pending review**.
+Automatic publication after approval is selected; it is not publicly available yet.
+The [scoped security review](docs/extension-security-review.md) records the release checks,
+deployed mitigations, and remaining dependency findings without claiming a clean audit.
 
 ## Architecture
 
@@ -193,7 +222,7 @@ Provider-backed scripts use synthetic tasks, not saved user prompts, and incur A
 - Create/edit/delete a profile; cancel and confirm its preview before generation.
 - Save a playbook, reuse it with new task details, and confirm it does not apply a profile automatically.
 - Refine a result, restore an earlier version, save/reopen its history, and check failed-request recovery.
-- Optimize from the result footer, including after restoring a version without a score; check failure recovery and previous versions.
+- Optimize from the request input; confirm results are read-only until Edit is selected. Reopen an old one-character request, replace it, and verify the new result and saved record use the new request.
 - Switch between Your prompt and Example after generation; verify the current task, prompt, and clipboard actions stay separate from the example.
 - Open optional quality review and test scoring retries separately.
 - Check pricing, account, feedback, history, and templates on desktop and a narrow mobile viewport.

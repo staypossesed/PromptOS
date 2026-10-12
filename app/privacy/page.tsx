@@ -8,7 +8,7 @@ export const metadata = {
   description: "How Umprompt handles your data.",
 };
 
-const LAST_UPDATED = "May 2026";
+const LAST_UPDATED = "October 10, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -47,9 +47,10 @@ export default function PrivacyPage() {
               database. We do not collect your name, phone number, or payment information.
             </p>
             <p>
-              Prompts you create — including your idea, context, generated prompt text, and quality
-              score — are saved to your account in our Supabase database. This data is used solely
-              to power your personal prompt workspace.
+              Prompts you explicitly save, including the idea, context, generated text, and quality
+              score, appear in your personal Supabase-backed workspace. Generation inputs and
+              outputs may also be recorded separately for reliability, debugging, and support;
+              choosing not to save a prompt does not mean that no server-side records exist.
             </p>
           </Section>
 
@@ -57,8 +58,9 @@ export default function PrivacyPage() {
             <ul>
               <li>To authenticate you and display your saved prompts.</li>
               <li>
-                To send your prompt idea and context to our AI provider (Anthropic) for generation,
-                scoring, and optimization. Anthropic processes this data subject to their own{" "}
+                To send your prompt idea and relevant context to the configured AI provider,
+                Anthropic or OpenRouter, for generation, scoring, and optimization. These
+                providers process data subject to their own privacy policies, including{" "}
                 <a
                   href="https://www.anthropic.com/privacy"
                   target="_blank"
@@ -67,6 +69,7 @@ export default function PrivacyPage() {
                 >
                   privacy policy
                 </a>
+                {" and "}<a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-clay-700 underline underline-offset-2">OpenRouter&apos;s privacy policy</a>
                 .
               </li>
               <li>To improve Umprompt (aggregated, anonymized usage only — no prompt content).</li>
@@ -106,6 +109,23 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
+          <Section title="Browser extension">
+            <p>
+              The Umprompt extension stores its sign-in session and unfinished prompt draft in
+              the browser&apos;s local extension storage. Drafts are separate from saved account
+              history. Signing out through the extension removes its current account session
+              and that account&apos;s local draft, but does not delete saved website history.
+            </p>
+            <p>
+              The extension does not automatically read webpages, browsing history, or the
+              clipboard. It processes text you type or paste into its panel, and writes a prompt
+              to the clipboard only when you choose Copy. Expanding, scoring, optimizing, and
+              simplifying send relevant task text to Umprompt&apos;s server and configured AI
+              provider. Choosing Save stores the prompt in the same private account history
+              used by the website.
+            </p>
+          </Section>
+
           <Section title="Data storage">
             <p>
               Your data is stored in a Supabase-hosted Postgres database. Row-level security
@@ -129,10 +149,10 @@ export default function PrivacyPage() {
             <p>
               Questions about privacy? Email us at{" "}
               <a
-                href="mailto:vanarnold.etsy@gmail.com"
+                href="mailto:umpromptsupport@gmail.com"
                 className="text-clay-700 underline underline-offset-2"
               >
-                vanarnold.etsy@gmail.com
+                umpromptsupport@gmail.com
               </a>
               .
             </p>
