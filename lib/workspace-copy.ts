@@ -7,11 +7,13 @@ const en = {
   refine: "Refine your prompt", usage: "Each refinement uses one generation.", versions: "Previous versions", restore: "Restore", current: "Current version", next: "Keep building", confirmDelete: "Delete this library item?", confirmReplace: "Start a new task? Save your current prompt first if you want to keep it.",
   profileConsent: "Apply this profile? Its selected details will be included in this task and sent to Umprompt's configured AI provider (Anthropic or OpenRouter). Do not include secrets or sensitive personal information.",
   savingError: "Could not save. Please try again.", restored: "Previous version restored", review: "Review profile", before: "Before", quality: "Quality optimization", restoredAction: "Restore", loading: "Loading...",
+  manualEdit: "Manual edit",
 };
 type Copy = typeof en;
 const es: Copy = {
   ...en, library: "Mi biblioteca", profiles: "Perfiles de contexto", playbooks: "Flujos de trabajo", profile: "Perfil", noProfile: "Sin perfil",
   before: "Antes de", quality: "Optimización", restoredAction: "Restaurar", loading: "Cargando...",
+  manualEdit: "Edición manual",
   newProfile: "Nuevo perfil", newPlaybook: "Nuevo flujo", name: "Nombre", details: "Contexto", audience: "Público", voice: "Voz y tono", constraints: "Incluir o evitar", idea: "Idea inicial",
   save: "Guardar", cancel: "Cancelar", edit: "Editar", remove: "Eliminar", use: "Usar", retry: "Reintentar", saved: "Guardado en tu biblioteca", deleted: "Eliminado", empty: "Todavía no hay elementos.", savePlaybook: "Guardar como flujo", applyPlaybook: "Elegir un flujo", manage: "Gestionar biblioteca", applied: "Aplicado",
   shorter: "Simplificar", specific: "Más específico", steps: "Paso a paso", professional: "Profesional", refine: "Refinar tu prompt", usage: "Cada ajuste usa una generación.", versions: "Versiones anteriores", restore: "Restaurar", current: "Versión actual", next: "Sigue creando",
@@ -20,6 +22,7 @@ const es: Copy = {
 const ru: Copy = {
   ...en, library: "Моя библиотека", profiles: "Профили контекста", playbooks: "Рабочие сценарии", profile: "Профиль", noProfile: "Без профиля",
   before: "До изменения", quality: "Оптимизация", restoredAction: "Восстановление", loading: "Загрузка...",
+  manualEdit: "Ручное изменение",
   newProfile: "Новый профиль", newPlaybook: "Новый сценарий", name: "Название", details: "Контекст", audience: "Аудитория", voice: "Стиль и тон", constraints: "Включить или исключить", idea: "Начальная идея",
   save: "Сохранить", cancel: "Отмена", edit: "Изменить", remove: "Удалить", use: "Использовать", retry: "Повторить", saved: "Сохранено в библиотеку", deleted: "Удалено", empty: "Пока ничего не сохранено.", savePlaybook: "Сохранить сценарий", applyPlaybook: "Выбрать сценарий", manage: "Открыть библиотеку", applied: "Применён",
   shorter: "Упростить", specific: "Конкретнее", steps: "Пошагово", professional: "Деловой стиль", refine: "Улучшить промпт", usage: "Каждое изменение использует одну генерацию.", versions: "Предыдущие версии", restore: "Восстановить", current: "Текущая версия", next: "Продолжить работу",

@@ -11,22 +11,23 @@ import { localizedNextSteps } from "@/lib/workspace-next-steps";
 const icons = { shorter: Minimize2, specific: Target, steps: ListOrdered, professional: BriefcaseBusiness };
 interface Props {
   busy: boolean;
+  canRefine?: boolean;
   category?: string;
   versions?: PromptVersion[];
   onRefine: (action: Refinement) => void;
   onRestore: (version: PromptVersion) => void;
 }
-export function ResultActions({ busy, versions = [], onRefine, onRestore }: Props) {
+export function ResultActions({ busy, canRefine = true, versions = [], onRefine, onRestore }: Props) {
   const { language } = useTranslations();
   const copy = workspaceCopy(language);
   const [selected, setSelected] = useState("");
   const [open, setOpen] = useState(false);
   const reduced = useReducedMotion();
   const version = versions[Number(selected)];
-  const labels: Record<string, string> = { shorter: copy.shorter, specific: copy.specific, steps: copy.steps, professional: copy.professional, "Quality optimization": copy.quality, "Restored version": copy.restoredAction };
+  const labels: Record<string, string> = { shorter: copy.shorter, specific: copy.specific, steps: copy.steps, professional: copy.professional, "Quality optimization": copy.quality, "Restored version": copy.restoredAction, "Manual edit": copy.manualEdit };
   return <div className="mb-4 border-y border-zinc-200 py-3">
     <div className="flex flex-wrap items-center justify-between gap-2"><h3 className="text-base font-semibold">{copy.refine}</h3><a href="#next-task-actions" className="inline-flex min-h-11 items-center gap-1.5 text-sm font-medium text-emerald-700"><ArrowUpRight className="size-4" />{copy.next}</a></div>
-    <div className="mt-3 flex flex-wrap gap-2">{REFINEMENTS.map((action) => { const Icon = icons[action]; return <Button key={action} variant="outline" size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-base" disabled={busy} onClick={() => onRefine(action)} title={copy.usage}><Icon className="size-4" />{copy[action]}</Button>; })}</div>
+    <div className="mt-3 flex flex-wrap gap-2">{REFINEMENTS.map((action) => { const Icon = icons[action]; return <Button key={action} variant="outline" size="sm" className="h-auto min-h-11 max-w-full whitespace-normal py-2 text-base" disabled={busy || !canRefine} onClick={() => onRefine(action)} title={copy.usage}><Icon className="size-4" />{copy[action]}</Button>; })}</div>
     <p className="mt-2 text-sm text-zinc-600">{copy.usage}</p>
     {!!versions.length && <div className="mt-4">
       <button type="button" disabled={busy} aria-expanded={open} aria-controls="prompt-versions" onClick={() => setOpen(!open)} className="flex min-h-11 items-center gap-2 py-2 text-sm font-medium text-zinc-600"><History className="size-4" />{copy.versions} ({versions.length})</button>

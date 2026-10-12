@@ -38,6 +38,7 @@ import { CHECKOUT_DRAFT_KEY, parseCheckoutDraft } from "@/lib/checkout-draft";
 import { rememberVersion, nextStepIdea, shouldOfferUpgrade, promptFingerprint, type Refinement, type PromptVersion, type Playbook } from "@/lib/workspace";
 import { workspaceCopy } from "@/lib/workspace-copy";
 import { inferTaskCategory } from "@/lib/idea-suggestions";
+import { canExpandIdea, editPromptText } from "@/lib/prompt-editing";
 
 // ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
 
@@ -57,6 +58,9 @@ function BuilderInner() {
   const [tool, setTool] = useState<ToolId>("claude");
   const [context, setContext] = useState<PromptContext>({});
   const [generatedPrompt, setGeneratedPrompt] = useState("");
+  const [resultIdea, setResultIdea] = useState("");
+  const [promptEdited, setPromptEdited] = useState(false);
+  const manualEdit = useRef(false);
   const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
@@ -66,7 +70,8 @@ function BuilderInner() {
   const generationLock = useRef(false);
   const initializedDraft = useRef(false);
   const generationController = useRef<AbortController | null>(null);
-  useEffect(() => () => generationController.current?.abort(), []);
+  const scoreController = useRef<AbortController | null>(null);
+  useEffect(() => () => { generationController.current?.abort(); scoreController.current?.abort(); }, []);
 
   // ── Pack save state ─────────────────────────────────────────────────────
   const [savedPackId, setSavedPackId] = useState<string | null>(null);
@@ -86,9 +91,7 @@ function BuilderInner() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScoring, setIsScoring] = useState(false);
-  const [isOptimizing, setIsOptimizing] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
-  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const saveLock = useRef(false);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -109,6 +112,7 @@ function BuilderInner() {
   const { t, language } = useTranslations();
   const copy = composerCopy(language);
   const workspaceText = workspaceCopy(language);
+  const hasCurrentResult = canExpandIdea(idea) && resultIdea === idea && (!!generatedPrompt.trim() || promptEdited);
   const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
   const resumeLoaded = useRef(false);
   useEffect(() => {
@@ -118,7 +122,7 @@ function BuilderInner() {
       const draft = parseCheckoutDraft(sessionStorage.getItem(CHECKOUT_DRAFT_KEY));
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       if (draft) {
-        setIdea(draft.idea); setContext(draft.context); setTool(draft.tool); setGeneratedPrompt(draft.prompt);
+        setIdea(draft.idea); setContext(draft.context); setTool(draft.tool); setGeneratedPrompt(draft.prompt); setResultIdea(draft.idea);
         setSavedId(draft.savedId); setHasCopied(draft.copied); setIsSaved(draft.saved);
         if (draft.saved) savedFingerprint.current = promptFingerprint({ idea: draft.idea, context: draft.context, target_tool: draft.tool, generated_prompt: draft.prompt, score: null });
       }
@@ -176,6 +180,7 @@ function BuilderInner() {
       if (parsedTool) setTool(parsedTool);
       if (p) {
         setGeneratedPrompt(p);
+        setResultIdea(i ?? "");
         setIsSaved(false);
         if (s && typeof s === "object") {
           // Score already available from Model Lab — restore it directly.
@@ -186,7 +191,7 @@ function BuilderInner() {
           // Pass idea/tool explicitly because runScoring's closure still
           // holds the empty initial values at this point in the mount cycle.
           showToast("success", t("builder.modelLabScoring"));
-          runScoring(p, { idea: i, tool: parsedTool });
+          if (i && canExpandIdea(i)) runScoring(p, { idea: i, tool: parsedTool });
         }
       }
     } catch {
@@ -214,6 +219,7 @@ function BuilderInner() {
         setHasCopied(false); setSavedThisSession(false);
         setContext(data.context ?? {});
         setGeneratedPrompt(data.generated_prompt);
+        setResultIdea(data.idea);
         setScore(data.score);
         setSavedId(data.id);
         setIsSaved(true);
@@ -286,95 +292,58 @@ function BuilderInner() {
     const effectiveTool = opts?.tool ?? tool;
     setScoreError(null);
     setIsScoring(true);
+    scoreController.current?.abort();
+    const controller = new AbortController();
+    scoreController.current = controller;
+    const abort = () => controller.abort();
+    if (opts?.signal?.aborted) controller.abort();
+    else opts?.signal?.addEventListener("abort", abort, { once: true });
     try {
       const res = await fetch("/api/prompts/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        signal: opts?.signal,
+        signal: controller.signal,
         body: JSON.stringify({ generated_prompt: prompt, idea: effectiveIdea, target_tool: effectiveTool, universal: opts?.universal ?? context.universal }),
       });
+      if (controller.signal.aborted) return null;
       if (res.ok) {
         const { data } = await res.json();
+        if (controller.signal.aborted) return null;
         if (opts?.publish !== false) setScore(data);
         track("prompt_scored", { target_tool: effectiveTool, score_overall: data.overall });
         return data;
       } else {
         const json = await res.json().catch(() => ({}));
+        if (controller.signal.aborted) return null;
         setScoreError(json.error ?? "Scoring failed. Try again.");
         return null;
       }
     } catch {
-      setScoreError("Scoring failed. Check your connection and try again.");
+      if (!controller.signal.aborted) setScoreError("Scoring failed. Check your connection and try again.");
       return null;
     } finally {
-      setIsScoring(false);
+      opts?.signal?.removeEventListener("abort", abort);
+      if (scoreController.current === controller) { scoreController.current = null; setIsScoring(false); }
     }
   }, [idea, tool, context.universal]);
 
+  const handleEditPrompt = useCallback((value: string) => {
+    if (!hasCurrentResult || isLoading || isGenerating || isSaving || saveLock.current || (generationLock.current && !isScoring)) return;
+    const next = editPromptText(generatedPrompt, value, context.versions, !manualEdit.current);
+    if (!next.changed) return;
+    manualEdit.current = true;
+    scoreController.current?.abort();
+    setGeneratedPrompt(next.prompt);
+    setContext({ ...context, versions: next.versions });
+    setPromptEdited(true); setScore(null); setScoreError(null);
+    setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+  }, [hasCurrentResult, generatedPrompt, context, isLoading, isGenerating, isSaving, isScoring]);
+
   // ── Manual retry (called from ScorePanel error state) ────────────────────
   const handleRetryScore = useCallback(() => {
-    if (!generatedPrompt || generationLock.current || isScoring || isGenerating || isOptimizing || isSaving) return;
+    if (!hasCurrentResult || !generatedPrompt || generationLock.current || isScoring || isGenerating || isSaving) return;
     runScoring(generatedPrompt);
-  }, [generatedPrompt, isScoring, isGenerating, isOptimizing, isSaving, runScoring]);
-
-  // ── Optimize weak dimensions ─────────────────────────────────────────────
-  const handleOptimize = useCallback(async () => {
-    if (!generatedPrompt.trim() || generationLock.current || isOptimizing || isGenerating || isScoring || isSaving) return;
-
-    generationLock.current = true;
-    setIsOptimizing(true);
-    setOptimizeError(null);
-    const controller = new AbortController();
-    generationController.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 90000);
-
-    try {
-      // Restored versions and checkout drafts may not have a quality score yet.
-      const currentScore = score ?? await runScoring(generatedPrompt, { signal: controller.signal, publish: false });
-      if (!currentScore) { setOptimizeError(copy.optimizeScoreError); return; }
-      const outputLanguage = detectTextLanguage(idea, language);
-      const res = await fetch("/api/prompts/optimize", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          idea,
-          target_tool: tool,
-          context,
-          generated_prompt: generatedPrompt,
-          score: currentScore,
-          outputLanguage,
-        }),
-      });
-      const json = await res.json();
-      if (!res.ok) {
-        setOptimizeError(copy.optimizeError);
-        return;
-      }
-      const improved: unknown = json.data?.improved_prompt;
-      if (typeof improved !== "string" || !improved.trim() || improved.length > 16000) {
-        setOptimizeError(copy.optimizeError);
-        return;
-      }
-      setGeneratedPrompt(improved);
-      setIsSaved(false);
-      setScore(null);
-      setContext({ ...context, versions: rememberVersion(context.versions, generatedPrompt, "Quality optimization") });
-      setHasCopied(false);
-      setSavedThisSession(false);
-      setGenerateRequestId(null);
-      const newScore = await runScoring(improved, { signal: controller.signal });
-      showToast("success", copy.optimizeDone);
-      track("prompt_optimized", { target_tool: tool, score_overall: newScore?.overall });
-    } catch {
-      setOptimizeError(copy.optimizeError);
-    } finally {
-      clearTimeout(timeout);
-      generationLock.current = false;
-      generationController.current = null;
-      setIsOptimizing(false);
-    }
-  }, [generatedPrompt, score, idea, tool, context, language, isOptimizing, isGenerating, isScoring, isSaving, runScoring, copy.optimizeError, copy.optimizeScoreError, copy.optimizeDone]);
+  }, [hasCurrentResult, generatedPrompt, isScoring, isGenerating, isSaving, runScoring]);
 
   // ── Generate Pack ────────────────────────────────────────────────────────
   const handleGeneratePack = useCallback(async () => {
@@ -423,11 +392,11 @@ function BuilderInner() {
 
   // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async (nextContext?: PromptContext, refinement?: Refinement) => {
-    if (!idea.trim()) {
-      showToast("error", t("builder.addIdeaFirst"));
+    if (!canExpandIdea(idea) && !refinement) {
+      showToast("error", copy.ideaTooShort);
       return;
     }
-    if (generationLock.current || isGenerating || isScoring || isOptimizing || isSaving) return;
+    if (generationLock.current || isGenerating || isScoring || isSaving) return;
     generationLock.current = true;
     const originalPrompt = generatedPrompt;
     const originalScore = score;
@@ -447,7 +416,6 @@ function BuilderInner() {
     setHasCopied(false);
     setSavedThisSession(false);
     setScoreError(null);
-    setOptimizeError(null);
     setIsSaved(false);
     setGenerateRequestId(null);
 
@@ -501,6 +469,9 @@ function BuilderInner() {
       if (accumulated.length > 16000) throw new Error("The generated prompt is too long. Please try a smaller task.");
       completed = true;
       setGeneratedPrompt(accumulated);
+      setResultIdea(idea);
+      if (resultIdea && resultIdea !== idea) { setSavedId(null); savedFingerprint.current = null; router.replace("/builder", { scroll: false }); }
+      setPromptEdited(false); manualEdit.current = false;
       setContext({ ...effectiveContext, versions: refinement ? rememberVersion(effectiveContext.versions, originalPrompt, refinement) : [] });
       setScore(null);
       if (refinement) track("prompt_refined", { action_type: refinement, category: effectiveContext.category });
@@ -513,7 +484,7 @@ function BuilderInner() {
       setIsGenerating(false);
       track("prompt_generated", { target_tool: tool });
       window.dispatchEvent(new Event("prompt_usage_refresh"));
-      await runScoring(accumulated, { universal: effectiveContext.universal });
+      await runScoring(accumulated, { universal: effectiveContext.universal, signal: controller.signal });
     } catch (err) {
       setGeneratedPrompt(originalPrompt);
       setScore(originalScore);
@@ -531,12 +502,12 @@ function BuilderInner() {
       generationController.current = null;
       setIsGenerating(false); // safety reset if streaming itself threw
     }
-  }, [idea, tool, context, language, isGenerating, isScoring, isOptimizing, isSaving, generatedPrompt, score, isSaved, hasCopied, savedThisSession, generateRequestId, runScoring, t]);
+  }, [idea, resultIdea, router, tool, context, language, isGenerating, isScoring, isSaving, generatedPrompt, score, isSaved, hasCopied, savedThisSession, generateRequestId, runScoring, copy.ideaTooShort]);
 
   // ── Save ──────────────────────────────────────────────────────────────────
   const handleSave = useCallback(async () => {
-    if (saveLock.current || generationLock.current || isGenerating || isScoring || isOptimizing) return;
-    if (!idea.trim() || !generatedPrompt.trim()) {
+    if (saveLock.current || generationLock.current || isGenerating || isScoring) return;
+    if (!hasCurrentResult || !generatedPrompt.trim()) {
       showToast("error", t("builder.generateFirst"));
       return;
     }
@@ -592,25 +563,27 @@ function BuilderInner() {
         saveLock.current = false;
         setIsSaving(false);
       }
-  }, [idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId, isGenerating, isScoring, isOptimizing]);
+  }, [hasCurrentResult, idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId, isGenerating, isScoring]);
 
   const startTask = useCallback((nextIdea: string, nextContext: PromptContext): boolean => {
-    if (generationLock.current || isGenerating || isScoring || isOptimizing || isSaving) return false;
+    if (generationLock.current || isGenerating || isScoring || isSaving) return false;
     if (generatedPrompt && !isSaved && !window.confirm(workspaceText.confirmReplace)) return false;
-    setIdea(nextIdea); setContext(nextContext); setGeneratedPrompt(""); setScore(null);
+    setIdea(nextIdea); setContext(nextContext); setGeneratedPrompt(""); setResultIdea(""); setScore(null);
+    setPromptEdited(false); manualEdit.current = false;
     savedFingerprint.current = null;
     setSavedId(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
-    setScoreError(null); setOptimizeError(null); setIsLoading(false);
+    setScoreError(null); setIsLoading(false);
     router.replace("/builder", { scroll: false });
     window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
     return true;
-  }, [generatedPrompt, isSaved, isGenerating, isScoring, isOptimizing, isSaving, workspaceText.confirmReplace, router, reducedMotion]);
+  }, [generatedPrompt, isSaved, isGenerating, isScoring, isSaving, workspaceText.confirmReplace, router, reducedMotion]);
   const applyPlaybook = useCallback((playbook: Playbook) => startTask(playbook.idea, { ...playbook.context, universal: true }), [startTask]);
   function restoreVersion(version: PromptVersion) {
-    if (generationLock.current || isGenerating || isScoring || isOptimizing || isSaving) return;
+    if (generationLock.current || isGenerating || isScoring || isSaving) return;
     setContext({ ...context, versions: rememberVersion((context.versions ?? []).filter((v) => v !== version), generatedPrompt, "Restored version") });
     setGeneratedPrompt(version.prompt); setScore(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
-    setScoreError(null); setOptimizeError(null);
+    setPromptEdited(false); manualEdit.current = false;
+    setScoreError(null);
     track("prompt_version_restored"); showToast("success", workspaceText.restored);
   }
 
@@ -628,6 +601,7 @@ function BuilderInner() {
         setIdea("");
         setTool("claude");
         setGeneratedPrompt("");
+        setPromptEdited(false); manualEdit.current = false;
         setScore(null);
         setSavedId(null);
         setIsSaved(false);
@@ -776,7 +750,7 @@ function BuilderInner() {
                   variant="outline"
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving || isLoading || isGenerating || isScoring || isOptimizing || !generatedPrompt}
+                  disabled={isSaving || isLoading || isGenerating || isScoring || !hasCurrentResult || !generatedPrompt.trim()}
                 >
                   <ActionIcon pending={isSaving} success={isSaved} icon={Save} />
                   {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
@@ -898,24 +872,25 @@ function BuilderInner() {
           </div>
         ) : (
           <>
-          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isScoring || isOptimizing || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
+          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isScoring || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
           <IdeaComposer idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
             example={<ExpansionExample copy={copy.expansionExample} onUse={!idea.trim() && !generatedPrompt && !isGenerating ? () => {
               setIdea(copy.expansionExample.idea);
               setContext({ ...context, category: "writing", universal: true, clarifications: undefined });
               document.getElementById("studio-idea")?.focus();
             } : undefined} />}
-            onGenerate={handleGenerate} busy={isGenerating || isScoring || isOptimizing || isSaving}
-            generating={isGenerating || isOptimizing} hasResult={!!generatedPrompt.trim()}
+            onGenerate={handleGenerate} busy={isGenerating || isScoring || isSaving}
+            generating={isGenerating} hasResult={hasCurrentResult} canSave={hasCurrentResult && !!generatedPrompt.trim()}
             onSave={handleSave} saving={isSaving} saved={isSaved}
+            onNewIdea={() => { if (startTask("", { universal: true, category: "auto" })) setTimeout(() => document.getElementById("studio-idea")?.focus(), 0); }}
             outcomeEligible={hasCopied}
-            resultActions={!!generatedPrompt && !isGenerating && <ResultActions busy={isScoring || isOptimizing || isSaving} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
-            nextActions={!!generatedPrompt && !isGenerating && <NextTaskActions busy={isScoring || isOptimizing || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
+            resultActions={hasCurrentResult && !isGenerating && <ResultActions busy={isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
+            nextActions={hasCurrentResult && !!generatedPrompt && !isGenerating && <NextTaskActions busy={isScoring || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
               const { versions: _versions, clarifications: _answers, ...reusable } = context;
               if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category: context.category, option: String(index) });
             }} />}
-            upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && !isOptimizing && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
-            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal isSaved={isSaved} isGenerating={isGenerating} isOptimizing={isOptimizing} busy={isScoring || isSaving} onOptimize={handleOptimize} optimizeError={optimizeError} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
+            upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
+            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
             quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} />}
           />
           </>

@@ -1,6 +1,6 @@
 "use client";
 
-import { Copy, Download, RefreshCw, Loader2, WandSparkles, FileText } from "lucide-react";
+import { Copy, Download, RefreshCw, Loader2, FileText, PenLine, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { useEffect, useRef, useState } from "react";
@@ -9,6 +9,7 @@ import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { cn } from "@/lib/utils";
 import { composerCopy } from "@/lib/composer-copy";
+import { MAX_PROMPT_LENGTH } from "@/lib/prompt-editing";
 
 // ── Tool metadata ─────────────────────────────────────────────────────────────
 
@@ -206,13 +207,14 @@ interface PromptOutputProps {
   targetTool: ToolId;
   isSaved?: boolean;
   isGenerating?: boolean;
-  isOptimizing?: boolean;
+  isScoring?: boolean;
   busy?: boolean;
-  onOptimize?: () => void;
-  optimizeError?: string | null;
   onRegenerate?: () => void;
   universal?: boolean;
   onCopied?: () => void;
+  onPromptChange?: (value: string) => void;
+  onPromptEditEnd?: () => void;
+  edited?: boolean;
 }
 
 export function PromptOutput({
@@ -220,13 +222,14 @@ export function PromptOutput({
   targetTool,
   isSaved,
   isGenerating,
-  isOptimizing,
+  isScoring,
   busy,
-  onOptimize,
-  optimizeError,
   onRegenerate,
   universal = false,
   onCopied,
+  onPromptChange,
+  onPromptEditEnd,
+  edited,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const { t, language } = useTranslations();
@@ -234,6 +237,8 @@ export function PromptOutput({
   const [copyError, setCopyError] = useState(false);
   const copyTimeout = useRef<ReturnType<typeof setTimeout>>();
   const copyLabel = universal ? copy.copy : t("promptOutput.copy");
+  const [view, setView] = useState<"edit" | "preview">("preview");
+  useEffect(() => { if (isGenerating || isSaved) setView("preview"); }, [isGenerating, isSaved]);
   useEffect(() => () => clearTimeout(copyTimeout.current), []);
   useEffect(() => {
     clearTimeout(copyTimeout.current);
@@ -246,6 +251,7 @@ export function PromptOutput({
       await navigator.clipboard.writeText(prompt);
       setCopyError(false);
       setCopied(true);
+      setView("preview"); onPromptEditEnd?.();
       clearTimeout(copyTimeout.current);
       copyTimeout.current = setTimeout(() => setCopied(false), 1500);
       track("prompt_copied", { target_tool: targetTool });
@@ -265,28 +271,30 @@ export function PromptOutput({
   }
 
   const isEmpty = !prompt.trim();
-  const locked = !!busy || isGenerating || isOptimizing;
+  const locked = !!busy || isGenerating;
   const toolMeta = TOOL_META[targetTool];
   const wordCount = prompt.split(/\s+/).filter(Boolean).length;
 
   const statusLabel = isGenerating
     ? t("promptOutput.streaming")
-    : isOptimizing
-    ? t("promptOutput.optimizing")
+    : isScoring
+    ? copy.checkingQuality
     : isSaved
     ? t("promptOutput.saved")
     : isEmpty
     ? ""
+    : edited
+    ? copy.edited
     : t("promptOutput.draft");
 
-  const statusClass = isGenerating || isOptimizing
+  const statusClass = isGenerating
     ? "text-clay-600 bg-clay-500/8 border-clay-200/60"
     : isSaved
     ? "text-emerald-700 bg-emerald-50 border-emerald-200/60"
     : "text-ink-500 bg-cream-100 border-ink-100/60";
 
   return (
-    <div data-prompt-output className={cn("flex h-full flex-col rounded-lg border bg-card card-soft overflow-hidden transition-colors duration-200", isGenerating || isOptimizing ? "generation-pulse border-emerald-300" : "border-ink-100/70")} aria-busy={locked}>
+    <div data-prompt-output className={cn("flex h-full flex-col rounded-lg border bg-card card-soft overflow-hidden transition-colors duration-200", isGenerating ? "generation-pulse border-emerald-300" : "border-ink-100/70")} aria-busy={locked}>
       {/* Header */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-ink-100/60 bg-cream-50/50">
         <div className="flex flex-wrap items-center gap-2.5 min-w-0">
@@ -300,21 +308,36 @@ export function PromptOutput({
             </span>
           )}
         </div>
+        <div className="flex min-w-0 flex-wrap items-center gap-2">
+        {onPromptChange && <button type="button" disabled={!!locked} title={view === "edit" ? copy.done : copy.editPrompt} aria-label={view === "edit" ? copy.done : copy.editPrompt} onClick={() => { onPromptEditEnd?.(); setView(view === "edit" ? "preview" : "edit"); }} className="inline-flex min-h-11 items-center gap-1.5 rounded px-2 text-sm text-zinc-500 hover:bg-zinc-100 hover:text-emerald-700 disabled:opacity-40">{view === "edit" ? <Check className="size-3.5" aria-hidden="true" /> : <PenLine className="size-3.5" aria-hidden="true" />}{view === "edit" ? copy.done : copy.edit}</button>}
         {statusLabel && (
           <span className={cn(
-            "flex items-center gap-1.5 text-sm font-medium rounded-md border px-2.5 py-0.5 shrink-0",
+            "flex max-w-full items-center gap-1.5 text-sm font-medium rounded-md border px-2.5 py-0.5",
             statusClass
           )}>
-            {(isGenerating || isOptimizing) && <Loader2 className="size-2.5 animate-spin" />}
-            {isSaved && !isGenerating && !isOptimizing && <ActionIcon success icon={Copy} className="size-3 [&_svg]:size-3" />}
+            {(isGenerating || isScoring) && <Loader2 className="size-3.5 animate-spin" />}
+            {isSaved && !isGenerating && <ActionIcon success icon={Copy} className="size-3 [&_svg]:size-3" />}
             {statusLabel}
           </span>
         )}
+        </div>
       </div>
 
       {/* Body */}
       <div data-prompt-content className="min-h-0 flex-1 overflow-y-auto break-words">
-        {isGenerating && isEmpty ? (
+        {onPromptChange && view === "edit" ? (
+          <textarea
+            aria-label={copy.result}
+            value={prompt}
+            maxLength={MAX_PROMPT_LENGTH}
+            placeholder={copy.promptPlaceholder}
+            readOnly={!!locked}
+            onChange={(event) => onPromptChange(event.target.value)}
+            onBlur={onPromptEditEnd}
+            spellCheck
+            className="block h-full min-h-[240px] w-full resize-none border-0 bg-white px-5 py-4 text-base leading-relaxed text-zinc-900 outline-none focus-visible:shadow-[inset_0_0_0_2px_#059669] read-only:bg-zinc-50/50"
+          />
+        ) : isGenerating && isEmpty ? (
           <div className="p-5">
             <StreamingPlaceholder />
           </div>
@@ -340,30 +363,23 @@ export function PromptOutput({
           </div>
         ) : (
           /* Formatted document view */
-          <div className="prompt-reveal px-5 py-4">
+          <div className="prompt-reveal min-h-full bg-zinc-50 px-5 py-4">
             <PromptRenderer text={prompt} />
           </div>
         )}
       </div>
 
+      {onPromptChange && view === "edit" && <div className="flex shrink-0 justify-end px-5 pb-2 text-xs tabular-nums text-zinc-500">{prompt.length} / {MAX_PROMPT_LENGTH}</div>}
+
       {copyError && <p role="alert" className="px-4 pb-3 text-sm text-red-700">{copy.copyError}</p>}
-      {optimizeError && <p role="alert" className="px-4 py-3 text-sm text-red-700">{optimizeError}</p>}
       {/* Footer */}
       <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 px-4 py-3 border-t border-ink-100/60 bg-cream-50/40">
         <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-        {onOptimize && <Button variant="outline" onClick={onOptimize} disabled={isEmpty || locked} title={copy.optimizeHint} className="h-auto min-h-11 max-w-full whitespace-normal px-3 py-2 text-base text-emerald-800">
-          <ActionIcon pending={isOptimizing} icon={WandSparkles} />
-          <span className="grid">
-            <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.optimize}</span>
-            <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.optimizing}</span>
-            <span aria-live="polite" className="col-start-1 row-start-1">{isOptimizing ? copy.optimizing : copy.optimize}</span>
-          </span>
-        </Button>}
         <Button
           variant="ghost"
           size="sm"
           onClick={onRegenerate}
-          disabled={isEmpty || locked || !onRegenerate}
+          disabled={isEmpty || locked || isScoring || !onRegenerate}
           className="h-auto min-h-11 max-w-full whitespace-normal px-3 py-2 text-base text-ink-600 hover:text-ink-800"
         >
           <RefreshCw className="size-3.5" />
