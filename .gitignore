@@ -1,5 +1,6 @@
 # dependencies
 /node_modules
+/.npm-cache-store-review/
 /.pnp
 .pnp.*
 .yarn/*
@@ -18,6 +19,8 @@
 
 # production
 /build
+/extension/dist/
+/extension/artifacts/
 
 # misc
 .DS_Store

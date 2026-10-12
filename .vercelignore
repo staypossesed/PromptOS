@@ -3,3 +3,6 @@
 .env
 *.tsbuildinfo
 .claude/
+extension/dist/
+extension/artifacts/
+.npm-cache-store-review/
