@@ -1,8 +1,10 @@
-# Chrome Web Store Submission Draft
+# Chrome Web Store Release
 
-Status: submitted to Chrome Web Store on October 11, 2026; dashboard shows
-**Pending review**. Automatic publication after approval was selected. Not approved
-or publicly available yet. See `docs/extension-security-review.md` for scoped verification.
+The dashboard's Published package was independently observed as **0.1.2** on October 14,
+2026. Update **0.1.3** was uploaded and submitted on October 14. Google confirmed
+"Your extension was submitted for review" and **Pending review**. Automatic publication
+after approval is selected. The update is not approved or published yet.
+See `docs/extension-security-review.md` for the previous scoped security review.
 
 ## Listing
 
@@ -15,9 +17,17 @@ Description:
 Turn a rough idea into a clear, detailed prompt for your preferred AI assistant, directly
 from a browser side panel.
 
-Type or paste your idea, choose Optimize my request, and copy the prepared prompt. Results
-are read-only until you choose Edit. Simplify the language or return to a previous version. A separate example
-shows the difference between a rough idea and an expanded prompt without replacing your work.
+Type or paste your idea, choose Optimize my request, and copy the prepared prompt. Your
+complete original idea stays visible. Choose Edit to add a forgotten detail, or Cancel
+changes to return to the previous result.
+
+Results are read-only until you choose Edit. Use Quality check to see feedback across
+clarity, context, constraints, examples, output format, and tool fit. Optimize using
+feedback improves the current prompt using those criteria. Simplify the language or
+return to a previous version.
+
+An introductory example shows what to expect before you start and disappears once you
+submit your idea.
 
 Save only the prompts you choose. They appear in the same private Umprompt history used
 by the website. Your unfinished draft stays on the device when the panel closes.
@@ -26,7 +36,8 @@ Sign in with your existing Umprompt Google or GitHub account. The same free allo
 paid account apply; the extension does not provide unlimited free AI generation.
 
 Available in English, Russian, and Spanish. The extension does not answer your task itself,
-read websites automatically, or insert text into other websites.
+read websites automatically, or insert text into other websites. Quality scores are
+estimates, not guarantees of an AI assistant's answer.
 
 Homepage: https://www.umprompt.com
 
@@ -41,7 +52,16 @@ editing, copying, and explicit saving to their Umprompt account.
 
 ## Release Preparation
 
-- Package: `extension/artifacts/umprompt-chrome-0.1.2.zip`.
+- Update package: `extension/artifacts/umprompt-chrome-0.1.3.zip`.
+- SHA-256: `7bde80de09fee899cc823f78afba24c2716a7bc52080b085c722215d9435958b`.
+- No permission, OAuth callback, backend-origin, or account-access changes in 0.1.3.
+- October 14 verification: 97 automated tests, TypeScript, production website build,
+  production saved-result inspection, and actual website/panel UI flows against synthetic
+  local AI/history fixtures. Checked full source text, explicit source editing/Cancel,
+  no result Example tab, criteria optimization, score invalidation, failure recovery,
+  versions, explicit saving, reopening, and narrow-panel layout. Native Chrome OAuth and
+  real-provider output quality were not rerun for this update; existing acceptance results
+  below belong to 0.1.2, not a fresh 0.1.3 sign-in test.
 - Publisher/support account requested by the founder: `umpromptsupport@gmail.com`.
 - Developer agreement and registration payment: completed by the founder; dashboard
   registration confirmation observed on October 11, 2026.
@@ -89,9 +109,9 @@ editing, copying, and explicit saving to their Umprompt account.
   This is not a clean audit or a penetration-test certification.
 - Backend security deployment: `dpl_3VyCgv6off9ySSRfPwzovdzi5DuX`, Ready and
   aliased to `https://www.umprompt.com`. Store-ID live empty-profile startup rechecked.
-- Status: version 0.1.2 submitted; Google confirmed "Your extension was submitted for
-  review" and "Pending review". Automatic publication selected; not approved/published yet.
-- Follow-up monitor: `umprompt-chrome-review`, every six hours, quiet while unchanged.
+- Historical submission: version 0.1.2 was submitted October 11; the Published package
+  table now confirms 0.1.2. Version 0.1.3 is the pending update, not the live package.
+- Previous monitor ID: `umprompt-chrome-review`; its status was not changed by this release.
 
 ### Store Identity for Isolated Acceptance Testing
 
@@ -151,8 +171,9 @@ draft, not a claim of certification or legal compliance.
 - Reviewers can use open Google/GitHub registration for all core extension functions.
   Provide a dedicated non-admin account privately only if Google requests restricted access.
   Never include credentials in source, screenshots, public listing copy, or this document.
-- Reviewer journey: sign in, enter an idea, choose Optimize my request, open Example, return
-  to Your prompt, choose Edit then Done, simplify, copy, Save, then open History. Website
-  History shows the same saved item.
+- Reviewer journey: inspect the introductory example, sign in, enter an idea, choose
+  Optimize my request, confirm the example disappears, edit the original idea or cancel,
+  choose Quality check / Optimize using feedback, edit the result then Done, simplify,
+  restore a version, copy, Save, then open History. Website History shows the same saved item.
 - Explain free limits and provide adequate test allowance. Do not initiate a paid purchase
   or ask reviewers to supply personal payment information.

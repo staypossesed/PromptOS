@@ -3,21 +3,33 @@
 ## Scope
 
 Manifest V3 extension with a toolbar-opened side panel. It expands ideas into prompts rather
-than answering the task. Optimize my request, Simplify, Copy, previous-version restoration,
-explicit Save, task suggestions, an independent Example tab, and private history are included.
+than answering the task. Optimize my request, criteria-based optimization, Simplify, Copy,
+previous-version restoration, explicit Save, task suggestions, and private history are included.
 The interface supports English, Russian, and Spanish and respects reduced-motion preferences.
 
 Generated and reopened prompts are read-only in **Your prompt**, in both the side panel and
 website builder. A small **Edit** control enables manual editing; **Done**, Copy, or a
-successful Save restores read-only view. After generation, the original idea is a read-only
-summary. **New prompt** in the panel or **New idea** on the website starts a separate task
+successful Save restores read-only view. After generation, the complete original idea is
+visible without line truncation. Its separate **Edit** action reopens the input form;
+the output is hidden while editing the source. **Cancel changes** restores the previous
+idea/result pairing and saved state. Optimizing an amended idea produces a new task ID
+without overwriting the previous saved record. **New prompt** or **New idea** starts a separate task
 without changing saved history. Copy, Save, and Simplify use the current result text. Typing
 makes no new AI request and does not save to cloud history. The extension keeps edits in its
 local account-scoped draft, including after the panel closes. On the website, use **Save**
 before leaving or refreshing to retain edits in history.
 
 **Optimize my request** is the input action. It expands the original idea and selected
-details; it never optimizes the output. A one-character request remains beside input
+details; it never uses the output as a replacement idea. The separate **Optimize using
+feedback** action in **Quality check** improves the current output using its actual score
+and criterion tips, then checks the improved result again. The previous output remains
+recoverable. Failed optimization keeps the original; failed rescoring keeps the successful
+improvement and offers retry. Quality scores are invalidated after manual edits and tied
+to the exact idea/output. Scoring on panel open is never automatic.
+
+The introductory example disappears as soon as the input action starts, including during
+clarification, loading, or failure. Generated and reopened results have no Example tab.
+A one-character request remains beside input
 validation instead of becoming an editable error response. Old one-character drafts reopen
 the request step, preserving their stored text but hiding the unusable result. Replacing
 such a request and generating again creates a result tied to the new idea; an explicit Save
@@ -26,7 +38,7 @@ creates a new record rather than silently overwriting the old saved request.
 The first change in an editing session keeps the previous text as a **Manual edit** version,
 not a version for every keystroke. Up to five previous versions can be recovered. Clearing
 the result leaves the editor available, while Copy, Save, and Simplify are disabled
-until there is text again. Edits invalidate the website's old quality score. The result is
+until there is text again. Edits invalidate the old quality score in both interfaces. The result is
 temporarily locked during generation, loading, and saving to prevent those
 operations from overwriting concurrent edits. Prompts are limited to 16,000 characters.
 Accidental one-character ideas are rejected before generation or clarification consumes AI
@@ -102,9 +114,11 @@ dependency entries, including eight high-severity findings. Scoped checks exclud
 high findings from extension inputs and deployed server traces, but this is not a clean
 audit. See `docs/extension-security-review.md` for mitigations, evidence, and follow-up.
 
-Chrome Web Store version 0.1.2 was submitted on October 11, 2026. The verified dashboard
-status is **Pending review**, with automatic publication after approval selected. Store ID:
-`nfbmeonaffiaicoiahbmmocbkbhekbin`. Submission is not approval or public availability.
+Store ID: `nfbmeonaffiaicoiahbmmocbkbhekbin`. Package **0.1.3** was uploaded and submitted
+on October 14; Google confirmed **Pending review**, with automatic publication after
+approval selected. The Published package table still showed **0.1.2**. Building or deploying
+the website does not update store installations. Confirm the dashboard and public listing
+before describing the 0.1.3 update as published.
 
 The panel checks the public, uncached `/api/extension/health` protocol before enabling AI,
 Save, or History. Opening the panel never calls AI or saves a prompt. A missing backend,
@@ -151,7 +165,7 @@ The browser test builds a separate local package into a temporary directory and 
 into a fresh Chromium profile; it never rewrites the existing installation folder. It uses fixtures
 for OAuth, AI responses, entitlements, and persistence: no production login, AI call, payment,
 or private user-history access. It exercises the real bundled PKCE SDK with a fixture callback,
-then request-only optimization, read-only/Edit/Done states, legacy short-request recovery,
+then source editing/Cancel, criteria optimization, read-only/Edit/Done states, legacy short-request recovery,
 simplification, copying, version restoration, explicit Save,
 Save retries, history, reopening the draft, errors, cancellation, quota exhaustion, expiration,
 token refresh, sign-out, and 420/320/280px layouts in all three languages. Screenshots go to
@@ -164,6 +178,12 @@ stale-score cancellation, edited Copy and Download, explicit Save/update/reopen,
 using edited text, clear/restore, and English/Spanish/Russian desktop and mobile layouts with
 the packaged Geist font. It does not prove live account persistence or test the outer app
 layout; it never sends AI requests or accesses a real account.
+
+For UI checks through a connected browser, `node scripts/test-prompt-editor.cjs --serve`
+and `node scripts/serve-extension-fixture.cjs` each print an isolated local URL. These mount
+the actual interfaces with synthetic sessions and local-only AI/history responses. They do
+not prove native extension loading, real OAuth, or live AI quality. Never distribute these
+fixture servers as part of the extension or describe their responses as production results.
 
 The backend check installs a production-targeted package into a fresh empty Chromium
 profile and contacts the real live site without fixtures. It confirms healthy startup,
