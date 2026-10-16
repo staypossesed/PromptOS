@@ -118,7 +118,7 @@ async function main() {
         return route.fulfill({ contentType: "text/plain", body: req.postDataJSON().refinement ? simplified : original });
       }
       if (pathname === "score") return json({ data: { overall: 75, dimensions: [{ key: "clarity", label: "Clarity", score: 70, reason: "Synthetic reason", tip: "Synthetic tip" }] } });
-      if (pathname === "optimize") throw new Error("Result optimization must not be called by the panel.");
+      if (pathname === "optimize") return json({ data: { improved_prompt: `${req.postDataJSON().generated_prompt}\nApplied the actual quality feedback.` } });
       if (pathname.startsWith("prompts/") && req.method() === "PUT") {
         if (failSave) return json({ error: "Synthetic failure" }, 500);
         const draftId = pathname.slice(8);
@@ -259,7 +259,7 @@ async function main() {
     await page.getByRole("button", { name: "Cancel", exact: true }).click();
     await page.getByRole("alert").waitFor();
     assert.equal(await page.getByRole("tab").count(), 0, "Cancelling the first generation does not leave a pretend result.");
-    assert.equal(await page.locator(".example").count(), 1);
+    assert.equal(await page.locator(".example").count(), 0, "The example stays hidden after an attempted request.");
     assert.equal(await page.locator("#idea").inputValue(), "email asking for two extra days");
     holdGeneration = false;
     await page.getByRole("button", { name: inputAction, exact: true }).click();
@@ -268,23 +268,22 @@ async function main() {
     assert.equal(requests.filter((request) => request.pathname === "generate").at(-1).body.idea, "email asking for two extra days");
     assert.equal(requests.filter((request) => request.pathname === "generate").at(-1).body.generated_prompt, "", "Optimize request uses the input, not a stale output.");
     assert.equal(await page.locator("#idea").count(), 0, "The original idea editor is removed after generation.");
-    assert.equal(await page.getByRole("button", { name: "Edit idea", exact: true }).count(), 0, "There is no competing Edit idea control.");
+    assert.equal(await page.getByRole("button", { name: "Edit idea", exact: true }).count(), 1, "The source is editable only on explicit request.");
     assert.equal(await page.locator("textarea:visible").count(), 0, "Results are read-only until Edit is selected.");
     assert.equal(await page.getByRole("button", { name: "Optimize prompt", exact: true }).count(), 0);
     assert.equal(saved.size, 0);
-    assert.equal(await page.getByRole("tab").count(), 2);
+    assert.equal(await page.getByRole("tab").count(), 0);
     assert.equal(await page.locator(".example").count(), 0);
-    await page.getByRole("tab", { name: "Example", exact: true }).click();
-    assert.equal(await page.getByRole("tabpanel").getByText("Goal", { exact: true }).count(), 1);
-    assert.equal(await page.locator(".output").count(), 0, "Example and real result are independent views.");
-    assert.equal(await page.getByRole("button", { name: "Copy AI prompt", exact: true }).count(), 0);
-    assert.equal(await page.getByRole("tabpanel").getByText("Expanded AI prompt", { exact: true }).count(), 1);
-    await page.screenshot({ path: path.join(artifacts, "example-tab-en-420.png"), fullPage: true });
-    await page.getByRole("tab", { name: "Your prompt", exact: true }).click();
+    await page.getByRole("button", { name: "Edit idea", exact: true }).click();
+    await page.locator("#idea").fill("A temporary change to the original idea");
+    assert.equal(await page.locator(".output").count(), 0);
+    await page.getByRole("button", { name: "Cancel changes", exact: true }).click();
     assert.equal(await outputText(), original);
-    await page.getByRole("tab", { name: "Your prompt", exact: true }).press("ArrowRight");
-    assert.equal(await page.getByRole("tab", { name: "Example", exact: true }).getAttribute("aria-selected"), "true");
-    await page.getByRole("tab", { name: "Example", exact: true }).press("Home");
+    await page.getByRole("button", { name: "Optimize using feedback", exact: true }).click();
+    await waitOutput(`${original}\nApplied the actual quality feedback.`);
+    assert.equal(requests.filter((request) => request.pathname === "optimize").at(-1).body.score.dimensions[0].tip, "Synthetic tip");
+    await page.getByRole("button", { name: "Previous version", exact: true }).click();
+    assert.equal(await outputText(), original);
     await page.getByRole("button", { name: "Copy AI prompt", exact: true }).click();
     await page.getByRole("button", { name: "Copied", exact: true }).waitFor();
     assert.equal(await page.evaluate(() => globalThis.syntheticCopiedText), original);
@@ -439,10 +438,10 @@ async function main() {
     assert.equal(saved.size, 1);
     assert.deepEqual(errors, []);
     assert.equal(requests.filter((req) => req.method === "PUT").length, 4);
-    assert.equal(requests.filter((req) => req.pathname === "optimize").length, 0, "The result has no AI optimization action.");
+    assert.equal(requests.filter((req) => req.pathname === "optimize").length, 1, "Criteria optimization is explicit, never automatic.");
     console.log(`PASS: packaged Chrome extension ${id}`);
     console.log(`Callback: https://${id}.chromiumapp.org/auth`);
-    console.log("PASS: Google/GitHub PKCE fixtures, invalid callbacks, cancellation, native window/network failures, disconnected worker, exchange failure, safe sign-in diagnostics, independent example, read-only result/Edit/Done, input-only optimization, legacy f recovery, draft restore, simplify/undo/copy, explicit idempotent Save, history, failures, limits, expiration, refresh, sign-out, 18 layouts.");
+    console.log("PASS: Google/GitHub PKCE fixtures, invalid callbacks, cancellation, native window/network failures, disconnected worker, exchange failure, safe sign-in diagnostics, initial-only example, explicit source editing/Cancel, read-only result/Edit/Done, criteria optimization, legacy f recovery, draft restore, simplify/undo/copy, explicit idempotent Save, history, failures, limits, expiration, refresh, sign-out, 18 layouts.");
     console.log("Real Google/GitHub sign-in, live database persistence and store review still require separate verification.");
     console.log(`Screenshots: ${artifacts}`);
   } finally {
