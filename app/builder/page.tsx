@@ -88,10 +88,12 @@ function BuilderInner() {
   const [packError, setPackError] = useState<string | null>(null);
 
   // ── Async operation states ──────────────────────────────────────────────
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(!!promptId || !!packId);
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScoring, setIsScoring] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const saveLock = useRef(false);
   const [isDeleting, startDeleteTransition] = useTransition();
@@ -113,6 +115,7 @@ function BuilderInner() {
   const copy = composerCopy(language);
   const workspaceText = workspaceCopy(language);
   const hasCurrentResult = canExpandIdea(idea) && resultIdea === idea && (!!generatedPrompt.trim() || promptEdited);
+  useEffect(() => { setOptimizeError(null); }, [idea, generatedPrompt]);
   const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
   const resumeLoaded = useRef(false);
   useEffect(() => {
@@ -328,7 +331,7 @@ function BuilderInner() {
   }, [idea, tool, context.universal]);
 
   const handleEditPrompt = useCallback((value: string) => {
-    if (!hasCurrentResult || isLoading || isGenerating || isSaving || saveLock.current || (generationLock.current && !isScoring)) return;
+    if (!hasCurrentResult || isLoading || isGenerating || isOptimizing || isSaving || saveLock.current || (generationLock.current && !isScoring)) return;
     const next = editPromptText(generatedPrompt, value, context.versions, !manualEdit.current);
     if (!next.changed) return;
     manualEdit.current = true;
@@ -337,13 +340,51 @@ function BuilderInner() {
     setContext({ ...context, versions: next.versions });
     setPromptEdited(true); setScore(null); setScoreError(null);
     setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
-  }, [hasCurrentResult, generatedPrompt, context, isLoading, isGenerating, isSaving, isScoring]);
+  }, [hasCurrentResult, generatedPrompt, context, isLoading, isGenerating, isOptimizing, isSaving, isScoring]);
 
   // ── Manual retry (called from ScorePanel error state) ────────────────────
   const handleRetryScore = useCallback(() => {
     if (!hasCurrentResult || !generatedPrompt || generationLock.current || isScoring || isGenerating || isSaving) return;
     runScoring(generatedPrompt);
   }, [hasCurrentResult, generatedPrompt, isScoring, isGenerating, isSaving, runScoring]);
+
+  const handleOptimize = useCallback(async () => {
+    if (!hasCurrentResult || !generatedPrompt.trim() || !score || generationLock.current || saveLock.current || isLoading || isGenerating || isScoring || isOptimizing || isSaving) return;
+    generationLock.current = true;
+    setIsOptimizing(true);
+    setOptimizeError(null);
+    const controller = new AbortController();
+    generationController.current = controller;
+    const timeout = setTimeout(() => controller.abort(), 90000);
+    let applied = false;
+    try {
+      const response = await fetch("/api/prompts/optimize", {
+        method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
+        body: JSON.stringify({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score, outputLanguage: detectTextLanguage(generatedPrompt, language) }),
+      });
+      const json = await response.json();
+      if (!response.ok) throw new Error(copy.optimizeError);
+      const improved = json.data?.improved_prompt;
+      if (controller.signal.aborted || typeof improved !== "string" || !improved.trim() || improved.length > 16000) throw new Error(copy.optimizeError);
+      applied = true;
+      setContext({ ...context, versions: rememberVersion(context.versions, generatedPrompt, copy.optimize) });
+      setGeneratedPrompt(improved);
+      setPromptEdited(false); manualEdit.current = false;
+      setScore(null); setScoreError(null);
+      setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+      track("prompt_optimized", { target_tool: tool });
+      showToast("success", copy.optimizeDone);
+      await runScoring(improved, { signal: controller.signal });
+    } catch {
+      if (applied) setScoreError(copy.optimizeRescoreError);
+      else setOptimizeError(copy.optimizeError);
+    } finally {
+      clearTimeout(timeout);
+      generationController.current = null;
+      generationLock.current = false;
+      setIsOptimizing(false);
+    }
+  }, [hasCurrentResult, generatedPrompt, score, isLoading, isGenerating, isScoring, isOptimizing, isSaving, idea, tool, context, language, copy.optimize, copy.optimizeDone, copy.optimizeError, copy.optimizeRescoreError, runScoring]);
 
   // ── Generate Pack ────────────────────────────────────────────────────────
   const handleGeneratePack = useCallback(async () => {
@@ -589,7 +630,7 @@ function BuilderInner() {
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
-    if (!savedId) return;
+    if (!savedId || generationLock.current || saveLock.current || isOptimizing || isSaving || isLoading || isGenerating || isScoring) return;
     if (!window.confirm(t("builder.deleteConfirm"))) return;
 
     startDeleteTransition(async () => {
@@ -611,7 +652,7 @@ function BuilderInner() {
         showToast("error", err instanceof Error ? err.message : t("builder.loadFailed"));
       }
     });
-  }, [savedId, router, t]);
+  }, [savedId, router, t, isOptimizing, isSaving, isLoading, isGenerating, isScoring]);
 
   // ── Save Pack ─────────────────────────────────────────────────────────────
   const handleSavePack = useCallback(() => {
@@ -735,7 +776,7 @@ function BuilderInner() {
                     variant="ghost"
                     size="sm"
                     onClick={handleDelete}
-                    disabled={isDeleting}
+                    disabled={isDeleting || isOptimizing || isSaving || isLoading || isGenerating || isScoring}
                     className="text-destructive hover:text-destructive hover:bg-destructive/5"
                   >
                     {isDeleting ? (
@@ -750,7 +791,7 @@ function BuilderInner() {
                   variant="outline"
                   size="sm"
                   onClick={handleSave}
-                  disabled={isSaving || isLoading || isGenerating || isScoring || !hasCurrentResult || !generatedPrompt.trim()}
+                  disabled={isSaving || isLoading || isGenerating || isOptimizing || isScoring || !hasCurrentResult || !generatedPrompt.trim()}
                 >
                   <ActionIcon pending={isSaving} success={isSaved} icon={Save} />
                   {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
@@ -802,6 +843,7 @@ function BuilderInner() {
             <button
               type="button"
               onClick={() => setMode("single")}
+              disabled={isOptimizing}
               className={cn(
                 "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
                 mode === "single" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
@@ -813,6 +855,7 @@ function BuilderInner() {
             <button
               type="button"
               onClick={() => setMode("pack")}
+              disabled={isOptimizing}
               className={cn(
                 "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
                 mode === "pack" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
@@ -872,26 +915,26 @@ function BuilderInner() {
           </div>
         ) : (
           <>
-          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isScoring || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
+          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isOptimizing || isScoring || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
           <IdeaComposer idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
             example={<ExpansionExample copy={copy.expansionExample} onUse={!idea.trim() && !generatedPrompt && !isGenerating ? () => {
               setIdea(copy.expansionExample.idea);
               setContext({ ...context, category: "writing", universal: true, clarifications: undefined });
               document.getElementById("studio-idea")?.focus();
             } : undefined} />}
-            onGenerate={handleGenerate} busy={isGenerating || isScoring || isSaving}
+            onGenerate={handleGenerate} busy={isGenerating || isOptimizing || isScoring || isSaving}
             generating={isGenerating} hasResult={hasCurrentResult} canSave={hasCurrentResult && !!generatedPrompt.trim()}
             onSave={handleSave} saving={isSaving} saved={isSaved}
             onNewIdea={() => { if (startTask("", { universal: true, category: "auto" })) setTimeout(() => document.getElementById("studio-idea")?.focus(), 0); }}
             outcomeEligible={hasCopied}
-            resultActions={hasCurrentResult && !isGenerating && <ResultActions busy={isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
-            nextActions={hasCurrentResult && !!generatedPrompt && !isGenerating && <NextTaskActions busy={isScoring || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
+            resultActions={hasCurrentResult && !isGenerating && <ResultActions busy={isOptimizing || isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
+            nextActions={hasCurrentResult && !!generatedPrompt && !isGenerating && <NextTaskActions busy={isOptimizing || isScoring || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
               const { versions: _versions, clarifications: _answers, ...reusable } = context;
               if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category: context.category, option: String(index) });
             }} />}
             upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
-            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
-            quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} />}
+            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isOptimizing || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
+            quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeDisabled={isLoading || isGenerating || isSaving || !hasCurrentResult || !generatedPrompt.trim()} optimizeError={optimizeError} />}
           />
           </>
         )}
