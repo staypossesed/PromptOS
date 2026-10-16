@@ -128,6 +128,7 @@ test("draft refinements keep identity, preserve prior results and require explic
   assert.equal(core.isSaved(result), false);
   const saved = { ...result, savedFingerprint: core.fingerprint(result) };
   assert.equal(core.isSaved(saved), true);
+  assert.equal(core.isSaved({ ...result, savedFingerprint: JSON.stringify([core.inputFingerprint(result), result.prompt, result.versions]) }), true, "Previously saved 0.1.2 drafts remain saved after updating.");
   const optimized = core.acceptResult(saved, "Synthetic optimized prompt", "optimize");
   assert.equal(optimized.id, saved.id);
   assert.equal(core.isSaved(optimized), false);
@@ -143,6 +144,31 @@ test("changed ideas cannot save mismatched results, and new tasks get their own 
   const second = core.acceptResult(edited, "Second prompt", "expand");
   assert.notEqual(second.id, first.id);
   assert.deepEqual(second.versions, []);
+});
+
+test("quality feedback is bounded and tied to the exact idea and prompt", () => {
+  const feedback = { overall: 81, dimensions: [{ key: "clarity", label: "Clarity", score: 80, reason: "Clear goal.", tip: "Specify the recipient." }] };
+  const result = core.acceptResult({ ...core.emptyDraft(), idea: "Write an email for my manager" }, "Original expanded prompt", "expand");
+  const scored = core.withScore(result, feedback);
+  assert.deepEqual(core.draftScore(scored), feedback);
+  assert.deepEqual(core.draftBody(scored).score, feedback);
+  assert.deepEqual(core.draftScore(core.restoreDraft(scored)), feedback);
+  assert.equal(core.draftScore({ ...scored, idea: "A different task" }), null);
+  assert.equal(core.draftScore({ ...scored, prompt: "Manually edited output" }), null);
+  assert.equal(core.draftScore(core.restoreDraft({ ...scored, prompt: "Manually edited output" })), null);
+  const optimized = core.acceptResult(scored, "Improved expanded prompt", "optimize");
+  assert.equal(core.draftScore(optimized), null);
+  assert.equal(optimized.versions.at(-1).prompt, result.prompt);
+  for (const invalid of [null, {}, { ...feedback, overall: NaN }, { ...feedback, overall: 101 }, { ...feedback, dimensions: [] }, { ...feedback, dimensions: [...feedback.dimensions, ...feedback.dimensions] }, { ...feedback, dimensions: [{ ...feedback.dimensions[0], tip: "x".repeat(4001) }] }]) {
+    assert.equal(core.parsePromptScore(invalid), null);
+    assert.throws(() => core.withScore(result, invalid));
+  }
+  const saved = { ...scored, savedFingerprint: core.fingerprint(scored) };
+  assert.equal(core.isSaved(saved), true);
+  const editing = { ...saved, idea: `${saved.idea}\nInclude the new detail.` };
+  assert.equal(core.isSaved(editing), false);
+  assert.equal(core.isSaved(saved), true, "Cancel can restore the exact saved snapshot.");
+  assert.notEqual(core.acceptResult(editing, "Updated idea result", "expand").id, saved.id);
 });
 
 test("local drafts are owner scoped, bounded and never contain unconfirmed profiles", () => {
