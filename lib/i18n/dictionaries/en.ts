@@ -155,7 +155,7 @@ export const en = {
     strongText: "Strong. Small tweaks available — or ship as-is.",
     decentText: "Decent start. Auto-fix the weak dimensions below.",
     needsWorkText: "Needs work. Hit optimize to improve the low scores.",
-    autoFix: "Auto-fix weak dimensions",
+    autoFix: "Optimize using feedback",
     optimizing: "Optimizing…",
     emptyTitle: "Score appears here",
     emptySubtitle: "Generate once. Umprompt scores across 6 dimensions and shows exactly what to improve.",

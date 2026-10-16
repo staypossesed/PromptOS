@@ -157,7 +157,7 @@ export const es: Dictionary = {
     strongText: "Bueno. Hay pequeños ajustes disponibles — o úsalo así.",
     decentText: "Buen comienzo. Corrige las dimensiones débiles abajo.",
     needsWorkText: "Necesita mejoras. Optimiza para mejorar las puntuaciones bajas.",
-    autoFix: "Corregir dimensiones débiles",
+    autoFix: "Optimizar según las sugerencias",
     optimizing: "Optimizando…",
     emptyTitle: "La puntuación aparecerá aquí",
     emptySubtitle: "Genera una vez. Umprompt puntúa en 6 dimensiones y muestra exactamente qué mejorar.",
