@@ -43,7 +43,7 @@ async function buildExtension({ local = false, liveInPlace = false, outputDirect
   for (const size of [16, 32, 48, 128]) await sharp(path.join(root, "app/icon.png")).resize(size, size).png().toFile(path.join(outdir, `icons/${size}.png`));
   const icons = Object.fromEntries([16, 32, 48, 128].map((size) => [size, `icons/${size}.png`]));
   const manifest = {
-    manifest_version: 3, name: local ? "Umprompt (Local)" : "Umprompt - AI Prompt Helper", version: "0.1.2", minimum_chrome_version: "116",
+    manifest_version: 3, name: local ? "Umprompt (Local)" : "Umprompt - AI Prompt Helper", version: "0.1.3", minimum_chrome_version: "116",
     description: "Expand rough ideas into clear AI prompts. Optimize, simplify, copy, and save to your Umprompt history.",
     permissions: ["sidePanel", "storage", "identity", "clipboardWrite"],
     host_permissions: [`${origin}/*`, `${supabaseOrigin}/*`],
