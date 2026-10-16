@@ -11,7 +11,8 @@ const { composerCopy } = loadTS("lib/composer-copy.ts");
 
 async function main() {
   const root = path.resolve(__dirname, "..");
-  const artifacts = path.join(root, "extension/artifacts");
+  const serveOnly = process.argv.includes("--serve");
+  const artifacts = process.env.UMPROMPT_TEST_ARTIFACTS || path.join(root, "extension/artifacts");
   await fs.mkdir(artifacts, { recursive: true });
   const shell = {
     "next/link": `export default function Link({href,children,...props}){return <a href={typeof href==='string'?href:href.pathname} {...props}>{children}</a>}`,
@@ -55,7 +56,11 @@ async function main() {
   };
   const fontStyles = "@font-face{font-family:'Editor Geist';src:url('/geist.woff2') format('woff2');font-weight:100 900;font-display:swap}@font-face{font-family:'Editor Geist Mono';src:url('/geist-mono.woff2') format('woff2');font-weight:100 900;font-display:swap}:root{--font-geist-sans:'Editor Geist',Arial,sans-serif;--font-geist-mono:'Editor Geist Mono',monospace}";
   const brand = await fs.readFile(path.join(root, "app/icon.png"));
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
+    if (serveOnly && req.url.startsWith("/api/")) {
+      try { await serveFixture(req, res); } catch { res.statusCode = 500; res.end(JSON.stringify({ error: "Local fixture failed" })); }
+      return;
+    }
     if (req.url === "/editor.js") { res.setHeader("Content-Type", "text/javascript"); res.end(bundle.outputFiles[0].contents); }
     else if (req.url === "/editor.css") { res.setHeader("Content-Type", "text/css"); res.end(fontStyles + styles.css); }
     else if (fonts[req.url]) { res.setHeader("Content-Type", "font/woff2"); res.end(fonts[req.url]); }
@@ -76,6 +81,53 @@ async function main() {
   const replacementIdea = "Suggest three books about history";
   const recoveredPrompt = "Recommend three history books. Include each title, author, and a brief reason to read it.";
   let holdScore = true;
+  let failOptimize = false;
+  async function serveFixture(req, res) {
+    const chunks = [];
+    for await (const chunk of req) chunks.push(chunk);
+    const body = chunks.length ? JSON.parse(Buffer.concat(chunks).toString("utf8")) : null;
+    const pathname = new URL(req.url, origin).pathname;
+    requests.push({ pathname, method: req.method, body });
+    await fs.writeFile(path.join(artifacts, "browser-request-log.json"), JSON.stringify(requests, null, 2));
+    const json = (value, status = 200) => { res.statusCode = status; res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(value)); };
+    if (pathname === "/api/prompts/clarify") {
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      if (body.idea.includes("simulate clarification failure")) return json({ error: "Synthetic clarification failure" }, 503);
+      return json({ data: body.idea.includes("no questions") ? [] : [
+        { question: "Who will receive this email?", options: ["My manager", "A customer"] },
+        { question: "What tone should the email use?", options: ["Friendly", "Professional"] },
+      ] });
+    }
+    if (pathname === "/api/prompts/generate") {
+      if (body.idea.includes("simulate generation failure")) return json({ error: "Synthetic generation failure" }, 503);
+      res.setHeader("Content-Type", "text/plain");
+      res.setHeader("X-Request-Id", "synthetic-generation");
+      return res.end(body.refinement ? simplified : original);
+    }
+    if (pathname === "/api/prompts/score") {
+      if (body.generated_prompt.includes("simulate rescore failure") && body.generated_prompt.includes("Apply the score feedback")) return json({ error: "Synthetic score failure" }, 503);
+      const overall = body.generated_prompt.includes("Apply the score feedback") ? 91 : 81;
+      return json({ data: { overall, dimensions: ["Clarity", "Context", "Constraints", "Examples", "Output Format", "Tool Fit"].map((label, i) => ({ key: label.toLowerCase().replaceAll(" ", "_"), label, score: overall - i, reason: "Synthetic verification fixture", tip: "Make the requested output and supplied constraints explicit without inventing facts." })) } });
+    }
+    if (pathname === "/api/prompts/optimize") {
+      await new Promise(resolve => setTimeout(resolve, 700));
+      if (body.generated_prompt.includes("simulate optimization failure")) return json({ error: "Synthetic optimization failure" }, 503);
+      return json({ data: { improved_prompt: body.generated_prompt + "\n\nApply the score feedback: keep the task specific, preserve the supplied facts, and return a concise subject line and email." } });
+    }
+    if (pathname === "/api/prompts" && req.method === "POST") {
+      const key = saved.has(id) ? nextId : id;
+      saved.set(key, { ...body, id: key }); return json({ data: { id: key } });
+    }
+    if (pathname.startsWith("/api/prompts/") && req.method === "PATCH") {
+      const key = pathname.split("/").at(-1); saved.set(key, { ...body, id: key }); return json({ data: { id: key } });
+    }
+    if (pathname.startsWith("/api/prompts/") && req.method === "GET") return json({ data: saved.get(pathname.split("/").at(-1)) });
+    return json({ error: "Unknown local fixture endpoint" }, 404);
+  }
+  if (serveOnly) {
+    console.log(JSON.stringify({ url: origin + "/builder", mode: "isolated session and synthetic AI responses", artifacts }));
+    return;
+  }
   try {
     browser = await chromium.launch({ headless: true });
     const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, reducedMotion: "reduce" });
@@ -96,7 +148,9 @@ async function main() {
         if (holdScore) await new Promise((resolve) => { releaseScore = resolve; });
         return json({ data: { overall: 81, dimensions: [{ key: "clarity", label: "Clarity", score: 80, reason: "Synthetic fixture", tip: "Synthetic fixture" }] } }).catch(() => {});
       }
-      if (pathname === "/api/prompts/optimize") return json({ data: { improved_prompt: improved } });
+      if (pathname === "/api/prompts/optimize") return failOptimize
+        ? route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Synthetic optimization failure" }) })
+        : json({ data: { improved_prompt: improved } });
       if (pathname === "/api/prompts" && req.method() === "POST") { const key = saved.has(id) ? nextId : id; saved.set(key, { ...body, id: key }); return json({ data: { id: key } }); }
       if (pathname.startsWith("/api/prompts/") && req.method() === "GET") return json({ data: saved.get(pathname.split("/").at(-1)) });
       if (pathname.startsWith("/api/prompts/") && req.method() === "PATCH") { const key = pathname.split("/").at(-1); saved.set(key, { ...body, id: key }); return json({ data: { id: key } }); }
@@ -113,6 +167,7 @@ async function main() {
     const editOutput = async () => { if (!await editor.count()) await page.getByRole("button", { name: composerCopy("en").editPrompt, exact: true }).click(); };
     const waitPreview = (value) => page.waitForFunction((text) => document.querySelector("[data-prompt-content]")?.innerText.replace(/\s+/g, " ").trim() === text.replace(/\s+/g, " ").trim(), value);
     const inputAction = composerCopy("en").optimizeRequest;
+    assert.equal(await page.locator("[data-expansion-example]").count(), 1, "The example is available before starting a request.");
     await page.locator("#studio-idea").fill("f");
     assert.equal(await page.getByRole("button", { name: inputAction, exact: true }).isDisabled(), true);
     assert.equal(requests.length, 0);
@@ -158,9 +213,8 @@ async function main() {
     await page.getByRole("button", { name: "Edit prompt", exact: true }).click();
     assert.equal(await editor.inputValue(), manual);
     await page.getByRole("button", { name: "Done", exact: true }).click();
-    await page.getByRole("tab", { name: "Example", exact: true }).click();
-    assert.equal(await page.getByRole("textbox", { name: composerCopy("en").result, exact: true }).count(), 0, "The example is a separate read-only view.");
-    await page.getByRole("tab", { name: "Your prompt", exact: true }).click();
+    assert.equal(await page.getByRole("tab", { name: "Example", exact: true }).count(), 0, "A generated prompt has no Example tab.");
+    assert.equal(await page.locator("[data-expansion-example]").count(), 0, "Example content is not mounted in a generated result.");
     await waitPreview(manual);
     await page.getByRole("button", { name: "Save", exact: true }).click();
     await page.getByRole("button", { name: "Saved", exact: true }).waitFor();
@@ -230,6 +284,7 @@ async function main() {
     assert.equal(await page.locator("#studio-idea").inputValue(), "");
     assert.equal(await editor.count(), 0, "A new idea has one input, not a second result editor.");
     assert.equal(saved.size, 1, "Starting a new idea preserves history.");
+    assert.equal(await page.locator("[data-expansion-example]").count(), 1, "Starting a new blank idea restores the introductory example.");
     saved.set(id, { ...saved.get(id), idea: "f", generated_prompt: "Your request is too short. Please share your idea.", context: { universal: true }, score: null });
     await page.goto(`${origin}/builder?id=${id}`);
     await page.waitForFunction(() => document.getElementById("studio-idea")?.value === "f");
@@ -245,7 +300,27 @@ async function main() {
     await page.getByRole("button", { name: "Saved", exact: true }).waitFor();
     assert.equal(saved.get(id).idea, "f", "Recovering the request never silently rewrites its old saved record.");
     assert.equal(saved.get(nextId).idea, replacementIdea);
-    console.log("PASS: request-only optimization, default read-only result, explicit Edit/Done, legacy f recovery, no stale source or output, stale-score protection, version checkpoints, copy/download, explicit Save/update/reopen, clear/restore, independent example, 21 desktop/mobile layouts.");
+    await page.getByRole("button", { name: "Quality check", exact: true }).click();
+    const optimizeLabel = loadTS("lib/i18n/dictionaries/en.ts").en.score.autoFix;
+    await page.getByRole("button", { name: optimizeLabel, exact: true }).click();
+    await waitPreview(improved);
+    const optimization = requests.filter(request => request.pathname === "/api/prompts/optimize").at(-1);
+    assert.equal(optimization.body.generated_prompt, recoveredPrompt, "Criteria optimization uses the current prompt, not the original rough idea.");
+    assert.equal(optimization.body.score.overall, 81);
+    assert.ok(optimization.body.score.dimensions[0].tip);
+    await page.getByRole("button", { name: "Save", exact: true }).click();
+    await page.getByRole("button", { name: "Saved", exact: true }).waitFor();
+    assert.equal(saved.get(nextId).generated_prompt, improved);
+    assert.equal(saved.get(nextId).context.versions.at(-1).prompt, recoveredPrompt);
+    failOptimize = true;
+    await page.getByRole("button", { name: optimizeLabel, exact: true }).click();
+    await page.getByText(composerCopy("en").optimizeError, { exact: true }).waitFor();
+    await waitPreview(improved);
+    assert.equal(saved.get(nextId).generated_prompt, improved, "A failed optimization does not change saved history.");
+    await page.reload();
+    await waitPreview(improved);
+    assert.equal(await page.locator("[data-expansion-example]").count(), 0, "Saved prompts never restore the introductory example.");
+    console.log("PASS: request-only optimization, default read-only result, explicit Edit/Done, legacy f recovery, no stale source or output, stale-score protection, version checkpoints, copy/download, explicit Save/update/reopen, clear/restore, example only before starting, 21 desktop/mobile layouts.");
     console.log("The browser uses isolated session/API fixtures; it does not sign into or change a live user account.");
   } finally {
     if (releaseScore) releaseScore();
