@@ -2,7 +2,6 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import * as Tabs from "@radix-ui/react-tabs";
 import { WandSparkles, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { Disclosure } from "@/components/ui/disclosure";
@@ -67,24 +66,52 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
   const [contextOpen, setContextOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
-  const [resultView, setResultView] = useState("prompt");
+  const [requestStarted, setRequestStarted] = useState(false);
+  const [editingIdea, setEditingIdea] = useState(false);
+  const ideaEdit = useRef<{ idea: string; context: PromptContext } | null>(null);
+  const ideaEditSubmitted = useRef(false);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const questionsRef = useRef<HTMLElement>(null);
   const resultRef = useRef<HTMLDivElement>(null);
   const requestRef = useRef<AbortController | null>(null);
   const locked = !!busy || checking;
   const showExamples = !idea && !inputFocused && !locked;
-  const showInitialExample = !!example && !hasResult && !generating;
-  const showResult = !!hasResult || !!generating;
+  const showInitialExample = !!example && !requestStarted && !editingIdea && !hasResult && !generating;
+  const showResult = (!!hasResult && !editingIdea) || !!generating;
 
   useEffect(() => () => requestRef.current?.abort(), []);
   useEffect(() => { if (!outcomeEligible) setFeedback(null); }, [outcomeEligible]);
-  useEffect(() => { setQuestions([]); setAnswers([]); setNotice(""); }, [idea, category]);
+  useEffect(() => {
+    if (!editingIdea) return;
+    inputRef.current?.focus();
+    inputRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  }, [editingIdea, reducedMotion]);
+  useEffect(() => {
+    if (!editingIdea || !inputRef.current) return;
+    inputRef.current.style.height = "auto";
+    inputRef.current.style.height = `${inputRef.current.scrollHeight}px`;
+  }, [editingIdea, idea]);
+  useEffect(() => {
+    if (editingIdea && ideaEditSubmitted.current && hasResult && !generating) {
+      setEditingIdea(false); ideaEdit.current = null; ideaEditSubmitted.current = false;
+    }
+  }, [editingIdea, hasResult, generating]);
+  useEffect(() => {
+    setQuestions([]); setAnswers([]); setNotice("");
+    if (!idea.trim()) setRequestStarted(false);
+  }, [idea, category]);
+  useEffect(() => {
+    if (!questions.length) return;
+    questionsRef.current?.focus({ preventScroll: true });
+    questionsRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  }, [questions.length, reducedMotion]);
   useEffect(() => {
     if (generating || hasResult) resultRef.current?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-    if (generating) { setFeedback(null); setQualityOpen(false); setResultView("prompt"); }
+    if (generating) { setFeedback(null); setQualityOpen(false); }
   }, [generating, hasResult, reducedMotion]);
 
   async function generate(nextContext: PromptContext) {
+    ideaEditSubmitted.current = editingIdea;
     setQuestions([]);
     setNotice("");
     onContextChange(nextContext);
@@ -93,6 +120,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
 
   async function prepare() {
     if (locked || !canExpandIdea(idea)) return;
+    setRequestStarted(true);
     const universalContext = { ...context, universal: true, category };
     if (guest) { await generate(universalContext); return; }
     // Previously answered questions remain usable until the idea/category changes.
@@ -125,11 +153,29 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
     if (context.clarifications) onContextChange({ ...context, clarifications: undefined });
   }
 
+  function beginIdeaEdit() {
+    if (locked || saving) return;
+    ideaEdit.current = { idea, context };
+    ideaEditSubmitted.current = false;
+    setEditingIdea(true); setRequestStarted(true);
+  }
+
+  function cancelIdeaEdit() {
+    if (locked || !ideaEdit.current) return;
+    onIdeaChange(ideaEdit.current.idea);
+    onContextChange(ideaEdit.current.context);
+    ideaEdit.current = null; ideaEditSubmitted.current = false;
+    setEditingIdea(false); setQuestions([]); setAnswers([]); setNotice("");
+  }
+
   return (
     <div className={cn("mx-auto w-full text-zinc-900", showInitialExample ? "grid max-w-5xl gap-x-8 md:grid-cols-2" : "max-w-3xl")}>
       {!showResult && <>
       <div className="min-w-0">
-      <label htmlFor="studio-idea" className="mb-3 block text-lg font-medium">{copy.idea}</label>
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <label htmlFor="studio-idea" className="block text-lg font-medium">{copy.idea}</label>
+        {editingIdea && <button type="button" disabled={locked} onClick={cancelIdeaEdit} className="min-h-11 text-sm font-medium text-zinc-600 hover:text-zinc-900 disabled:opacity-40">{copy.cancelIdeaEdit}</button>}
+      </div>
       <form onSubmit={(e) => { e.preventDefault(); void prepare(); }} className="relative rounded-lg border border-zinc-300 bg-white shadow-sm transition-shadow focus-within:border-emerald-600 focus-within:ring-2 focus-within:ring-emerald-600/10">
         <div className="relative">
         <textarea ref={inputRef} id="studio-idea" value={idea} maxLength={4000} disabled={locked} aria-describedby={`${categoryGroup}-idea-feedback`}
@@ -154,7 +200,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
         <span>{notice}</span><button disabled={locked} type="button" className="font-medium underline" onClick={() => void generate({ ...context, universal: true, category })}>{copy.skip}</button>
       </div>}
 
-      {questions.length > 0 && <section aria-label={copy.details} className="mt-6 border-y border-emerald-200 py-6">
+      {questions.length > 0 && <section ref={questionsRef} tabIndex={-1} aria-label={copy.details} className="mt-6 scroll-mt-24 border-y border-emerald-200 py-6 outline-none">
         <h2 className="mb-5 text-lg font-semibold">{copy.details}</h2>
         {questions.map((item, index) => <fieldset key={`${index}:${item.question}`} className="mb-5 space-y-3">
           <legend className="mb-2 text-sm font-medium">{item.question}</legend>
@@ -172,7 +218,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
         </div>
       </section>}
 
-      {!hasResult && !generating && !questions.length && <section className="mt-7">
+      {!editingIdea && !hasResult && !generating && !questions.length && <section className="mt-7">
         <div className="mb-3 flex items-center justify-between gap-3">
           <h2 className="text-base font-medium text-zinc-700">{idea.trim() ? copy.matching : copy.inspiration}</h2>
           <button type="button" onClick={refresh} disabled={locked} title={copy.refresh} aria-label={copy.refresh} className="motion-press flex size-11 shrink-0 items-center justify-center rounded-md text-zinc-600 hover:bg-zinc-100 hover:text-zinc-900">
@@ -231,11 +277,13 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
       </>}
       {showResult && <section ref={resultRef} className="prompt-reveal scroll-mt-24">
         <div className="mb-5 flex items-start justify-between gap-4 border-b border-zinc-200 pb-4">
-          <div className="min-w-0"><p className="mb-1 text-sm text-zinc-500">{copy.idea}</p><p className="line-clamp-2 break-words text-base text-zinc-700">{idea}</p></div>
+          <div className="min-w-0 flex-1"><div className="mb-2 flex items-center justify-between gap-3"><p className="text-sm text-zinc-500">{copy.idea}</p>
+            <button type="button" onClick={beginIdeaEdit} disabled={locked || saving} aria-label={copy.editIdea} className="motion-press inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-md px-2 text-sm text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"><PenLine className="size-4" aria-hidden="true" />{copy.edit}</button>
+          </div><p data-rough-idea className="whitespace-pre-wrap break-words text-base text-zinc-700">{idea}</p></div>
           {onNewIdea && <button type="button" onClick={onNewIdea} disabled={locked || saving} className="motion-press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"><Plus className="size-4" aria-hidden="true" />{copy.newIdea}</button>}
         </div>
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{copy.result}</h2>
-          {onSave && resultView === "prompt" && <button type="button" disabled={saving || busy || !canSave} onClick={onSave} className={cn("motion-press flex min-h-11 items-center gap-2 rounded-md px-3 text-base hover:bg-zinc-100 disabled:opacity-40", saved ? "text-emerald-700" : "text-zinc-600")}>
+          {onSave && <button type="button" disabled={saving || busy || !canSave} onClick={onSave} className={cn("motion-press flex min-h-11 items-center gap-2 rounded-md px-3 text-base hover:bg-zinc-100 disabled:opacity-40", saved ? "text-emerald-700" : "text-zinc-600")}>
             <ActionIcon pending={saving} success={saved} icon={Save} />
             <span className="grid">
               <span aria-hidden="true" className="invisible col-start-1 row-start-1">{copy.save}</span>
@@ -244,11 +292,6 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
             </span>
           </button>}
         </div>
-        <Tabs.Root value={resultView} onValueChange={setResultView}>
-        {example && <Tabs.List aria-label={copy.resultViews} className="mb-4 flex border-b border-zinc-200">
-          {[["prompt", copy.yourPrompt], ["example", copy.exampleTab]].map(([value, label]) => <Tabs.Trigger key={value} value={value} className="min-h-12 flex-1 border-b-2 border-transparent px-3 py-2 text-base font-medium text-zinc-600 outline-none focus-visible:ring-2 focus-visible:ring-emerald-600 data-[state=active]:border-emerald-700 data-[state=active]:text-emerald-800">{label}</Tabs.Trigger>)}
-        </Tabs.List>}
-        <Tabs.Content value="prompt" forceMount hidden={resultView !== "prompt"} className="outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">
         {resultActions}
         <div className="h-[min(640px,75dvh)] min-h-[520px]">{result}</div>
         {upgrade && <div className="mt-4">{upgrade}</div>}
@@ -261,9 +304,6 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
           {feedback === null && ([true, false] as const).map((value) => <button key={String(value)} type="button" aria-label={value ? copy.yes : copy.no} title={value ? copy.yes : copy.no}
             onClick={() => { setFeedback(value); track("answer_outcome_feedback", { category, improved: value }); }} className="flex size-11 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100">{value ? <ThumbsUp className="size-4" /> : <ThumbsDown className="size-4" />}</button>)}
         </div>}
-        </Tabs.Content>
-        {example && <Tabs.Content value="example" className="outline-none focus-visible:ring-2 focus-visible:ring-emerald-600">{example}</Tabs.Content>}
-        </Tabs.Root>
       </section>}
     </div>
   );
