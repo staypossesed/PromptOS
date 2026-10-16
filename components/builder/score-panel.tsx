@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { PromptScore } from "@/types/prompt";
 import { useTranslations } from "@/lib/i18n/use-translations";
+import { composerCopy } from "@/lib/composer-copy";
 
 interface ScorePanelProps {
   score: PromptScore | null;
@@ -15,6 +16,7 @@ interface ScorePanelProps {
   onOptimize?: () => void;
   isOptimizing?: boolean;
   optimizeError?: string | null;
+  optimizeDisabled?: boolean;
 }
 
 export function ScorePanel({
@@ -25,8 +27,9 @@ export function ScorePanel({
   onOptimize,
   isOptimizing,
   optimizeError,
+  optimizeDisabled,
 }: ScorePanelProps) {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
 
   if (!score) {
     return (
@@ -74,6 +77,9 @@ export function ScorePanel({
               <p className="text-[13px] text-ink-400 leading-relaxed max-w-[210px]">
                 {t("score.emptySubtitle")}
               </p>
+              {onRetry && <Button className="mt-4" size="sm" variant="outline" onClick={onRetry} disabled={isOptimizing || optimizeDisabled}>
+                <RefreshCw className="size-3.5" />{composerCopy(language).quality}
+              </Button>}
             </div>
           )}
         </div>
@@ -113,6 +119,12 @@ export function ScorePanel({
             <span className="text-sm text-ink-400 mb-1">/ 100</span>
           </div>
           <div className="text-xs text-ink-500 mt-1.5">{scoreText}</div>
+          {onOptimize && <div className="mt-4 space-y-2">
+            <Button className="h-auto min-h-11 w-full whitespace-normal" onClick={onOptimize} disabled={isOptimizing || isScoring || optimizeDisabled}>
+              {isOptimizing ? <><Loader2 className="size-3.5 animate-spin" />{t("score.optimizing")}</> : <><Wand2 className="size-3.5" />{t("score.autoFix")}</>}
+            </Button>
+            {optimizeError && <p role="alert" className="text-sm text-destructive leading-snug">{optimizeError}</p>}
+          </div>}
         </div>
       </div>
 
@@ -123,26 +135,6 @@ export function ScorePanel({
         ))}
       </div>
 
-      {/* Optimize CTA */}
-      {onOptimize && <div className="border-t border-ink-100/60 p-4 bg-cream-50/40 space-y-2">
-        <Button
-          className="w-full"
-          variant="default"
-          onClick={onOptimize}
-          disabled={isOptimizing || isScoring}
-        >
-          {isOptimizing ? (
-            <><Loader2 className="size-3.5 animate-spin" />{t("score.optimizing")}</>
-          ) : (
-            <><Wand2 className="size-3.5" />{t("score.autoFix")}</>
-          )}
-        </Button>
-        {optimizeError && (
-          <p className="text-[11px] text-destructive text-center leading-snug">
-            {optimizeError}
-          </p>
-        )}
-      </div>}
     </div>
   );
 }
