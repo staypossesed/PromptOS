@@ -73,11 +73,11 @@ deployed mitigations, and remaining dependency findings without claiming a clean
 
 The interface is one system, described in [`docs/redesign-scope.md`](docs/redesign-scope.md).
 
-- **Direction:** “The printed annual”. A fixed 42% reading axis, a gutterless picture mosaic, flat colour fields, and a prompt document that reads like a page.
+- **Direction:** “The printed annual”. A fixed 42% reading axis, flat colour fields, a prompt document that reads like a page, and a navigation built around the workspace rather than a marketing menu.
 - **Type:** Imbue for display, Albert Sans for text. Self-hosted through `@fontsource-variable`.
 - **Colour:** `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
 - **Shape:** square corners, no cards, no gradients, no shadows at rest. Real tables and form fields may use a line.
-- **Pictures:** four archival images from open collections, credited in [`docs/image-credits.md`](docs/image-credits.md) and in the footer. The product itself is shown as built interface fragments, not fake screenshots.
+- **Pictures:** no decorative photography. The product is shown as built interface fragments: the live prompt sheet, the builder panel, the score margin, and the library panel.
 - **Motion:** CSS entrances on sections, control feedback, and one slow image treatment. Every move respects `prefers-reduced-motion`.
 
 The landing page is art-directed with the `design-taste-frontend` skill. App screens inherit the same tokens, type, grid, and component shapes at higher density.

@@ -32,7 +32,7 @@ export default function LoginPage() {
         </Suspense>
       </main>
     </div>
-    <Footer strip />
+    <Footer />
     </>
   );
 }

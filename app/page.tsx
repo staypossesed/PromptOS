@@ -1,5 +1,4 @@
 import Link from "next/link";
-import Image from "next/image";
 import { Nav } from "@/components/system/nav";
 import { Footer } from "@/components/system/footer";
 import { ButtonLink } from "@/components/system/button";
@@ -43,20 +42,10 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="mosaic" aria-label="The world of printed pages">
-          <Image src="/images/type-case.webp" width={1024} height={683} alt="A letterpress type case with labelled drawers" sizes="(max-width: 720px) 100vw, 22vw" />
-          <Image src="/images/card-catalogue.webp" width={1920} height={1624} alt="A wooden library card catalogue with an open drawer" sizes="(max-width: 720px) 50vw, 20vw" />
-          <div className="mosaic__field">
-            <p>Every prompt is a document before it is a message.</p>
-          </div>
-          <Image src="/images/printed-book.webp" width={1024} height={888} alt="An open woodblock-printed book with illustrated pages" sizes="(max-width: 720px) 50vw, 20vw" />
-          <Image src="/images/manuscript.webp" width={1694} height={2074} alt="A handwritten manuscript page with dense script" sizes="(max-width: 720px) 50vw, 22vw" />
-        </section>
-
-        <section className="band band--tight">
+        <section className="band band--tight" id="product">
           <div className="wrap">
             <Reveal>
-              <div className="axis" style={{ marginBottom: "clamp(32px, 4vw, 64px)" }}>
+              <div className="axis" style={{ marginBottom: "clamp(24px, 3vw, 48px)" }}>
                 <div className="axis__side" aria-hidden="true" />
                 <div className="axis__main stack">
                   <h2>One sentence in.<br />One usable prompt out.</h2>
@@ -77,76 +66,60 @@ export default function LandingPage() {
         <section className="band band--surface" id="how">
           <div className="wrap">
             <Reveal>
-              <h2 style={{ maxWidth: "12ch", marginBottom: "clamp(32px, 4vw, 64px)" }}>
-                Three exchanges.
-              </h2>
+              <div className="section-head">
+                <h2>Three exchanges.</h2>
+                <p className="body">
+                  The whole product is a short conversation: the rough version, the missing
+                  detail, the finished prompt.
+                </p>
+              </div>
             </Reveal>
-            <Reveal>
-              <div className="exchange">
+            <div className="exchanges">
+              <Reveal className="exchange">
                 <p className="exchange__label">First, the rough version.</p>
-                <div className="exchange__body">
-                  <p className="body">
-                    You type what you would say out loud. No prompt syntax, no role, no
-                    “act as an expert”. The first version is allowed to be messy.
-                  </p>
-                  <div className="exchange__call">“Plan my week.”</div>
-                </div>
-              </div>
-            </Reveal>
-            <Reveal>
-              <div className="exchange">
+                <p className="body">
+                  You type what you would say out loud. No prompt syntax, no role, no “act as
+                  an expert”. The first version is allowed to be messy.
+                </p>
+                <div className="exchange__call">“Plan my week.”</div>
+              </Reveal>
+              <Reveal className="exchange" delay={70}>
                 <p className="exchange__label">Then, only what is missing.</p>
-                <div className="exchange__body">
-                  <p className="body">
-                    If the idea is ambiguous, Umprompt asks up to two questions. If it is clear,
-                    it proceeds. You are never asked to fill in a template for its own sake.
-                  </p>
-                  <div className="exchange__call">
-                    “I have four deadlines and two school runs. Mornings are impossible.”
-                  </div>
-                  <div className="exchange__response">
-                    <p className="body">
-                      The prompt now carries the real constraints: the deadlines, the school
-                      runs, the mornings that do not work. Not a generic productivity plan.
-                    </p>
-                  </div>
+                <p className="body">
+                  If the idea is ambiguous, Umprompt asks up to two questions. If it is clear,
+                  it proceeds. You are never asked to fill in a template for its own sake.
+                </p>
+                <div className="exchange__call">
+                  “I have four deadlines and two school runs. Mornings are impossible.”
                 </div>
-              </div>
-            </Reveal>
-            <Reveal>
-              <div className="exchange">
+              </Reveal>
+              <Reveal className="exchange" delay={140}>
                 <p className="exchange__label">Finally, the prompt.</p>
-                <div className="exchange__body">
+                <p className="body">
+                  A clear request with a task, context, limits, and an output shape. It is
+                  read-only until you choose Edit, and it is saved only when you choose Save.
+                </p>
+                <div className="sheet" style={{ background: "var(--paper)" }} data-ui>
+                  <div className="prompt-doc__label">Output</div>
                   <p className="body">
-                    A clear request with a task, context, limits, and an output shape. It is
-                    read-only until you choose Edit, and it is saved only when you choose Save.
+                    A seven-day plan with fixed blocks, two buffers, and one sentence on what
+                    to move when a day collapses.
                   </p>
-                  <div className="sheet" style={{ background: "var(--paper)" }} data-ui>
-                    <div className="prompt-doc__label">Output</div>
-                    <p className="body">
-                      A seven-day plan with fixed blocks, two buffers, and one sentence on what
-                      to move when a day collapses.
-                    </p>
-                  </div>
                 </div>
-              </div>
-            </Reveal>
+              </Reveal>
+            </div>
           </div>
         </section>
 
         <section className="band">
           <div className="wrap">
             <Reveal>
-              <div className="axis" style={{ marginBottom: "clamp(32px, 4vw, 64px)" }}>
-                <div className="axis__side" aria-hidden="true" />
-                <div className="axis__main stack">
-                  <h2>A workspace,<br />not a chat box.</h2>
-                  <p className="body">
-                    Every prompt is a document with a score, a history, and a home. The
-                    interface keeps the parts you need to see and gets out of the way of the
-                    sentence.
-                  </p>
-                </div>
+              <div className="section-head">
+                <h2>A workspace,<br />not a chat box.</h2>
+                <p className="body">
+                  Every prompt is a document with a score, a history, and a home. The interface
+                  keeps the parts you need to see and gets out of the way of the sentence.
+                </p>
               </div>
             </Reveal>
             <Reveal>
@@ -185,38 +158,16 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="band band--surface">
-          <div className="wrap">
-            <Reveal>
-              <div className="facts">
-                <div>
-                  <h2>What it actually does.</h2>
-                  <p className="body" style={{ marginTop: 20 }}>
-                    No customer names, no invented reviews. These are the facts of the product
-                    as it stands today.
-                  </p>
-                </div>
-                <div className="facts__list">
-                  <p className="facts__item">7 free prompts a week</p>
-                  <p className="facts__item">No card to start</p>
-                  <p className="facts__item">Works with Claude, ChatGPT, Cursor, and any assistant</p>
-                  <p className="facts__item">English interface</p>
-                  <p className="facts__item">Prompts saved to your account</p>
-                  <p className="facts__item">Prompt packs for multi-step work</p>
-                  <p className="facts__item">A six-dimension score on every prompt</p>
-                  <p className="facts__item">Edit, refine, restore, and copy as a document</p>
-                </div>
-              </div>
-            </Reveal>
-          </div>
-        </section>
-
         <section className="band band--tight" id="pricing">
           <div className="wrap">
             <Reveal>
-              <h2 style={{ maxWidth: "20ch", marginBottom: "clamp(24px, 3vw, 48px)" }}>
-                Free to start.<br />Pro when it earns it.
-              </h2>
+              <div className="section-head">
+                <h2>Free to start.<br />Pro when it earns it.</h2>
+                <p className="body">
+                  Seven prompts a week are free. Pro is for the weeks when the workspace is
+                  the work.
+                </p>
+              </div>
             </Reveal>
             <Reveal>
               <div className="pricing">

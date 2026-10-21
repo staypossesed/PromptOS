@@ -6,21 +6,23 @@ export function Nav() {
     <header className="nav">
       <div className="wrap nav__inner">
         <Link href="/" className="wordmark" aria-label="Umprompt home">Umprompt</Link>
-        <nav className="nav__links" aria-label="Main">
-          <Link href="/#how">How it works</Link>
-          <Link href="/#pricing">Plans</Link>
-          <Link href="/help">Help</Link>
+        <nav className="nav__links" aria-label="Product">
+          <a href="#product">Product</a>
+          <a href="#how">How it works</a>
+          <a href="#pricing">Plans</a>
         </nav>
         <div className="nav__action">
           <Link href="/login" className="small nav__signin">Sign in</Link>
-          <ButtonLink href="/builder" variant="accent" size="sm">Start with an idea</ButtonLink>
+          <ButtonLink href="/builder" variant="accent" size="sm">Start free</ButtonLink>
           <details className="nav__mobile">
             <summary className="button button--ghost button--small">Menu</summary>
             <div className="nav__mobile-panel">
-              <Link href="/#how">How it works</Link>
-              <Link href="/plan">Plans</Link>
+              <a href="#product">Product</a>
+              <a href="#how">How it works</a>
+              <a href="#pricing">Plans</a>
               <Link href="/help">Help</Link>
               <Link href="/login">Sign in</Link>
+              <ButtonLink href="/builder" variant="accent" size="sm">Start free</ButtonLink>
             </div>
           </details>
         </div>

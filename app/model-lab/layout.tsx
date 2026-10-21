@@ -13,7 +13,7 @@ export default async function ModelLabLayout({ children }: { children: React.Rea
   if (!isAdminUser(user.email)) redirect("/dashboard");
 
   return (
-    <div className="app-shell">
+    <div className="admin-shell">
       <AdminNav />
       <main id="main" className="app-main">{children}</main>
     </div>

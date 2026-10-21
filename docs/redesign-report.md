@@ -36,16 +36,13 @@ The palette and type system were adopted as dealt: Imbue + Albert Sans, `#f7f7f7
 
 The live thing is the hero sheet. A visitor types a rough sentence. The prompt document fills in Task, Context, Constraints, and Output. Six margin notes mark Clarity, Context, Constraints, Examples, Output format, and Tool fit as present or missing. It is deterministic and client-side; real generation still requires sign-in. Without JavaScript, the static example remains readable.
 
-## 4. Pictures and credits
+## 4. Pictures
 
-Four archival images are used, with one greyscale treatment, in a gutterless mosaic on the landing page and a colophon strip in the app footer. They are not presented as product screenshots or as the client’s own photographs.
+The first build used four archival images in a landing mosaic and an app-footer colophon strip. They were removed after review: they carried no product information and made the page longer and harder to scan.
 
-- `public/images/type-case.webp` — Type case letterpress drawer, CC0, via rawpixel.
-- `public/images/card-catalogue.webp` — “Schlagwortkatalog” by Dr. Marcus Gossler, CC BY-SA 3.0, via Wikimedia Commons.
-- `public/images/printed-book.webp` — Woodblock printed book pages, CC0, via rawpixel.
-- `public/images/manuscript.webp` — “1765 Saka, 1843 CE, Jnanesvari Jnandeva Dnyaneshwar manuscript page 1 and 2” by Ms Sarah Welch, CC BY-SA 4.0, via Wikimedia Commons.
+The only pictures now are the product itself, built as interface fragments and marked `data-ui`: the live prompt sheet, the builder panel, the score margin, the library panel, and the history ledger. There is no stock photography, no decorative archive, and no image credit line.
 
-Full licences and source pages: [`docs/image-credits.md`](image-credits.md). The credit line is also in the site footer. The product itself is shown as built interface fragments marked `data-ui`: the live prompt sheet, the builder panel, the score margin, the library panel, and the history ledger.
+This knowingly gives up the skill’s four-picture floor. The user’s feedback takes priority: the page is a text tool, and the type, colour, and interface are the material.
 
 ## 5. Critique
 
@@ -54,22 +51,32 @@ Full licences and source pages: [`docs/image-credits.md`](image-credits.md). The
 - Seen in one second: a large green serif headline, a yellow action, and a prompt sheet with a margin of notes.
 - Idea: the prompt document is a printed page, and the score is the editor’s margin.
 - Live thing: type a rough sentence; the document and six margin notes update.
-- Layout words by section: hero = split + margin / mosaic = full-bleed / showcase = split / how-it-works = list / features = three-column notes / facts = split list / pricing = two fields / FAQ = two columns / close = full-bleed statement / footer = wordmark band.
+- Layout words by section: hero = split + margin / showcase = split / how-it-works = three columns / features = three-column notes / pricing = two fields / FAQ = two columns / close = full-bleed statement / footer = wordmark band.
 - Scores: design 8.5 · usability 8.5 · creativity 8.5 · content 8.0 → **overall 8.4**.
-- Caps applied: none. No FAIL remains. Four real pictures. The live thing is present. No placeholder.
+- Caps applied: none. No FAIL remains. The skill’s picture cap is knowingly overridden by the user’s instruction to remove decorative pictures. The live thing is present. No placeholder.
 - Top three problems and fixes:
   1. The desktop hero left a long empty column under the copy while the sheet ran tall. Fixed by putting the six score notes in a second column beside the sheet and stretching the copy to the same height.
-  2. The footer was too quiet for a designed close. Fixed by raising the wordmark and adding the four-image colophon strip on app pages.
+  2. The footer was too quiet for a designed close. Fixed by raising the wordmark and giving it a clear four-column link set. The image strip was removed after review.
   3. The plan page used small labels above prices and a back link above the heading. Fixed by moving the plan name under the price, removing the back link from the top, and setting the running copy in full ink.
 
 **What still falls short**
 
-- **No video.** The skill asks for one honest moving picture. There is no honest footage of a text tool turning a sentence into a structured prompt; a stock clip would be decoration pretending to be evidence. The slow drift on the first mosaic image and the footer colophon is the moving picture. This is the one warning that remains on every inspected page.
-- **App screens are not judged by the landing picture floor.** The skill says it is not for dashboards or app screens. `/builder`, `/dashboard`, `/history`, `/library`, `/account`, `/admin`, and `/model-lab` share the tokens, type, grid, and component shapes, but they are judged by task clarity and density. `/login` still reports a motion warning at nine moving elements; it is a utility screen with a slow-moving colophon, not a marketing page.
+- **No pictures or video.** The skill asks for real pictures and one moving picture. There is no honest footage of a text tool turning a sentence into a structured prompt, and the archival mosaic was removed after review. The interface fragments are the only pictures. This is the expected warning on the landing page and the expected picture-floor failure on the app and legal screens.
+- **App screens are not judged by the landing picture floor.** The skill says it is not for dashboards or app screens. `/builder`, `/dashboard`, `/history`, `/library`, `/account`, `/admin`, and `/model-lab` share the tokens, type, grid, and component shapes, but they are judged by task clarity and density. `/login` still reports a motion warning at nine moving elements; it is a utility screen, not a marketing page.
 - **Interface copy is English in this pass.** The i18n dictionaries and the generation language detection remain, but the selector was removed rather than leave a control that changes nothing visible. The next pass can port the new copy into EN/ES/RU and restore the selector.
 - **Admin and model-lab are functional ledgers.** They use the new type, palette, and table grammar, but they are deliberately plainer than the public pages.
 
-## 6. Verification
+## 6. Revision after review
+
+The first build was reviewed on a 16:9 screen and revised.
+
+- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the live sheet and its primary action inside 1366×768. The landing page is 7.9 screens at 1440×900, down from 10.1.
+- **Navigation:** the public header is now three anchors (Product, How it works, Plans) plus Sign in and Start free. The app header was replaced by a persistent left sidebar grouped into Create, Workspace, and You, with a mobile top bar and a four-item bottom bar. The previous top bar carried too many links and a dropdown.
+- **Pictures:** the four archival images and the footer colophon strip were removed. They carried no product information and made the page longer and harder to scan. The only pictures are the product interface fragments.
+
+The short-screen layout is CSS-only: below 820px of viewport height the live sheet becomes one column, its padding tightens, and the six score notes move into a compact three-column strip below the sheet.
+
+## 7. Verification
 
 | Check | Result |
 | --- | --- |
@@ -77,14 +84,14 @@ Full licences and source pages: [`docs/image-credits.md`](image-credits.md). The
 | `npm test` | 98 passed, 0 failed |
 | `node scripts/check-start-ui.cjs` | Pass at 1440 and 390 |
 | `lint.mjs app components` | 0 FAIL, 0 WARN |
-| `inspect.mjs /` | 0 FAIL, 1 WARN (no footage) |
-| `inspect.mjs /login` | 0 FAIL, 2 WARN (no footage, little motion) |
-| `inspect.mjs /plan` | 0 FAIL, 1 WARN (no footage) |
-| `inspect.mjs /privacy` | 0 FAIL, 1 WARN (no footage) |
+| `inspect.mjs /` | 0 FAIL, 2 WARN (no real pictures, no footage — both overridden by review) |
+| `inspect.mjs /login` | 1 FAIL (few-pictures), 2 WARN — app screen, outside the landing rubric |
+| `inspect.mjs /plan` | 1 FAIL (few-pictures), 1 WARN — app screen, outside the landing rubric |
+| `inspect.mjs /privacy` | 1 FAIL (few-pictures), 2 WARN — legal screen, outside the landing rubric |
 
 The inspector screenshots live in `.taste-skill/` during the build. They are working files, not source.
 
-## 7. What changed for the next developer
+## 8. What changed for the next developer
 
 - The design tokens are in `app/globals.css`. There is no Tailwind config and no PostCSS plugin file.
 - Fonts are `@fontsource-variable/imbue` and `@fontsource-variable/albert-sans`, imported in `app/layout.tsx`.

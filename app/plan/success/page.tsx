@@ -142,7 +142,7 @@ function SuccessInner() {
         </div>
       </div>
     </div>
-    <Footer strip />
+    <Footer />
     </>
   );
 }

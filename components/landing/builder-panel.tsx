@@ -20,7 +20,7 @@ export function BuilderPanel() {
         <span className="composer__chip">Research</span>
         <span className="composer__chip">Everyday</span>
       </div>
-      <div className="score" style={{ background: "var(--surface)", padding: 18 }}>
+      <div className="score" data-ui style={{ background: "var(--surface)", padding: 18 }}>
         <div className="score__total">82</div>
         <div className="score__row"><span className="score__name">Clarity</span><span className="score__value">88</span></div>
         <div className="score__row"><span className="score__name">Context</span><span className="score__value">84</span></div>

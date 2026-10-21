@@ -75,7 +75,7 @@ export default function TermsPage() {
           </article>
         </div>
       </main>
-      <Footer strip />
+      <Footer />
     </>
   );
 }

@@ -249,7 +249,7 @@ function PlanInner() {
         lifetime purchases.
       </p>
     </div>
-    <Footer strip />
+    <Footer />
     </>
   );
 }

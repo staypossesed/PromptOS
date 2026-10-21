@@ -1,14 +1,14 @@
-import { AppNav } from "./app-nav";
-import { Footer } from "./footer";
+import { AppSidebar } from "./app-sidebar";
+import { AppTopbar } from "./app-topbar";
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-shell">
-      <AppNav />
-      <main id="main" className="app-main">
-        <div className="wrap">{children}</div>
-      </main>
-      <Footer strip />
+      <AppSidebar />
+      <div className="app-content">
+        <AppTopbar />
+        <main id="main" className="app-main">{children}</main>
+      </div>
     </div>
   );
 }

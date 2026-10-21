@@ -15,21 +15,30 @@ const links = [
 export function AdminNav() {
   const pathname = usePathname();
   return (
-    <header className="app-nav">
-      <div className="wrap app-nav__inner">
+    <header className="nav">
+      <div className="wrap nav__inner">
         <Link href="/admin" className="wordmark">Umprompt · Admin</Link>
-        <nav className="app-nav__links" aria-label="Admin">
+        <nav className="nav__links" aria-label="Admin">
           {links.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              aria-current={pathname === link.href ? "page" : undefined}
-            >
+            <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>
               {link.label}
             </Link>
           ))}
         </nav>
-        <Link href="/dashboard" className="button button--ghost button--small">Back to app</Link>
+        <div className="nav__action">
+          <Link href="/dashboard" className="small nav__signin">Back to app</Link>
+          <details className="nav__mobile">
+            <summary className="button button--ghost button--small">Menu</summary>
+            <div className="nav__mobile-panel">
+              {links.map((link) => (
+                <Link key={link.href} href={link.href} aria-current={pathname === link.href ? "page" : undefined}>
+                  {link.label}
+                </Link>
+              ))}
+              <Link href="/dashboard">Back to app</Link>
+            </div>
+          </details>
+        </div>
       </div>
     </header>
   );
