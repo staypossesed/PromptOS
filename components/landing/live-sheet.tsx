@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/system/button";
+import { Reveal } from "@/components/system/reveal";
 import { inferTaskCategory } from "@/lib/idea-suggestions";
 
 const EXAMPLE = "write a launch email for our new study app, for students, keep it short";
@@ -141,15 +142,17 @@ export function LiveSheet() {
       </div>
 
       <div className="margin-note-list" style={{ marginTop: 16 }}>
-        {DIMENSIONS.map((dimension) => {
+        {DIMENSIONS.map((dimension, index) => {
           const note = notes[dimension.key];
           return (
-            <div className="margin-note" key={dimension.key}>
-              <span className="margin-note__label">
-                {dimension.label} · {note.ok ? "present" : "missing"}
-              </span>
-              <span className="margin-note__text">{note.note}</span>
-            </div>
+            <Reveal key={dimension.key} delay={index * 55}>
+              <div className="margin-note">
+                <span className="margin-note__label">
+                  {dimension.label} · {note.ok ? "present" : "missing"}
+                </span>
+                <span className="margin-note__text">{note.note}</span>
+              </div>
+            </Reveal>
           );
         })}
       </div>

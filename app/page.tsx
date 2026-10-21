@@ -4,9 +4,11 @@ import { Footer } from "@/components/system/footer";
 import { ButtonLink } from "@/components/system/button";
 import { Reveal } from "@/components/system/reveal";
 import { PageViewTracker } from "@/components/system/page-view-tracker";
+import { ScrollProgress } from "@/components/system/scroll-progress";
 import { LiveSheet } from "@/components/landing/live-sheet";
 import { ExampleSpread } from "@/components/landing/example-spread";
 import { BuilderPanel } from "@/components/landing/builder-panel";
+import { Marquee } from "@/components/landing/marquee";
 import { checkoutPrice } from "@/lib/checkout";
 
 function dollars(cents: number) {
@@ -17,6 +19,7 @@ export default function LandingPage() {
   return (
     <>
       <PageViewTracker event="landing_view" />
+      <ScrollProgress />
       <Nav />
       <main id="main">
         <section className="hero">
@@ -42,19 +45,18 @@ export default function LandingPage() {
           </div>
         </section>
 
+        <Marquee items={["Writing", "Coding", "Research", "Everyday", "Business", "Creative"]} />
+
         <section className="band band--tight" id="product">
           <div className="wrap">
             <Reveal>
-              <div className="axis" style={{ marginBottom: "clamp(24px, 3vw, 48px)" }}>
-                <div className="axis__side" aria-hidden="true" />
-                <div className="axis__main stack">
-                  <h2>One sentence in.<br />One usable prompt out.</h2>
-                  <p className="body">
-                    The rough version is not a draft to be ashamed of. It is the material.
-                    Umprompt keeps your meaning, adds the context the request was missing, and
-                    returns a prompt you can paste anywhere.
-                  </p>
-                </div>
+              <div className="section-head">
+                <h2>One sentence in.<br />One usable prompt out.</h2>
+                <p className="body">
+                  The rough version is not a draft to be ashamed of. It is the material.
+                  Umprompt keeps your meaning, adds the context the request was missing, and
+                  returns a prompt you can paste anywhere.
+                </p>
               </div>
             </Reveal>
             <Reveal>
@@ -111,7 +113,7 @@ export default function LandingPage() {
           </div>
         </section>
 
-        <section className="band">
+        <section className="band band--dark" id="workspace">
           <div className="wrap">
             <Reveal>
               <div className="section-head">
@@ -173,10 +175,13 @@ export default function LandingPage() {
               <div className="pricing">
                 <div className="price-field price-field--free">
                   <div className="stack">
-                    <span className="price-field__name">Free</span>
+                    <h2 className="price-field__name">Free</h2>
                     <p className="body">
                       Seven prompts a week. The full composer, the complete score, and your saved
                       history. No card.
+                    </p>
+                    <p className="plan-list">
+                      7 prompts a week · Full composer and score · Saved prompts and history · Templates
                     </p>
                   </div>
                   <div>
@@ -189,10 +194,13 @@ export default function LandingPage() {
                 </div>
                 <div className="price-field price-field--pro">
                   <div className="stack">
-                    <span className="price-field__name">Pro</span>
+                    <h2 className="price-field__name">Pro</h2>
                     <p className="body">
                       Unlimited fair use. Prompt packs, library profiles, playbooks, and the
                       full workspace. Monthly or once.
+                    </p>
+                    <p className="plan-list">
+                      Unlimited fair use · Prompt packs · Profiles and playbooks · Full history
                     </p>
                   </div>
                   <div>

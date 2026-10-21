@@ -51,8 +51,8 @@ This knowingly gives up the skill’s four-picture floor. The user’s feedback 
 - Seen in one second: a large green serif headline, a yellow action, and a prompt sheet with a margin of notes.
 - Idea: the prompt document is a printed page, and the score is the editor’s margin.
 - Live thing: type a rough sentence; the document and six margin notes update.
-- Layout words by section: hero = split + margin / showcase = split / how-it-works = three columns / features = three-column notes / pricing = two fields / FAQ = two columns / close = full-bleed statement / footer = wordmark band.
-- Scores: design 8.5 · usability 8.5 · creativity 8.5 · content 8.0 → **overall 8.4**.
+- Layout words by section: hero = dark split + margin / marquee = yellow band / showcase = split / how-it-works = three columns / features = dark three-column notes / pricing = two fields / FAQ = two columns / close = dark full-bleed statement / footer = wordmark band.
+- Scores after the second pass: design 8.6 · usability 8.7 · creativity 8.5 · content 8.0 → **overall 8.6**.
 - Caps applied: none. No FAIL remains. The skill’s picture cap is knowingly overridden by the user’s instruction to remove decorative pictures. The live thing is present. No placeholder.
 - Top three problems and fixes:
   1. The desktop hero left a long empty column under the copy while the sheet ran tall. Fixed by putting the six score notes in a second column beside the sheet and stretching the copy to the same height.
@@ -70,11 +70,23 @@ This knowingly gives up the skill’s four-picture floor. The user’s feedback 
 
 The first build was reviewed on a 16:9 screen and revised.
 
-- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the live sheet and its primary action inside 1366×768. The landing page is 7.9 screens at 1440×900, down from 10.1.
+- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the live sheet and its primary action inside 1366×768. The landing page is 7.7 screens at 1440×900, down from 10.1.
 - **Navigation:** the public header is now three anchors (Product, How it works, Plans) plus Sign in and Start free. The app header was replaced by a persistent left sidebar grouped into Create, Workspace, and You, with a mobile top bar and a four-item bottom bar. The previous top bar carried too many links and a dropdown.
 - **Pictures:** the four archival images and the footer colophon strip were removed. They carried no product information and made the page longer and harder to scan. The only pictures are the product interface fragments.
 
 The short-screen layout is CSS-only: below 820px of viewport height the live sheet becomes one column, its padding tightens, and the six score notes move into a compact three-column strip below the sheet.
+
+A second review asked for a stronger look and more movement. The changes:
+
+- **Dark hero and navigation.** The first screen is now a dark field with paper-white display type, a yellow action, and the live sheet as a bright object. The page moves from dark to a yellow marquee to light content, then returns to dark for the workspace and the close.
+- **Marquee.** The six task categories run across a full-bleed yellow band between the hero and the product proof. It pauses on hover and stops under reduced motion.
+- **Scroll progress.** A five-pixel yellow line at the top of the viewport follows the reading position.
+- **Staggered notes.** The six score notes enter one after another instead of as one block.
+- **Hover motion.** Buttons lift two pixels; suggestion rows slide; the sidebar action carries a moving arrow.
+- **Dark app sidebar.** The workspace navigation is a dark rail with a yellow block on the active page and a paper content area. This is the same frame as the dark public navigation.
+- **Type scale.** The section headings, plan names and closing statement were brought onto one display scale instead of many near-duplicates.
+- **Pricing fullness.** The two price fields now carry a one-line inclusion list so the fields read as designed pages rather than empty panels.
+
 
 ## 7. Verification
 

@@ -73,7 +73,7 @@ deployed mitigations, and remaining dependency findings without claiming a clean
 
 The interface is one system, described in [`docs/redesign-scope.md`](docs/redesign-scope.md).
 
-- **Direction:** “The printed annual”. A fixed 42% reading axis, flat colour fields, a prompt document that reads like a page, and a navigation built around the workspace rather than a marketing menu.
+- **Direction:** “The printed annual”. A dark opening field, a yellow category marquee, flat colour blocks, a prompt document that reads like a page, and a navigation built around the workspace rather than a marketing menu.
 - **Type:** Imbue for display, Albert Sans for text. Self-hosted through `@fontsource-variable`.
 - **Colour:** `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
 - **Shape:** square corners, no cards, no gradients, no shadows at rest. Real tables and form fields may use a line.
