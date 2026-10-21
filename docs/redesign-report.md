@@ -82,6 +82,7 @@ A second review asked for a stronger look and more movement. The changes:
 - **Marquee.** The six task categories run across a full-bleed yellow band between the hero and the product proof. It pauses on hover and stops under reduced motion.
 - **Scroll progress.** A five-pixel yellow line at the top of the viewport follows the reading position.
 - **Rotating hero example.** Three real tasks switch in place with a short crossfade; the paper is the product, not a form.
+- **Showcase as a selector.** Study plan and Launch email swap the rough sentence and the structured prompt together.
 - **How it works as a selector.** First / Then / Finally are tabs. The panel shows the rough quote, the clarification, or the finished prompt instead of three static columns.
 - **FAQ as a question list.** The wall of text is now a question selector with one answer open at a time. On a phone the answer opens directly under the question.
 - **Pricing toggle.** Monthly and Once are a real toggle; the price changes in place, with the founder price beside it.

@@ -911,6 +911,35 @@ pre {
 
 /* ── Landing: input/output split ────────────────────────────────────────── */
 
+.example-spread {
+  display: grid;
+  gap: 16px;
+}
+
+.example-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.example-tab {
+  border: 0;
+  background: var(--paper);
+  color: var(--muted);
+  padding: 8px 14px;
+  font-size: 16px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.example-tab[aria-selected="true"] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.split {
+  animation: panel-in 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
 .split {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -927,6 +956,7 @@ pre {
 .split__page--dark {
   background: var(--dark);
   color: var(--dark-ink);
+  align-content: center;
 }
 
 .split__page--light {
