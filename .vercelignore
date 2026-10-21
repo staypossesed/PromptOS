@@ -6,3 +6,5 @@
 extension/dist/
 extension/artifacts/
 .npm-cache-store-review/
+
+.taste-skill/
