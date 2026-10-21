@@ -723,7 +723,7 @@ pre {
 /* ── Landing: hero ──────────────────────────────────────────────────────── */
 
 .hero {
-  min-height: calc(100svh - 72px);
+  min-height: calc(100svh - 152px);
   display: flex;
   align-items: center;
   padding-block: clamp(24px, 3vw, 56px);
@@ -798,6 +798,115 @@ pre {
 .hero__note {
   font-size: 16px;
   color: var(--muted);
+}
+
+/* ── Landing: hero example ──────────────────────────────────────────────── */
+
+.hero-example {
+  display: grid;
+  gap: 16px;
+  align-content: start;
+}
+
+.hero-example__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: clamp(14px, 2vw, 28px);
+}
+
+.hero-example__tab {
+  border: 0;
+  background: none;
+  padding: 8px 0;
+  color: #a9b8b0;
+  font-size: 16px;
+  font-weight: 500;
+  border-bottom: 3px solid transparent;
+  transition: color 150ms ease, border-color 150ms ease;
+}
+
+.hero-example__tab:hover {
+  color: var(--dark-ink);
+}
+
+.hero-example__tab[aria-selected="true"] {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.hero-example__paper {
+  background: var(--paper);
+  color: var(--ink);
+  padding: clamp(20px, 2.4vw, 34px);
+  display: grid;
+  gap: clamp(14px, 1.6vw, 20px);
+  animation: example-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.hero-example__top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.hero-example__label {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.hero-example__idea {
+  font-family: var(--font-display);
+  font-size: clamp(24px, 2vw, 32px);
+  line-height: 1.1;
+  max-width: 26ch;
+  margin-top: 6px;
+}
+
+.hero-example__score {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 4vw, 64px);
+  line-height: 0.8;
+  flex-shrink: 0;
+}
+
+.hero-example__doc {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+}
+
+.hero-example__section {
+  display: grid;
+  gap: 2px;
+}
+
+.hero-example__section dt {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+.hero-example__section dd {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.hero-example__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+
+.hero-example__hint {
+  font-size: 16px;
+  color: var(--muted);
+}
+
+@keyframes example-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: none; }
 }
 
 /* ── Landing: input/output split ────────────────────────────────────────── */

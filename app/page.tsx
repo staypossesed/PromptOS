@@ -5,7 +5,7 @@ import { ButtonLink } from "@/components/system/button";
 import { Reveal } from "@/components/system/reveal";
 import { PageViewTracker } from "@/components/system/page-view-tracker";
 import { ScrollProgress } from "@/components/system/scroll-progress";
-import { LiveSheet } from "@/components/landing/live-sheet";
+import { HeroExample } from "@/components/landing/hero-example";
 import { ExampleSpread } from "@/components/landing/example-spread";
 import { BuilderPanel } from "@/components/landing/builder-panel";
 import { Marquee } from "@/components/landing/marquee";
@@ -40,7 +40,7 @@ export default function LandingPage() {
               <p className="small muted">7 free prompts a week · No card to start</p>
             </Reveal>
             <Reveal delay={90}>
-              <LiveSheet />
+              <HeroExample />
             </Reveal>
           </div>
         </section>

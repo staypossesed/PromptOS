@@ -24,9 +24,9 @@ The API routes, Supabase schema, Stripe flow, auth callback, rate limits, genera
 
 Three slots were redrawn for stated reasons. No other slot was changed.
 
-1. **Hero:** the dealt hero was a two-by-two board. It was redrawn to a two-column live sheet plus margin notes, because the live thing needed the first screen and the score notes needed to be readable beside the document. Usability reason.
-2. **Closing section:** the dealt section was “three photographs, then a field.” It was redrawn to one gutterless mosaic of the world of print plus a dark closing field. Asset reason: there is no honest three-photograph CTA sequence for a text tool, and one mosaic carries the idea without repeating it.
-3. **Footer:** the dealt footer was “columns above, wordmark below.” It was kept, with a four-image colophon strip added on app pages so every page closes with the same world of print. System reason, not a redraw of the composition.
+1. **Hero:** the dealt hero was a two-by-two board. It is now a two-column dark stage with a three-tab example paper: one rough idea, its structured prompt, and its score. An earlier form-style live sheet was replaced after review because it read as a demo form and made the first screen heavy. Usability reason.
+2. **Closing section:** the dealt section was “three photographs, then a field.” It is now a single dark closing field with one statement and one action. The image mosaic was removed after review; it carried no product information and made the page longer.
+3. **Footer:** the dealt footer was “columns above, wordmark below.” It was kept as a plain four-column close. The image strip was removed after review.
 
 The palette and type system were adopted as dealt: Imbue + Albert Sans, `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
 
@@ -34,13 +34,13 @@ The palette and type system were adopted as dealt: Imbue + Albert Sans, `#f7f7f7
 
 > On this page, Umprompt’s six-dimension prompt score becomes the margin notes of a printed page: the visitor’s rough sentence is edited in public, and each correction is annotated in the margin.
 
-The live thing is the hero sheet. A visitor types a rough sentence. The prompt document fills in Task, Context, Constraints, and Output. Six margin notes mark Clarity, Context, Constraints, Examples, Output format, and Tool fit as present or missing. It is deterministic and client-side; real generation still requires sign-in. Without JavaScript, the static example remains readable.
+The live thing is the hero example. Three tabs switch between a week plan, a launch email, and a debugging task. Each shows one rough sentence, a structured prompt with Task, Context, Constraints, and Output, and the score it earns. The tabs advance every 6.5 seconds, pause on hover or focus, and stop under reduced motion. “Build this prompt” carries the example into the builder. Without JavaScript the first example remains readable.
 
 ## 4. Pictures
 
 The first build used four archival images in a landing mosaic and an app-footer colophon strip. They were removed after review: they carried no product information and made the page longer and harder to scan.
 
-The only pictures now are the product itself, built as interface fragments and marked `data-ui`: the live prompt sheet, the builder panel, the score margin, the library panel, and the history ledger. There is no stock photography, no decorative archive, and no image credit line.
+The only pictures now are the product itself, built as interface fragments and marked `data-ui`: the hero example paper, the builder panel, the score margin, the library panel, and the history ledger. There is no stock photography, no decorative archive, and no image credit line.
 
 This knowingly gives up the skill’s four-picture floor. The user’s feedback takes priority: the page is a text tool, and the type, colour, and interface are the material.
 
@@ -50,7 +50,7 @@ This knowingly gives up the skill’s four-picture floor. The user’s feedback 
 
 - Seen in one second: a large green serif headline, a yellow action, and a prompt sheet with a margin of notes.
 - Idea: the prompt document is a printed page, and the score is the editor’s margin.
-- Live thing: type a rough sentence; the document and six margin notes update.
+- Live thing: switch between three real tasks and see the rough sentence become a structured prompt with a score.
 - Layout words by section: hero = dark split + margin / marquee = yellow band / showcase = split / how-it-works = three columns / features = dark three-column notes / pricing = two fields / FAQ = two columns / close = dark full-bleed statement / footer = wordmark band.
 - Scores after the second pass: design 8.6 · usability 8.7 · creativity 8.5 · content 8.0 → **overall 8.6**.
 - Caps applied: none. No FAIL remains. The skill’s picture cap is knowingly overridden by the user’s instruction to remove decorative pictures. The live thing is present. No placeholder.
@@ -70,7 +70,7 @@ This knowingly gives up the skill’s four-picture floor. The user’s feedback 
 
 The first build was reviewed on a 16:9 screen and revised.
 
-- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the live sheet and its primary action inside 1366×768. The landing page is 7.7 screens at 1440×900, down from 10.1.
+- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the live sheet and its primary action inside 1366×768. The landing page is 7.2 screens at 1440×900, down from 10.1.
 - **Navigation:** the public header is now three anchors (Product, How it works, Plans) plus Sign in and Start free. The app header was replaced by a persistent left sidebar grouped into Create, Workspace, and You, with a mobile top bar and a four-item bottom bar. The previous top bar carried too many links and a dropdown.
 - **Pictures:** the four archival images and the footer colophon strip were removed. They carried no product information and made the page longer and harder to scan. The only pictures are the product interface fragments.
 
@@ -81,7 +81,7 @@ A second review asked for a stronger look and more movement. The changes:
 - **Dark hero and navigation.** The first screen is now a dark field with paper-white display type, a yellow action, and the live sheet as a bright object. The page moves from dark to a yellow marquee to light content, then returns to dark for the workspace and the close.
 - **Marquee.** The six task categories run across a full-bleed yellow band between the hero and the product proof. It pauses on hover and stops under reduced motion.
 - **Scroll progress.** A five-pixel yellow line at the top of the viewport follows the reading position.
-- **Staggered notes.** The six score notes enter one after another instead of as one block.
+- **Rotating hero example.** Three real tasks switch in place with a short crossfade; the paper is the product, not a form.
 - **Hover motion.** Buttons lift two pixels; suggestion rows slide; the sidebar action carries a moving arrow.
 - **Dark app sidebar.** The workspace navigation is a dark rail with a yellow block on the active page and a paper content area. This is the same frame as the dark public navigation.
 - **Type scale.** The section headings, plan names and closing statement were brought onto one display scale instead of many near-duplicates.
