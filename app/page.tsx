@@ -203,7 +203,7 @@ export default function LandingPage() {
               <p className="lead" style={{ maxWidth: "30ch" }}>
                 The first seven prompts are free. No card. No prompt engineering.
               </p>
-              <ButtonLink href="/builder" variant="accent">Start with an idea</ButtonLink>
+              <ButtonLink href="/builder" variant="ink">Start with an idea</ButtonLink>
             </Reveal>
           </div>
         </section>

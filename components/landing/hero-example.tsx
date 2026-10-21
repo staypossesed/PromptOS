@@ -102,29 +102,22 @@ export function HeroExample() {
             <p className="hero-example__label">The rough version</p>
             <p className="hero-example__idea">“{example.idea}”</p>
           </div>
-          <div className="hero-example__score" aria-label={`Score ${example.score}`}>
-            {example.score}
+          <div className="hero-example__score" aria-label={`Prompt score ${example.score} out of 100`} title="Weighted average of clarity, context, constraints, examples, output format, and tool fit">
+            <span className="hero-example__score-label">Prompt score</span>
+            <span className="hero-example__score-number">{example.score}<small>/100</small></span>
           </div>
         </div>
 
-        <dl className="hero-example__doc">
-          <div className="hero-example__section">
-            <dt>Task</dt>
-            <dd>{example.task}</dd>
-          </div>
-          <div className="hero-example__section">
-            <dt>Context</dt>
-            <dd>{example.context}</dd>
-          </div>
-          <div className="hero-example__section">
-            <dt>Constraints</dt>
-            <dd>{example.constraints}</dd>
-          </div>
-          <div className="hero-example__section">
-            <dt>Output</dt>
-            <dd>{example.output}</dd>
-          </div>
-        </dl>
+        <div className="hero-example__chain">
+          <div className="hero-chain__step"><span>Task</span><p>{example.task}</p></div>
+          <div className="hero-chain__step"><span>Context</span><p>{example.context}</p></div>
+          <div className="hero-chain__step"><span>Constraints</span><p>{example.constraints}</p></div>
+        </div>
+
+        <div className="hero-example__output">
+          <span>Output</span>
+          <p>{example.output}</p>
+        </div>
 
         <div className="hero-example__actions">
           <Button variant="accent" size="sm" onClick={start}>Build this prompt</Button>

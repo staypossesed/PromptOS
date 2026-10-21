@@ -864,32 +864,71 @@ pre {
 }
 
 .hero-example__score {
-  font-family: var(--font-display);
-  font-size: clamp(48px, 4vw, 64px);
-  line-height: 0.8;
-  flex-shrink: 0;
-}
-
-.hero-example__doc {
   display: grid;
-  gap: 12px;
-  margin: 0;
-}
-
-.hero-example__section {
-  display: grid;
+  justify-items: end;
   gap: 2px;
+  flex-shrink: 0;
+  text-align: right;
 }
 
-.hero-example__section dt {
-  font-size: 16px;
+.hero-example__score-label {
+  font-size: 14px;
   color: var(--muted);
 }
 
-.hero-example__section dd {
+.hero-example__score-number {
+  font-family: var(--font-display);
+  font-size: clamp(48px, 4vw, 64px);
+  line-height: 0.8;
+}
+
+.hero-example__score-number small {
+  font-family: var(--font-text);
+  font-size: 14px;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+ .hero-example__chain {
+  display: grid;
+  gap: 10px;
+  border-left: 6px solid var(--accent);
+  padding-left: 16px;
+}
+
+.hero-chain__step {
+  display: grid;
+  gap: 1px;
+}
+
+.hero-chain__step span {
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.hero-chain__step p {
   margin: 0;
   font-size: 16px;
-  line-height: 1.45;
+  line-height: 1.4;
+}
+
+.hero-example__output {
+  background: var(--accent);
+  color: var(--accent-ink);
+  padding: 16px 18px;
+  display: grid;
+  gap: 4px;
+}
+
+.hero-example__output span {
+  font-size: 14px;
+}
+
+.hero-example__output p {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: clamp(22px, 1.8vw, 30px);
+  line-height: 1.1;
 }
 
 .hero-example__actions {
@@ -1127,23 +1166,24 @@ pre {
 
 .faq-list {
   display: grid;
-  gap: 2px;
+  gap: 6px;
 }
 
 .faq-question {
   border: 0;
-  background: none;
+  background: var(--paper);
   text-align: left;
-  padding: 12px;
-  font-family: var(--font-display);
-  font-size: clamp(20px, 1.6vw, 24px);
-  line-height: 1.1;
-  color: var(--muted);
+  padding: 14px 16px;
+  font-family: var(--font-text);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--ink);
   transition: background-color 150ms ease, color 150ms ease;
 }
 
 .faq-question:hover {
-  color: var(--ink);
+  background: var(--surface-2);
 }
 
 .faq-question[aria-selected="true"] {
@@ -1167,6 +1207,10 @@ pre {
 
 .faq-answer h3 {
   font-size: clamp(28px, 2.4vw, 40px);
+}
+
+.faq-answer .body {
+  max-width: 60ch;
 }
 
 /* ── Landing: price toggle ───────────────────────────────────────────────── */
@@ -1240,9 +1284,102 @@ pre {
   color: var(--muted);
 }
 
-.notes__panel {
+.workspace-visual {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.workspace-sheet {
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.workspace-composer,
+.workspace-history {
   background: var(--paper);
-  padding: clamp(18px, 2vw, 28px);
+  color: var(--ink);
+}
+
+.workspace-score {
+  background: var(--accent);
+  color: var(--accent-ink);
+  grid-row: span 2;
+}
+
+.workspace-sheet__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.workspace-score .workspace-sheet__head {
+  color: var(--accent-ink);
+}
+
+.workspace-composer__idea {
+  font-family: var(--font-display);
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+.workspace-score__label {
+  font-size: 14px;
+  color: var(--accent-ink);
+}
+
+.workspace-score__total {
+  font-family: var(--font-display);
+  font-size: 56px;
+  line-height: 0.8;
+}
+
+.workspace-score__total span {
+  font-family: var(--font-text);
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+.workspace-score__note {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.workspace-score__rows {
+  display: grid;
+  gap: 5px;
+}
+
+.workspace-score__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 14px;
+  padding-block: 2px;
+}
+
+.workspace-history__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 16px;
+  padding-block: 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 1024px) {
+  .workspace-visual {
+    grid-template-columns: 1fr;
+  }
+
+  .workspace-score {
+    grid-row: auto;
+  }
 }
 
 /* ── Landing: pricing ───────────────────────────────────────────────────── */
@@ -1318,12 +1455,13 @@ pre {
 /* ── Landing: closing field ─────────────────────────────────────────────── */
 
 .close-field {
-  background: var(--dark);
-  color: var(--dark-ink);
-  min-height: 72svh;
+  background: var(--accent);
+  color: var(--accent-ink);
+  min-height: 36svh;
   display: grid;
-  align-content: space-between;
-  padding-block: clamp(48px, 6vw, 96px);
+  align-content: center;
+  gap: clamp(24px, 3vw, 36px);
+  padding-block: clamp(40px, 5vw, 72px);
 }
 
 .close-field__title {

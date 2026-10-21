@@ -70,7 +70,7 @@ This knowingly gives up the skill’s four-picture floor. The user’s feedback 
 
 The first build was reviewed on a 16:9 screen and revised.
 
-- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the hero example and its primary action inside 1366×768. The landing page is 7.0 screens at 1440×900, down from 10.1.
+- **16:9:** the container was capped at 1440px, so 1920px and 2560px screens carried large empty margins. It is now capped at 2200px with fluid margins, the hero fills the first screen at 1920×1080, and a compressed short-screen layout keeps the hero example and its primary action inside 1366×768. The landing page is 6.5 screens at 1440×900, down from 10.1.
 - **Navigation:** the public header is now three anchors (Product, How it works, Plans) plus Sign in and Start free. The app header was replaced by a persistent left sidebar grouped into Create, Workspace, and You, with a mobile top bar and a four-item bottom bar. The previous top bar carried too many links and a dropdown.
 - **Pictures:** the four archival images and the footer colophon strip were removed. They carried no product information and made the page longer and harder to scan. The only pictures are the product interface fragments.
 
@@ -86,6 +86,11 @@ A second review asked for a stronger look and more movement. The changes:
 - **How it works as a selector.** First / Then / Finally are tabs. The panel shows the rough quote, the clarification, or the finished prompt instead of three static columns.
 - **FAQ as a question list.** The wall of text is now a question selector with one answer open at a time. On a phone the answer opens directly under the question.
 - **Pricing toggle.** Monthly and Once are a real toggle; the price changes in place, with the founder price beside it.
+- **Defined scores.** Every score reads as “Prompt score 82/100” or “91/100”; the workspace card names the six weighted dimensions. No bare number sits without its scale.
+- **Hero output.** Task, Context and Constraints read as a chain with a yellow rail; Output is a full yellow block at display size, not a small footnote.
+- **Workspace visual.** The single large white panel was replaced by three smaller cards: composer, score, and history. The white mass is gone and the score card is the yellow accent.
+- **FAQ rows.** Questions are filled white rows with a yellow active row; the answer panel is a separate white page. On a phone the answer opens under the question.
+- **Close.** The final field is yellow and 36svh tall, directly above the dark footer, so the end of the page is a compact close rather than a large empty dark room.
 - **Hover motion.** Buttons lift two pixels; suggestion rows slide; the sidebar action carries a moving arrow.
 - **Dark app sidebar.** The workspace navigation is a dark rail with a yellow block on the active page and a paper content area. This is the same frame as the dark public navigation.
 - **Type scale.** The section headings, plan names and closing statement were brought onto one display scale instead of many near-duplicates.

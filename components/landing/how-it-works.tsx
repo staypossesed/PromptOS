@@ -53,7 +53,7 @@ export function HowItWorks() {
         ))}
       </div>
 
-      <article className="how-panel" key={step.title} aria-live="polite">
+      <article className="how-panel" key={step.title} aria-live="polite" data-ui>
         <h3>{step.title}</h3>
         <p className="body">{step.body}</p>
         {step.prompt ? (
