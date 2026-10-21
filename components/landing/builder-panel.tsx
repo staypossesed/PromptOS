@@ -11,12 +11,9 @@ export function BuilderPanel() {
   return (
     <div className="workspace-visual" data-ui>
       <article className="workspace-sheet workspace-composer" data-ui>
-        <div className="workspace-sheet__head">
-          <span>Composer</span>
-          <span>Everyday</span>
-        </div>
+        <span className="workspace-composer__label">The rough version</span>
         <p className="workspace-composer__idea">
-          Plan a two-week study schedule for a history exam. I lose focus after forty minutes.
+          “Plan a two-week study schedule for a history exam. I lose focus after forty minutes.”
         </p>
         <div className="composer__chips">
           <span className="composer__chip" aria-pressed="true">Writing</span>

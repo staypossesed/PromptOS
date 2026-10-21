@@ -1322,10 +1322,23 @@ pre {
   color: var(--accent-ink);
 }
 
+.workspace-composer {
+  align-content: space-between;
+}
+
+.workspace-composer__label {
+  font-size: 14px;
+  color: var(--muted);
+}
+
 .workspace-composer__idea {
   font-family: var(--font-display);
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.1;
+}
+
+.workspace-composer .button {
+  width: 100%;
 }
 
 .workspace-score__label {
