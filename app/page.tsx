@@ -6,6 +6,9 @@ import { Reveal } from "@/components/system/reveal";
 import { PageViewTracker } from "@/components/system/page-view-tracker";
 import { ScrollProgress } from "@/components/system/scroll-progress";
 import { HeroExample } from "@/components/landing/hero-example";
+import { HowItWorks } from "@/components/landing/how-it-works";
+import { Faq } from "@/components/landing/faq";
+import { ProPrice } from "@/components/landing/pro-price";
 import { ExampleSpread } from "@/components/landing/example-spread";
 import { BuilderPanel } from "@/components/landing/builder-panel";
 import { Marquee } from "@/components/landing/marquee";
@@ -76,40 +79,7 @@ export default function LandingPage() {
                 </p>
               </div>
             </Reveal>
-            <div className="exchanges">
-              <Reveal className="exchange">
-                <p className="exchange__label">First, the rough version.</p>
-                <p className="body">
-                  You type what you would say out loud. No prompt syntax, no role, no “act as
-                  an expert”. The first version is allowed to be messy.
-                </p>
-                <div className="exchange__call">“Plan my week.”</div>
-              </Reveal>
-              <Reveal className="exchange" delay={70}>
-                <p className="exchange__label">Then, only what is missing.</p>
-                <p className="body">
-                  If the idea is ambiguous, Umprompt asks up to two questions. If it is clear,
-                  it proceeds. You are never asked to fill in a template for its own sake.
-                </p>
-                <div className="exchange__call">
-                  “I have four deadlines and two school runs. Mornings are impossible.”
-                </div>
-              </Reveal>
-              <Reveal className="exchange" delay={140}>
-                <p className="exchange__label">Finally, the prompt.</p>
-                <p className="body">
-                  A clear request with a task, context, limits, and an output shape. It is
-                  read-only until you choose Edit, and it is saved only when you choose Save.
-                </p>
-                <div className="sheet" style={{ background: "var(--paper)" }} data-ui>
-                  <div className="prompt-doc__label">Output</div>
-                  <p className="body">
-                    A seven-day plan with fixed blocks, two buffers, and one sentence on what
-                    to move when a day collapses.
-                  </p>
-                </div>
-              </Reveal>
-            </div>
+            <HowItWorks />
           </div>
         </section>
 
@@ -203,19 +173,7 @@ export default function LandingPage() {
                       Unlimited fair use · Prompt packs · Profiles and playbooks · Full history
                     </p>
                   </div>
-                  <div>
-                    <div className="price-field__amount">
-                      {dollars(checkoutPrice("monthly", false))}
-                    </div>
-                    <p className="small">
-                      Per month. Or {dollars(checkoutPrice("lifetime", false))} once. Founder
-                      price: {dollars(checkoutPrice("monthly", true))} per month or{" "}
-                      {dollars(checkoutPrice("lifetime", true))} once, first 100.
-                    </p>
-                    <div style={{ marginTop: 18 }}>
-                      <ButtonLink href="/plan" variant="ink" size="sm">See the plans</ButtonLink>
-                    </div>
-                  </div>
+                  <ProPrice />
                 </div>
               </div>
             </Reveal>
@@ -225,23 +183,13 @@ export default function LandingPage() {
         <section className="band band--surface">
           <div className="wrap">
             <Reveal>
-              <div className="faq">
-                <div>
-                  <h2>Questions,<br />answered plainly.</h2>
-                </div>
-                <div className="faq__columns">
-                  <p className="faq__item"><span className="faq__q">What is Umprompt?</span> It expands a rough idea into a clear, structured prompt for your preferred assistant. It prepares the instructions; it does not answer the task.</p>
-                  <p className="faq__item"><span className="faq__q">Do I need to know prompt engineering?</span> No. You write the request the way you would say it. The structure is the product.</p>
-                  <p className="faq__item"><span className="faq__q">Which assistants does it work with?</span> Claude, ChatGPT, Cursor, and any assistant that accepts text. The default prompt is portable, not tied to one vendor.</p>
-                  <p className="faq__item"><span className="faq__q">How does the score work?</span> Six dimensions get a score out of 100: clarity, context, constraints, examples, output format, and tool fit. It is an estimate, not proof of a better answer.</p>
-                  <p className="faq__item"><span className="faq__q">Is my prompt private?</span> Saved prompts live in your account and are protected by row-level security. Analytics events do not include prompt text or profile content.</p>
-                  <p className="faq__item"><span className="faq__q">What is a prompt pack?</span> A multi-step task broken into a set of prompts that run in order. Build an app, launch a product, run a research report.</p>
-                  <p className="faq__item"><span className="faq__q">What does it cost?</span> Seven prompts a week are free. Pro is {dollars(checkoutPrice("monthly", false))} a month or {dollars(checkoutPrice("lifetime", false))} once, with a founder price for the first 100.</p>
-                  <p className="faq__item"><span className="faq__q">Can I edit a saved prompt?</span> Yes. Open it from the dashboard or history, choose Edit, make the change, and save a new version.</p>
-                  <p className="faq__item"><span className="faq__q">Does it work in other languages?</span> The generator follows the language of your idea. The interface copy is English in this pass; Spanish and Russian dictionaries remain for the next pass.</p>
-                  <p className="faq__item"><span className="faq__q">What happens when I run out?</span> The composer offers an upgrade after a copy or save when two or fewer free prompts remain. Your task stays in place.</p>
-                </div>
+              <div className="section-head">
+                <h2>Questions,<br />answered plainly.</h2>
+                <p className="body">
+                  Pick a question. The answer is here, not behind a support form.
+                </p>
               </div>
+              <Faq />
             </Reveal>
           </div>
         </section>

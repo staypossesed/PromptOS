@@ -73,7 +73,7 @@ deployed mitigations, and remaining dependency findings without claiming a clean
 
 The interface is one system, described in [`docs/redesign-scope.md`](docs/redesign-scope.md).
 
-- **Direction:** “The printed annual”. A dark opening field, a yellow category marquee, flat colour blocks, a prompt document that reads like a page, and a navigation built around the workspace rather than a marketing menu.
+- **Direction:** “The printed annual”. A dark opening field, a yellow category marquee, flat colour blocks, a prompt document that reads like a page, and a navigation built around the workspace rather than a marketing menu. The main sections are selectors, not static blocks: three hero examples, three how-it-works steps, one open question at a time, and a monthly/once price toggle.
 - **Type:** Imbue for display, Albert Sans for text. Self-hosted through `@fontsource-variable`.
 - **Colour:** `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
 - **Shape:** square corners, no cards, no gradients, no shadows at rest. Real tables and form fields may use a line.
@@ -268,7 +268,7 @@ Vercel-protected previews may require a Vercel account to view. Do not disable d
 ```text
 app/                    Pages, API routes, and auth callback
 components/system/      Navigation, footer, buttons, dialogs, reveals
-components/landing/     Live prompt sheet and landing sections
+components/landing/     Hero example, how-it-works selector, FAQ, pricing toggle
 components/builder/     Composer, prompt sheet, score margin, library
 components/library/     Profiles and playbooks manager
 components/auth/        Sign-in form
