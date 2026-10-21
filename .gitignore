@@ -47,3 +47,6 @@ next-env.d.ts
 .claude/
 
 .vercel
+
+# design-taste-frontend working files
+.taste-skill/

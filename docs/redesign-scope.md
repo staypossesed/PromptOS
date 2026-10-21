@@ -1,9 +1,10 @@
 # Frontend Redesign — Scope
 
-**Status:** awaiting approval. No file has been deleted, moved, or created except this document.
-**Branch:** `backup/pre-redesign-frontend`
+**Status:** approved and implemented on `redesign/frontend-v1`. See [`docs/redesign-report.md`](redesign-report.md) for the build record.
+**Backup branch:** `backup/pre-redesign-frontend`
 **Snapshot commit:** `6532f0e` — `chore: snapshot current frontend before redesign`
 **Base:** `cc8996d` on `master`
+**Build branch:** `redesign/frontend-v1`
 
 The original frontend is recoverable with `git switch master` or `git switch backup/pre-redesign-frontend`.
 
@@ -22,7 +23,7 @@ This redesign replaces the frontend, not the product. The API contracts, Supabas
 - `/builder` rebuilt as the centre of the product: a two-page workspace, input on the left, prompt document on the right.
 - Account, billing, history, library, templates, auth, help, and legal pages rebuilt in the same system.
 - Public marketing and product surfaces share one type scale, one palette, one grid, one button, one field, and one motion language.
-- Internal admin and model-lab screens are either rebuilt in phase 2 or kept temporarily; see the open questions.
+- Internal admin and model-lab screens are rebuilt in the same system; no old screens remain.
 
 **Not in scope**
 
@@ -39,134 +40,134 @@ All paths are relative to the repository root. “Delete” means removed from t
 
 ### 2.1 App routes and pages (26 files)
 
-| Path | Current role | Action |
-| --- | --- | --- |
-| `app/page.tsx` | Public landing page and guest composer | Delete; replaced by the new landing page |
-| `app/layout.tsx` | Root layout, fonts, providers, metadata | Delete; replaced by the new root layout |
-| `app/globals.css` | Old design tokens, utilities, animations | Delete; replaced by the new token sheet |
-| `app/account/page.tsx` | Account, plan, language, sign-out | Delete; rebuilt |
-| `app/admin/page.tsx` | Admin overview and statistics | Delete; rebuilt in phase 2 |
-| `app/admin/layout.tsx` | Admin shell and navigation | Delete; rebuilt in phase 2 |
-| `app/admin/users/page.tsx` | Admin user list, segments, CSV export | Delete; rebuilt in phase 2 |
-| `app/admin/users/[userId]/page.tsx` | Admin user detail and billing history | Delete; rebuilt in phase 2 |
-| `app/admin/generations/page.tsx` | Admin generation-run list | Delete; rebuilt in phase 2 |
-| `app/admin/billing/page.tsx` | Admin subscription list | Delete; rebuilt in phase 2 |
-| `app/admin/feedback/page.tsx` | Admin feedback list | Delete; rebuilt in phase 2 |
-| `app/builder/page.tsx` | Core composer, output, score, packs, library | Delete; rebuilt |
-| `app/dashboard/page.tsx` | Saved-prompt dashboard | Delete; rebuilt |
-| `app/demo/page.tsx` | Marketing walkthrough of the four-step flow | Delete; folded into the new landing page |
-| `app/help/page.tsx` | FAQ and feedback trigger | Delete; rebuilt |
-| `app/history/page.tsx` | Prompt and prompt-pack history | Delete; rebuilt |
-| `app/library/page.tsx` | Workspace profiles and playbooks | Delete; rebuilt |
-| `app/login/page.tsx` | Sign-in page | Delete; rebuilt |
-| `app/model-lab/page.tsx` | Admin model-comparison lab | Delete; rebuilt in phase 2 |
-| `app/model-lab/layout.tsx` | Admin guard for model lab | Delete; rebuilt in phase 2 |
-| `app/plan/page.tsx` | Pricing and checkout | Delete; rebuilt |
-| `app/plan/success/page.tsx` | Checkout verification and return | Delete; rebuilt |
-| `app/privacy/page.tsx` | Privacy policy | Delete; rebuilt as a reading page |
-| `app/settings/page.tsx` | Redirect to `/account` | Delete; replaced by a permanent redirect |
-| `app/templates/page.tsx` | Template gallery | Delete; rebuilt |
-| `app/terms/page.tsx` | Terms of service | Delete; rebuilt as a reading page |
+| Path                                | Current role                                 | Action                                   |
+| ----------------------------------- | -------------------------------------------- | ---------------------------------------- |
+| `app/page.tsx`                      | Public landing page and guest composer       | Delete; replaced by the new landing page |
+| `app/layout.tsx`                    | Root layout, fonts, providers, metadata      | Delete; replaced by the new root layout  |
+| `app/globals.css`                   | Old design tokens, utilities, animations     | Delete; replaced by the new token sheet  |
+| `app/account/page.tsx`              | Account, plan, language, sign-out            | Delete; rebuilt                          |
+| `app/admin/page.tsx`                | Admin overview and statistics                | Delete; rebuilt in phase 2               |
+| `app/admin/layout.tsx`              | Admin shell and navigation                   | Delete; rebuilt in phase 2               |
+| `app/admin/users/page.tsx`          | Admin user list, segments, CSV export        | Delete; rebuilt in phase 2               |
+| `app/admin/users/[userId]/page.tsx` | Admin user detail and billing history        | Delete; rebuilt in phase 2               |
+| `app/admin/generations/page.tsx`    | Admin generation-run list                    | Delete; rebuilt in phase 2               |
+| `app/admin/billing/page.tsx`        | Admin subscription list                      | Delete; rebuilt in phase 2               |
+| `app/admin/feedback/page.tsx`       | Admin feedback list                          | Delete; rebuilt in phase 2               |
+| `app/builder/page.tsx`              | Core composer, output, score, packs, library | Delete; rebuilt                          |
+| `app/dashboard/page.tsx`            | Saved-prompt dashboard                       | Delete; rebuilt                          |
+| `app/demo/page.tsx`                 | Marketing walkthrough of the four-step flow  | Delete; folded into the new landing page |
+| `app/help/page.tsx`                 | FAQ and feedback trigger                     | Delete; rebuilt                          |
+| `app/history/page.tsx`              | Prompt and prompt-pack history               | Delete; rebuilt                          |
+| `app/library/page.tsx`              | Workspace profiles and playbooks             | Delete; rebuilt                          |
+| `app/login/page.tsx`                | Sign-in page                                 | Delete; rebuilt                          |
+| `app/model-lab/page.tsx`            | Admin model-comparison lab                   | Delete; rebuilt in phase 2               |
+| `app/model-lab/layout.tsx`          | Admin guard for model lab                    | Delete; rebuilt in phase 2               |
+| `app/plan/page.tsx`                 | Pricing and checkout                         | Delete; rebuilt                          |
+| `app/plan/success/page.tsx`         | Checkout verification and return             | Delete; rebuilt                          |
+| `app/privacy/page.tsx`              | Privacy policy                               | Delete; rebuilt as a reading page        |
+| `app/settings/page.tsx`             | Redirect to `/account`                       | Delete; replaced by a permanent redirect |
+| `app/templates/page.tsx`            | Template gallery                             | Delete; rebuilt                          |
+| `app/terms/page.tsx`                | Terms of service                             | Delete; rebuilt as a reading page        |
 
 **Do not delete these app files**
 
-| Path | Why |
-| --- | --- |
-| `app/icon.png` | Read by `scripts/build-extension.cjs`, `scripts/create-extension-store-assets.cjs`, `scripts/prepare-extension-store-screenshots.cjs`, `scripts/test-prompt-editor.cjs`, and `tests/brand-icons.test.cjs`. It is a build input, not UI. |
-| `app/favicon.ico` | Brand asset checked by `tests/brand-icons.test.cjs`. Keep until replacement icons are approved. |
-| `app/auth/callback/route.ts` | Auth route handler, not a page. Keep. |
-| `app/actions/auth.ts` | Server action for sign-out. Keep. |
-| `app/actions/admin.ts` | Server action for admin check. Keep. |
-| `app/api/**` | All API routes. Keep. |
+| Path                         | Why                                                                                                                                                                                                                                     |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app/icon.png`               | Read by `scripts/build-extension.cjs`, `scripts/create-extension-store-assets.cjs`, `scripts/prepare-extension-store-screenshots.cjs`, `scripts/test-prompt-editor.cjs`, and `tests/brand-icons.test.cjs`. It is a build input, not UI. |
+| `app/favicon.ico`            | Brand asset checked by `tests/brand-icons.test.cjs`. Keep until replacement icons are approved.                                                                                                                                         |
+| `app/auth/callback/route.ts` | Auth route handler, not a page. Keep.                                                                                                                                                                                                   |
+| `app/actions/auth.ts`        | Server action for sign-out. Keep.                                                                                                                                                                                                       |
+| `app/actions/admin.ts`       | Server action for admin check. Keep.                                                                                                                                                                                                    |
+| `app/api/**`                 | All API routes. Keep.                                                                                                                                                                                                                   |
 
 ### 2.2 Components (50 files)
 
 Every file under `components/` is deleted. The new design system is built from new primitives; old class names and component APIs are not carried forward.
 
-| Path | Current role |
-| --- | --- |
-| `components/admin/admin-nav.tsx` | Admin section links |
-| `components/analytics/page-view-tracker.tsx` | PostHog page-view event |
-| `components/auth/login-form.tsx` | OAuth and magic-link form |
-| `components/billing/billing-portal-button.tsx` | Stripe customer-portal action |
-| `components/billing/paywall-modal-container.tsx` | Paywall state wrapper |
-| `components/billing/paywall-modal.tsx` | Upgrade dialog |
-| `components/billing/upgrade-cta.tsx` | Upgrade link and button |
-| `components/brand/logo.tsx` | Wordmark and icon |
-| `components/builder/context-panel.tsx` | Context fields for generation |
-| `components/builder/expansion-example.tsx` | Rough/structured example |
-| `components/builder/idea-composer.tsx` | Core idea composer |
-| `components/builder/idea-input.tsx` | Idea textarea |
-| `components/builder/idea-placeholder.tsx` | Rotating placeholder |
-| `components/builder/onboarding-panel.tsx` | First-run panel |
-| `components/builder/pack-type-selector.tsx` | Prompt-pack type choice |
-| `components/builder/packs-upsell.tsx` | Prompt-pack upsell |
-| `components/builder/prompt-output.tsx` | Generated prompt document |
-| `components/builder/prompt-pack-output.tsx` | Prompt-pack document |
-| `components/builder/score-panel.tsx` | Score dimensions |
-| `components/builder/start-experience.tsx` | Public landing composer |
-| `components/builder/tool-selector.tsx` | Target-tool choice |
-| `components/dashboard/empty-state.tsx` | Empty-list state |
-| `components/dashboard/prompt-card.tsx` | Saved prompt card |
-| `components/dashboard/prompt-pack-card.tsx` | Saved pack card |
-| `components/feedback/feedback-button.tsx` | Feedback trigger |
-| `components/feedback/feedback-modal.tsx` | Feedback form |
-| `components/layout/app-shell.tsx` | Workspace shell |
-| `components/layout/mobile-nav.tsx` | Mobile navigation |
-| `components/layout/sidebar.tsx` | Desktop sidebar |
-| `components/layout/topbar.tsx` | Top bar and user menu |
-| `components/marketing/feature-triad.tsx` | Three feature cards |
-| `components/marketing/hero-demo.tsx` | Animated hero demo |
-| `components/marketing/hero-mockup.tsx` | Product mockup |
-| `components/marketing/tool-strip.tsx` | Tool logos strip |
-| `components/marketing/use-cases.tsx` | Use-case cards |
-| `components/providers/motion-provider.tsx` | Reduced-motion context |
-| `components/providers/posthog-provider.tsx` | PostHog initialisation |
-| `components/settings/language-selector.tsx` | EN/ES/RU switch |
-| `components/templates/template-grid.tsx` | Template cards |
-| `components/ui/action-icon.tsx` | Icon button with feedback |
-| `components/ui/badge.tsx` | Badge primitive |
-| `components/ui/button.tsx` | Button primitive |
-| `components/ui/card.tsx` | Card primitive |
-| `components/ui/disclosure.tsx` | Accordion |
-| `components/ui/input.tsx` | Input primitive |
-| `components/ui/separator.tsx` | Divider |
-| `components/ui/textarea.tsx` | Textarea primitive |
-| `components/workspace/builder-library.tsx` | Profile/playbook picker in builder |
-| `components/workspace/library-manager.tsx` | Full library manager |
-| `components/workspace/result-actions.tsx` | Copy, save, refine actions |
+| Path                                             | Current role                       |
+| ------------------------------------------------ | ---------------------------------- |
+| `components/admin/admin-nav.tsx`                 | Admin section links                |
+| `components/analytics/page-view-tracker.tsx`     | PostHog page-view event            |
+| `components/auth/login-form.tsx`                 | OAuth and magic-link form          |
+| `components/billing/billing-portal-button.tsx`   | Stripe customer-portal action      |
+| `components/billing/paywall-modal-container.tsx` | Paywall state wrapper              |
+| `components/billing/paywall-modal.tsx`           | Upgrade dialog                     |
+| `components/billing/upgrade-cta.tsx`             | Upgrade link and button            |
+| `components/brand/logo.tsx`                      | Wordmark and icon                  |
+| `components/builder/context-panel.tsx`           | Context fields for generation      |
+| `components/builder/expansion-example.tsx`       | Rough/structured example           |
+| `components/builder/idea-composer.tsx`           | Core idea composer                 |
+| `components/builder/idea-input.tsx`              | Idea textarea                      |
+| `components/builder/idea-placeholder.tsx`        | Rotating placeholder               |
+| `components/builder/onboarding-panel.tsx`        | First-run panel                    |
+| `components/builder/pack-type-selector.tsx`      | Prompt-pack type choice            |
+| `components/builder/packs-upsell.tsx`            | Prompt-pack upsell                 |
+| `components/builder/prompt-output.tsx`           | Generated prompt document          |
+| `components/builder/prompt-pack-output.tsx`      | Prompt-pack document               |
+| `components/builder/score-panel.tsx`             | Score dimensions                   |
+| `components/builder/start-experience.tsx`        | Public landing composer            |
+| `components/builder/tool-selector.tsx`           | Target-tool choice                 |
+| `components/dashboard/empty-state.tsx`           | Empty-list state                   |
+| `components/dashboard/prompt-card.tsx`           | Saved prompt card                  |
+| `components/dashboard/prompt-pack-card.tsx`      | Saved pack card                    |
+| `components/feedback/feedback-button.tsx`        | Feedback trigger                   |
+| `components/feedback/feedback-modal.tsx`         | Feedback form                      |
+| `components/layout/app-shell.tsx`                | Workspace shell                    |
+| `components/layout/mobile-nav.tsx`               | Mobile navigation                  |
+| `components/layout/sidebar.tsx`                  | Desktop sidebar                    |
+| `components/layout/topbar.tsx`                   | Top bar and user menu              |
+| `components/marketing/feature-triad.tsx`         | Three feature cards                |
+| `components/marketing/hero-demo.tsx`             | Animated hero demo                 |
+| `components/marketing/hero-mockup.tsx`           | Product mockup                     |
+| `components/marketing/tool-strip.tsx`            | Tool logos strip                   |
+| `components/marketing/use-cases.tsx`             | Use-case cards                     |
+| `components/providers/motion-provider.tsx`       | Reduced-motion context             |
+| `components/providers/posthog-provider.tsx`      | PostHog initialisation             |
+| `components/settings/language-selector.tsx`      | EN/ES/RU switch                    |
+| `components/templates/template-grid.tsx`         | Template cards                     |
+| `components/ui/action-icon.tsx`                  | Icon button with feedback          |
+| `components/ui/badge.tsx`                        | Badge primitive                    |
+| `components/ui/button.tsx`                       | Button primitive                   |
+| `components/ui/card.tsx`                         | Card primitive                     |
+| `components/ui/disclosure.tsx`                   | Accordion                          |
+| `components/ui/input.tsx`                        | Input primitive                    |
+| `components/ui/separator.tsx`                    | Divider                            |
+| `components/ui/textarea.tsx`                     | Textarea primitive                 |
+| `components/workspace/builder-library.tsx`       | Profile/playbook picker in builder |
+| `components/workspace/library-manager.tsx`       | Full library manager               |
+| `components/workspace/result-actions.tsx`        | Copy, save, refine actions         |
 
 ### 2.3 Hooks (3 files)
 
-| Path | Current role |
-| --- | --- |
+| Path                          | Current role                                 |
+| ----------------------------- | -------------------------------------------- |
 | `hooks/useIdeaSuggestions.ts` | Rotating, category-aware starter suggestions |
-| `hooks/usePromptUsage.ts` | Billing and usage state for the client |
-| `hooks/useWorkspace.ts` | Workspace profiles and playbooks state |
+| `hooks/usePromptUsage.ts`     | Billing and usage state for the client       |
+| `hooks/useWorkspace.ts`       | Workspace profiles and playbooks state       |
 
 ### 2.4 Public assets (3 files)
 
-| Path | Current role |
-| --- | --- |
-| `public/apple-touch-icon.png` | Apple touch icon, referenced by the root metadata |
-| `public/brand/umprompt-banner.png` | Brand banner; not referenced by the app |
-| `public/brand/umprompt-icon.png` | Wordmark icon, used by the old `Logo` and `scripts/serve-extension-fixture.cjs` |
+| Path                               | Current role                                                                    |
+| ---------------------------------- | ------------------------------------------------------------------------------- |
+| `public/apple-touch-icon.png`      | Apple touch icon, referenced by the root metadata                               |
+| `public/brand/umprompt-banner.png` | Brand banner; not referenced by the app                                         |
+| `public/brand/umprompt-icon.png`   | Wordmark icon, used by the old `Logo` and `scripts/serve-extension-fixture.cjs` |
 
 **Caution:** `public/brand/umprompt-icon.png` and `public/apple-touch-icon.png` are both required by `tests/brand-icons.test.cjs`; `public/brand/umprompt-icon.png` is also served by `scripts/serve-extension-fixture.cjs`. Deleting them will fail `npm test` and the extension fixture until the test and script are updated. They are in the delete list because they are old frontend brand assets, but replacement must land in the same change.
 
 ### 2.5 Styling and build config (3 files)
 
-| Path | Current role | Action |
-| --- | --- | --- |
+| Path                 | Current role                                 | Action                                                      |
+| -------------------- | -------------------------------------------- | ----------------------------------------------------------- |
 | `tailwind.config.ts` | Old colour aliases, fonts, radii, animations | Delete the old theme; recreate a minimal token-based config |
-| `postcss.config.mjs` | Tailwind and autoprefixer pipeline | Delete and recreate unchanged; the new build still needs it |
-| `app/globals.css` | Old tokens, utilities, keyframes | Delete; replace with the new design-system CSS |
+| `postcss.config.mjs` | Tailwind and autoprefixer pipeline           | Delete and recreate unchanged; the new build still needs it |
+| `app/globals.css`    | Old tokens, utilities, keyframes             | Delete; replace with the new design-system CSS              |
 
 `postcss.config.mjs` contains no design decisions. It is listed because it exists only to serve the frontend, but removing it without a replacement breaks the CSS build. The same file will be recreated.
 
-### 2.6 Unused marketing files at the repository root (not deleted yet)
+### 2.6 Unused marketing files at the repository root — deleted
 
-These are outside `public/` and are not imported by the app. They are old marketing source files. I am flagging them rather than deleting them because they may be wanted for the store listing or social posts.
+These were outside `public/` and were not imported by the app. They were old marketing source files, inconsistent with the code brand (`Umprompt.png` was orange while the code used emerald). They are deleted on this branch.
 
 - `hero-desktop-full.png`
 - `hero-mobile-full.png`
@@ -174,8 +175,7 @@ These are outside `public/` and are not imported by the app. They are old market
 - `Umprompt banner.png`
 - `Umprompt.png`
 - `POSTS/1-linkedin.png`
-
-They are inconsistent with the current code brand: `Umprompt.png` is orange, while the code and `tests/brand-icons.test.cjs` use emerald.
+- `public/brand/umprompt-banner.png`
 
 ---
 
@@ -185,40 +185,40 @@ They are inconsistent with the current code brand: `Umprompt.png` is orange, whi
 
 All API routes stay. The new frontend calls the same URLs and expects the same response shapes.
 
-| Route | Methods | Purpose |
-| --- | --- | --- |
-| `/api/admin/users/export` | GET | Admin CSV export of users and segments |
-| `/api/billing/checkout` | POST | Create a Stripe Checkout session |
-| `/api/billing/founder-count` | GET | Founder-slot count and limit |
-| `/api/billing/portal` | POST | Create a Stripe customer-portal session |
-| `/api/billing/status` | GET | Plan, limits, and usage for the signed-in user |
-| `/api/billing/sync-checkout` | POST | Verify a completed checkout and fulfil it |
-| `/api/extension/[...path]` | GET, POST, PUT | Extension backend: status, prompts, generate, optimize, score, save |
-| `/api/extension/health` | GET | Extension service identity and version |
-| `/api/model-lab/compare` | POST | Generate and score outputs from several models |
-| `/api/model-lab/comparisons` | GET, POST | List and save comparisons |
-| `/api/model-lab/comparisons/[id]` | PATCH | Set the winning model and reason |
-| `/api/prompt-packs` | GET, POST | List and create prompt packs |
-| `/api/prompt-packs/[id]` | GET, PATCH, DELETE | Read, update, delete a prompt pack |
-| `/api/prompt-packs/generate` | POST | Generate a multi-step prompt pack |
-| `/api/prompts` | GET, POST | List and create saved prompts |
-| `/api/prompts/[id]` | GET, PATCH, DELETE | Read, update, delete a saved prompt |
-| `/api/prompts/clarify` | POST | Ask up to two clarifying questions |
-| `/api/prompts/generate` | POST | Stream a generated prompt |
-| `/api/prompts/optimize` | POST | Optimize or refine a prompt |
-| `/api/prompts/score` | POST | Score a prompt across six dimensions |
-| `/api/stripe/webhook` | POST | Stripe subscription and checkout events |
-| `/api/usage` | GET | Weekly and daily usage |
-| `/api/workspace` | GET, POST, PATCH, DELETE | Private context profiles and playbooks |
+| Route                             | Methods                  | Purpose                                                             |
+| --------------------------------- | ------------------------ | ------------------------------------------------------------------- |
+| `/api/admin/users/export`         | GET                      | Admin CSV export of users and segments                              |
+| `/api/billing/checkout`           | POST                     | Create a Stripe Checkout session                                    |
+| `/api/billing/founder-count`      | GET                      | Founder-slot count and limit                                        |
+| `/api/billing/portal`             | POST                     | Create a Stripe customer-portal session                             |
+| `/api/billing/status`             | GET                      | Plan, limits, and usage for the signed-in user                      |
+| `/api/billing/sync-checkout`      | POST                     | Verify a completed checkout and fulfil it                           |
+| `/api/extension/[...path]`        | GET, POST, PUT           | Extension backend: status, prompts, generate, optimize, score, save |
+| `/api/extension/health`           | GET                      | Extension service identity and version                              |
+| `/api/model-lab/compare`          | POST                     | Generate and score outputs from several models                      |
+| `/api/model-lab/comparisons`      | GET, POST                | List and save comparisons                                           |
+| `/api/model-lab/comparisons/[id]` | PATCH                    | Set the winning model and reason                                    |
+| `/api/prompt-packs`               | GET, POST                | List and create prompt packs                                        |
+| `/api/prompt-packs/[id]`          | GET, PATCH, DELETE       | Read, update, delete a prompt pack                                  |
+| `/api/prompt-packs/generate`      | POST                     | Generate a multi-step prompt pack                                   |
+| `/api/prompts`                    | GET, POST                | List and create saved prompts                                       |
+| `/api/prompts/[id]`               | GET, PATCH, DELETE       | Read, update, delete a saved prompt                                 |
+| `/api/prompts/clarify`            | POST                     | Ask up to two clarifying questions                                  |
+| `/api/prompts/generate`           | POST                     | Stream a generated prompt                                           |
+| `/api/prompts/optimize`           | POST                     | Optimize or refine a prompt                                         |
+| `/api/prompts/score`              | POST                     | Score a prompt across six dimensions                                |
+| `/api/stripe/webhook`             | POST                     | Stripe subscription and checkout events                             |
+| `/api/usage`                      | GET                      | Weekly and daily usage                                              |
+| `/api/workspace`                  | GET, POST, PATCH, DELETE | Private context profiles and playbooks                              |
 
 ### 3.2 Auth and server actions
 
-| Path | Why it stays |
-| --- | --- |
+| Path                         | Why it stays                                         |
+| ---------------------------- | ---------------------------------------------------- |
 | `app/auth/callback/route.ts` | Supabase PKCE callback; the login flow depends on it |
-| `app/actions/auth.ts` | `signOut()` server action |
-| `app/actions/admin.ts` | `checkIsAdmin()` server action |
-| `middleware.ts` | Session refresh, protected-route guards, admin guard |
+| `app/actions/auth.ts`        | `signOut()` server action                            |
+| `app/actions/admin.ts`       | `checkIsAdmin()` server action                       |
+| `middleware.ts`              | Session refresh, protected-route guards, admin guard |
 
 `middleware.ts` stays, but its route lists must be updated if any protected route is renamed or removed. See §7.
 
@@ -331,43 +331,43 @@ The extension panel is a separate UI. Rebuilding it is not part of this scope un
 
 ### 3.6 Scripts (16 files)
 
-| Path | Decision | Note |
-| --- | --- | --- |
-| `scripts/build-extension.cjs` | Keep | Reads `app/icon.png` |
-| `scripts/check-extension-backend.cjs` | Keep | Backend check |
-| `scripts/check-extension-release-security.cjs` | Keep | Release security check |
-| `scripts/check-extension-signin.cjs` | Keep | Extension sign-in check |
-| `scripts/check-release-config.cjs` | Keep | Imports `lib/checkout.ts` |
-| `scripts/check-start-ui.cjs` | Rewrite | Asserts old landing copy and imports `lib/composer-copy.ts`, `lib/idea-suggestions.ts` |
-| `scripts/check-workspace-ui.cjs` | Rewrite | Creates fixture routes that re-export `app/builder/page.tsx` and `app/library/page.tsx`; imports `lib/composer-copy.ts` |
-| `scripts/create-extension-store-assets.cjs` | Keep | Reads `app/icon.png` |
-| `scripts/evaluate-outcomes.cjs` | Keep | Imports AI modules |
-| `scripts/load-ts.cjs` | Keep | Test loader |
-| `scripts/prepare-extension-store-screenshots.cjs` | Keep | Reads `app/icon.png` |
-| `scripts/serve-extension-fixture.cjs` | Keep | Serves `public/brand/umprompt-icon.png` |
-| `scripts/smoke-generation.cjs` | Keep | Billable smoke check |
-| `scripts/test-extension-update.cjs` | Keep | Extension update check |
-| `scripts/test-extension.cjs` | Keep | Extension tests |
-| `scripts/test-prompt-editor.cjs` | Rewrite | Imports `app/builder/page.tsx`, `lib/i18n/language-provider`, `lib/composer-copy`, `lib/i18n/dictionaries/en.ts`, and `tailwind.config.ts` |
+| Path                                              | Decision | Note                                                                                                                                       |
+| ------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `scripts/build-extension.cjs`                     | Keep     | Reads `app/icon.png`                                                                                                                       |
+| `scripts/check-extension-backend.cjs`             | Keep     | Backend check                                                                                                                              |
+| `scripts/check-extension-release-security.cjs`    | Keep     | Release security check                                                                                                                     |
+| `scripts/check-extension-signin.cjs`              | Keep     | Extension sign-in check                                                                                                                    |
+| `scripts/check-release-config.cjs`                | Keep     | Imports `lib/checkout.ts`                                                                                                                  |
+| `scripts/check-start-ui.cjs`                      | Rewrite  | Asserts old landing copy and imports `lib/composer-copy.ts`, `lib/idea-suggestions.ts`                                                     |
+| `scripts/check-workspace-ui.cjs`                  | Rewrite  | Creates fixture routes that re-export `app/builder/page.tsx` and `app/library/page.tsx`; imports `lib/composer-copy.ts`                    |
+| `scripts/create-extension-store-assets.cjs`       | Keep     | Reads `app/icon.png`                                                                                                                       |
+| `scripts/evaluate-outcomes.cjs`                   | Keep     | Imports AI modules                                                                                                                         |
+| `scripts/load-ts.cjs`                             | Keep     | Test loader                                                                                                                                |
+| `scripts/prepare-extension-store-screenshots.cjs` | Keep     | Reads `app/icon.png`                                                                                                                       |
+| `scripts/serve-extension-fixture.cjs`             | Keep     | Serves `public/brand/umprompt-icon.png`                                                                                                    |
+| `scripts/smoke-generation.cjs`                    | Keep     | Billable smoke check                                                                                                                       |
+| `scripts/test-extension-update.cjs`               | Keep     | Extension update check                                                                                                                     |
+| `scripts/test-extension.cjs`                      | Keep     | Extension tests                                                                                                                            |
+| `scripts/test-prompt-editor.cjs`                  | Rewrite  | Imports `app/builder/page.tsx`, `lib/i18n/language-provider`, `lib/composer-copy`, `lib/i18n/dictionaries/en.ts`, and `tailwind.config.ts` |
 
 ### 3.7 Tests (14 files)
 
-| Path | Decision | Note |
-| --- | --- | --- |
-| `tests/auth-redirect.test.cjs` | Keep | Update only if `/builder` default changes |
-| `tests/auth-session.test.cjs` | Keep | Middleware route expectations may need updating |
-| `tests/bounded-provider-fetch.test.cjs` | Keep | Pure backend |
-| `tests/brand-icons.test.cjs` | Keep / update | Requires `public/brand/umprompt-icon.png`, `app/icon.png`, `public/apple-touch-icon.png`, `app/favicon.ico` |
-| `tests/checkout.test.cjs` | Keep | `lib/checkout.ts` return path is `/builder` |
-| `tests/composer-layout.test.cjs` | Rewrite | Imports deleted builder components |
-| `tests/composer.test.cjs` | Keep | Imports `lib/` copy and prompt logic |
-| `tests/extension-recovery.test.cjs` | Keep | Extension and health route |
-| `tests/extension.test.cjs` | Keep | Extension and extension route |
-| `tests/load-with-imports.cjs` | Keep | Test helper |
-| `tests/prompt-editing.test.cjs` | Keep | Prompt editing logic |
-| `tests/rate-limit-security.test.cjs` | Keep | Rate-limit logic |
-| `tests/workspace-api.test.cjs` | Keep | Workspace route and generate handler |
-| `tests/workspace.test.cjs` | Keep | Workspace logic |
+| Path                                    | Decision      | Note                                                                                                        |
+| --------------------------------------- | ------------- | ----------------------------------------------------------------------------------------------------------- |
+| `tests/auth-redirect.test.cjs`          | Keep          | Update only if `/builder` default changes                                                                   |
+| `tests/auth-session.test.cjs`           | Keep          | Middleware route expectations may need updating                                                             |
+| `tests/bounded-provider-fetch.test.cjs` | Keep          | Pure backend                                                                                                |
+| `tests/brand-icons.test.cjs`            | Keep / update | Requires `public/brand/umprompt-icon.png`, `app/icon.png`, `public/apple-touch-icon.png`, `app/favicon.ico` |
+| `tests/checkout.test.cjs`               | Keep          | `lib/checkout.ts` return path is `/builder`                                                                 |
+| `tests/composer-layout.test.cjs`        | Rewrite       | Imports deleted builder components                                                                          |
+| `tests/composer.test.cjs`               | Keep          | Imports `lib/` copy and prompt logic                                                                        |
+| `tests/extension-recovery.test.cjs`     | Keep          | Extension and health route                                                                                  |
+| `tests/extension.test.cjs`              | Keep          | Extension and extension route                                                                               |
+| `tests/load-with-imports.cjs`           | Keep          | Test helper                                                                                                 |
+| `tests/prompt-editing.test.cjs`         | Keep          | Prompt editing logic                                                                                        |
+| `tests/rate-limit-security.test.cjs`    | Keep          | Rate-limit logic                                                                                            |
+| `tests/workspace-api.test.cjs`          | Keep          | Workspace route and generate handler                                                                        |
+| `tests/workspace.test.cjs`              | Keep          | Workspace logic                                                                                             |
 
 ### 3.8 Types (5 files)
 
@@ -385,20 +385,20 @@ Keep `next.config.mjs`, `tsconfig.json`, `package.json`, `package-lock.json`, `.
 
 ### 3.10 Ambiguous items — flagged, not guessed
 
-| Item | Why it is ambiguous | Proposed handling |
-| --- | --- | --- |
-| `lib/i18n/*` | It is UI copy, but it is also a working three-language system and is used by server pages and tests | Keep the system; rewrite strings as the new pages are built |
-| `lib/composer-copy.ts`, `lib/workspace-copy.ts` | Old voice and old page structure; several tests import them | Keep during the rebuild; rewrite copy in place and update tests |
-| `lib/idea-suggestions.ts`, `lib/localized-ideas.ts` | Product content, not visual design | Keep and re-use |
-| `lib/templates.ts` | Template content for the gallery | Keep and re-use; prune templates that no longer fit |
-| `lib/mock-data.ts` | Name suggests mock UI data, but AI code imports tool profiles from it | Keep |
-| `lib/analytics.ts` | Client analytics, but event names feed dashboards | Keep and preserve event names |
-| `app/admin/**` and `app/model-lab/**` | Frontend, but internal and large; rebuilding them doubles the scope | Rebuild in phase 2, or keep old screens temporarily |
-| `app/demo/page.tsx` | Marketing page that duplicates the landing walkthrough | Delete and fold into `/`; confirm |
-| `app/settings/page.tsx` | Only a redirect | Delete and add a permanent redirect to `/account` |
-| `public/brand/*`, `app/favicon.ico`, `app/icon.png` | Brand assets, not layout; tests and extension build depend on them | Keep until replacement brand assets are approved |
-| Root `hero-*.png`, `Umprompt*.png`, `POSTS/` | Old marketing sources, unused by the app | Keep for now; propose moving to `assets/` later |
-| Chrome extension panel | Separate UI, not part of the website | Exclude unless requested |
+| Item                                                | Why it is ambiguous                                                                                 | Proposed handling                                               |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| `lib/i18n/*`                                        | It is UI copy, but it is also a working three-language system and is used by server pages and tests | Keep the system; rewrite strings as the new pages are built     |
+| `lib/composer-copy.ts`, `lib/workspace-copy.ts`     | Old voice and old page structure; several tests import them                                         | Keep during the rebuild; rewrite copy in place and update tests |
+| `lib/idea-suggestions.ts`, `lib/localized-ideas.ts` | Product content, not visual design                                                                  | Keep and re-use                                                 |
+| `lib/templates.ts`                                  | Template content for the gallery                                                                    | Keep and re-use; prune templates that no longer fit             |
+| `lib/mock-data.ts`                                  | Name suggests mock UI data, but AI code imports tool profiles from it                               | Keep                                                            |
+| `lib/analytics.ts`                                  | Client analytics, but event names feed dashboards                                                   | Keep and preserve event names                                   |
+| `app/admin/**` and `app/model-lab/**`               | Frontend, but internal and large; rebuilding them doubles the scope                                 | Rebuild in phase 2, or keep old screens temporarily             |
+| `app/demo/page.tsx`                                 | Marketing page that duplicates the landing walkthrough                                              | Delete and fold into `/`; confirm                               |
+| `app/settings/page.tsx`                             | Only a redirect                                                                                     | Delete and add a permanent redirect to `/account`               |
+| `public/brand/*`, `app/favicon.ico`, `app/icon.png` | Brand assets, not layout; tests and extension build depend on them                                  | Keep until replacement brand assets are approved                |
+| Root `hero-*.png`, `Umprompt*.png`, `POSTS/`        | Old marketing sources, unused by the app                                                            | Keep for now; propose moving to `assets/` later                 |
+| Chrome extension panel                              | Separate UI, not part of the website                                                                | Exclude unless requested                                        |
 
 ---
 
@@ -406,62 +406,62 @@ Keep `next.config.mjs`, `tsconfig.json`, `package.json`, `package-lock.json`, `.
 
 ### 4.1 Page routes
 
-| Route | File | Current purpose | Decision | Notes |
-| --- | --- | --- | --- | --- |
-| `/` | `app/page.tsx` | Public landing page with a guest composer | **Rebuild** | New landing page; the guest-draft question is open |
-| `/builder` | `app/builder/page.tsx` | Core workspace: idea, clarify, generate, optimize, score, save, packs, library | **Rebuild** | The most important page; must keep every backend call and the `?id`, `?pack`, `?template`, `?profile`, `?playbook`, and `?resume=checkout` query contracts |
-| `/dashboard` | `app/dashboard/page.tsx` | Saved prompts and quick start | **Rebuild** | Becomes a “contents” page |
-| `/history` | `app/history/page.tsx` | Prompt and pack history, filters, delete | **Rebuild** | Becomes a ledger with tabs as text |
-| `/library` | `app/library/page.tsx` | Profiles and playbooks manager | **Rebuild** | Becomes an index with a detail pane |
-| `/templates` | `app/templates/page.tsx` | Starter template gallery | **Rebuild** | Becomes a catalogue list |
-| `/account` | `app/account/page.tsx` | Account, plan, usage, language, sign-out | **Rebuild** | Becomes a colophon page |
-| `/plan` | `app/plan/page.tsx` | Pricing and Stripe checkout | **Rebuild** | Keep founder and promo logic |
-| `/plan/success` | `app/plan/success/page.tsx` | Checkout verification and return | **Rebuild** | Keep polling and retry states |
-| `/login` | `app/login/page.tsx` | OAuth and email-link sign-in | **Rebuild** | Keep exact callback contract |
-| `/help` | `app/help/page.tsx` | FAQ and feedback | **Rebuild** | FAQ becomes reading text |
-| `/privacy` | `app/privacy/page.tsx` | Privacy policy | **Rebuild** | Reading page |
-| `/terms` | `app/terms/page.tsx` | Terms of service | **Rebuild** | Reading page |
-| `/demo` | `app/demo/page.tsx` | Marketing walkthrough | **Delete** | Fold the explanation into `/`; add a redirect if approved |
-| `/settings` | `app/settings/page.tsx` | Redirect to `/account` | **Delete** | Add permanent redirect `/settings` → `/account` |
-| `/model-lab` | `app/model-lab/page.tsx` | Admin model comparison | **Rebuild (phase 2)** | Admin-only; keep API calls |
-| `/admin` | `app/admin/page.tsx` | Admin overview | **Rebuild (phase 2)** | Internal |
-| `/admin/users` | `app/admin/users/page.tsx` | Admin user list, segments, export | **Rebuild (phase 2)** | Internal |
-| `/admin/users/[userId]` | `app/admin/users/[userId]/page.tsx` | Admin user detail | **Rebuild (phase 2)** | Internal |
-| `/admin/generations` | `app/admin/generations/page.tsx` | Admin generation runs | **Rebuild (phase 2)** | Internal |
-| `/admin/billing` | `app/admin/billing/page.tsx` | Admin subscriptions | **Rebuild (phase 2)** | Internal |
-| `/admin/feedback` | `app/admin/feedback/page.tsx` | Admin feedback | **Rebuild (phase 2)** | Internal |
-| `/auth/callback` | `app/auth/callback/route.ts` | Supabase PKCE callback | **Keep** | Do not rename; configured in Supabase |
-| `/api/*` | `app/api/**` | Backend routes | **Keep** | See §4.2 |
+| Route                   | File                                | Current purpose                                                                | Decision              | Notes                                                                                                                                                      |
+| ----------------------- | ----------------------------------- | ------------------------------------------------------------------------------ | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `/`                     | `app/page.tsx`                      | Public landing page with a guest composer                                      | **Rebuild**           | New landing page; the guest-draft question is open                                                                                                         |
+| `/builder`              | `app/builder/page.tsx`              | Core workspace: idea, clarify, generate, optimize, score, save, packs, library | **Rebuild**           | The most important page; must keep every backend call and the `?id`, `?pack`, `?template`, `?profile`, `?playbook`, and `?resume=checkout` query contracts |
+| `/dashboard`            | `app/dashboard/page.tsx`            | Saved prompts and quick start                                                  | **Rebuild**           | Becomes a “contents” page                                                                                                                                  |
+| `/history`              | `app/history/page.tsx`              | Prompt and pack history, filters, delete                                       | **Rebuild**           | Becomes a ledger with tabs as text                                                                                                                         |
+| `/library`              | `app/library/page.tsx`              | Profiles and playbooks manager                                                 | **Rebuild**           | Becomes an index with a detail pane                                                                                                                        |
+| `/templates`            | `app/templates/page.tsx`            | Starter template gallery                                                       | **Rebuild**           | Becomes a catalogue list                                                                                                                                   |
+| `/account`              | `app/account/page.tsx`              | Account, plan, usage, language, sign-out                                       | **Rebuild**           | Becomes a colophon page                                                                                                                                    |
+| `/plan`                 | `app/plan/page.tsx`                 | Pricing and Stripe checkout                                                    | **Rebuild**           | Keep founder and promo logic                                                                                                                               |
+| `/plan/success`         | `app/plan/success/page.tsx`         | Checkout verification and return                                               | **Rebuild**           | Keep polling and retry states                                                                                                                              |
+| `/login`                | `app/login/page.tsx`                | OAuth and email-link sign-in                                                   | **Rebuild**           | Keep exact callback contract                                                                                                                               |
+| `/help`                 | `app/help/page.tsx`                 | FAQ and feedback                                                               | **Rebuild**           | FAQ becomes reading text                                                                                                                                   |
+| `/privacy`              | `app/privacy/page.tsx`              | Privacy policy                                                                 | **Rebuild**           | Reading page                                                                                                                                               |
+| `/terms`                | `app/terms/page.tsx`                | Terms of service                                                               | **Rebuild**           | Reading page                                                                                                                                               |
+| `/demo`                 | `app/demo/page.tsx`                 | Marketing walkthrough                                                          | **Delete**            | Fold the explanation into `/`; add a redirect if approved                                                                                                  |
+| `/settings`             | `app/settings/page.tsx`             | Redirect to `/account`                                                         | **Delete**            | Add permanent redirect `/settings` → `/account`                                                                                                            |
+| `/model-lab`            | `app/model-lab/page.tsx`            | Admin model comparison                                                         | ***Rebuild*** | Admin-only; keep API calls                                                                                                                                 |
+| `/admin`                | `app/admin/page.tsx`                | Admin overview                                                                 | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/admin/users`          | `app/admin/users/page.tsx`          | Admin user list, segments, export                                              | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/admin/users/[userId]` | `app/admin/users/[userId]/page.tsx` | Admin user detail                                                              | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/admin/generations`    | `app/admin/generations/page.tsx`    | Admin generation runs                                                          | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/admin/billing`        | `app/admin/billing/page.tsx`        | Admin subscriptions                                                            | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/admin/feedback`       | `app/admin/feedback/page.tsx`       | Admin feedback                                                                 | ***Rebuild*** | Internal                                                                                                                                                   |
+| `/auth/callback`        | `app/auth/callback/route.ts`        | Supabase PKCE callback                                                         | **Keep**              | Do not rename; configured in Supabase                                                                                                                      |
+| `/api/*`                | `app/api/**`                        | Backend routes                                                                 | **Keep**              | See §4.2                                                                                                                                                   |
 
 ### 4.2 API routes
 
 All 23 API route files are kept unchanged.
 
-| Route | Methods | Decision |
-| --- | --- | --- |
-| `/api/admin/users/export` | GET | Keep |
-| `/api/billing/checkout` | POST | Keep |
-| `/api/billing/founder-count` | GET | Keep |
-| `/api/billing/portal` | POST | Keep |
-| `/api/billing/status` | GET | Keep |
-| `/api/billing/sync-checkout` | POST | Keep |
-| `/api/extension/[...path]` | GET, POST, PUT | Keep |
-| `/api/extension/health` | GET | Keep |
-| `/api/model-lab/compare` | POST | Keep |
-| `/api/model-lab/comparisons` | GET, POST | Keep |
-| `/api/model-lab/comparisons/[id]` | PATCH | Keep |
-| `/api/prompt-packs` | GET, POST | Keep |
-| `/api/prompt-packs/[id]` | GET, PATCH, DELETE | Keep |
-| `/api/prompt-packs/generate` | POST | Keep |
-| `/api/prompts` | GET, POST | Keep |
-| `/api/prompts/[id]` | GET, PATCH, DELETE | Keep |
-| `/api/prompts/clarify` | POST | Keep |
-| `/api/prompts/generate` | POST | Keep |
-| `/api/prompts/optimize` | POST | Keep |
-| `/api/prompts/score` | POST | Keep |
-| `/api/stripe/webhook` | POST | Keep |
-| `/api/usage` | GET | Keep |
-| `/api/workspace` | GET, POST, PATCH, DELETE | Keep |
+| Route                             | Methods                  | Decision |
+| --------------------------------- | ------------------------ | -------- |
+| `/api/admin/users/export`         | GET                      | Keep     |
+| `/api/billing/checkout`           | POST                     | Keep     |
+| `/api/billing/founder-count`      | GET                      | Keep     |
+| `/api/billing/portal`             | POST                     | Keep     |
+| `/api/billing/status`             | GET                      | Keep     |
+| `/api/billing/sync-checkout`      | POST                     | Keep     |
+| `/api/extension/[...path]`        | GET, POST, PUT           | Keep     |
+| `/api/extension/health`           | GET                      | Keep     |
+| `/api/model-lab/compare`          | POST                     | Keep     |
+| `/api/model-lab/comparisons`      | GET, POST                | Keep     |
+| `/api/model-lab/comparisons/[id]` | PATCH                    | Keep     |
+| `/api/prompt-packs`               | GET, POST                | Keep     |
+| `/api/prompt-packs/[id]`          | GET, PATCH, DELETE       | Keep     |
+| `/api/prompt-packs/generate`      | POST                     | Keep     |
+| `/api/prompts`                    | GET, POST                | Keep     |
+| `/api/prompts/[id]`               | GET, PATCH, DELETE       | Keep     |
+| `/api/prompts/clarify`            | POST                     | Keep     |
+| `/api/prompts/generate`           | POST                     | Keep     |
+| `/api/prompts/optimize`           | POST                     | Keep     |
+| `/api/prompts/score`              | POST                     | Keep     |
+| `/api/stripe/webhook`             | POST                     | Keep     |
+| `/api/usage`                      | GET                      | Keep     |
+| `/api/workspace`                  | GET, POST, PATCH, DELETE | Keep     |
 
 ### 4.3 Middleware route map
 
@@ -540,30 +540,30 @@ If the brand must stay emerald, the accent becomes the existing emerald and yell
 
 ### 5.2 Pages to rebuild
 
-| Route | One-line purpose | Backend features exposed | Phase |
-| --- | --- | --- | --- |
-| `/` | Explain the product and let a visitor turn a rough sentence into a structured prompt in the hero | None required; local demo; links to `/login`, `/plan`, `/builder` | 1 |
-| `/builder` | The core workspace: idea, clarification, generation, optimization, scoring, saving, packs, library | `/api/prompts/clarify`, `/generate`, `/optimize`, `/score`, `/api/prompts` (POST/GET), `/api/prompt-packs` and `/generate` and `/[id]`, `/api/workspace`, `/api/usage`, `/api/billing/status`, `/api/billing/checkout` | 1 |
-| `/dashboard` | Show saved prompts, usage, and a way back into the builder | `/api/prompts` GET, `/api/usage`, `/api/billing/status` | 1 |
-| `/history` | Browse, filter, reopen, and delete prompts and prompt packs | `/api/prompts` GET/PATCH/DELETE, `/api/prompt-packs` GET/PATCH/DELETE | 1 |
-| `/library` | Manage private context profiles and reusable playbooks | `/api/workspace` GET/POST/PATCH/DELETE | 1 |
-| `/templates` | Browse starter templates and open one in the builder | `lib/templates.ts`; builder query parameter | 1 |
-| `/login` | Sign in with Google, GitHub, or an email link | Supabase Auth, `/auth/callback`, `lib/auth-redirect` | 1 |
-| `/account` | Manage account, plan, usage, language, and sign-out | `/api/billing/status`, `/api/billing/portal`, `signOut` | 1 |
-| `/plan` | Compare plans and start checkout | `/api/billing/founder-count`, `/api/billing/checkout`, `/api/usage`, `/api/billing/status` | 1 |
-| `/plan/success` | Verify a checkout and return the user to their draft or dashboard | `/api/billing/sync-checkout`, `lib/checkout-draft` | 1 |
-| `/help` | Answer common questions and collect feedback | Supabase `feedback` insert via browser client | 1 |
-| `/privacy` | State the privacy policy | None | 1 |
-| `/terms` | State the terms of service | None | 1 |
-| `/model-lab` | Compare model outputs and record a winner | `/api/model-lab/compare`, `/api/model-lab/comparisons` | 2 |
-| `/admin` | Overview of users, generations, billing, and feedback | Admin Supabase client, audit log | 2 |
-| `/admin/users` | Search users, inspect segments, export CSV | Admin Supabase client, `/api/admin/users/export` | 2 |
-| `/admin/users/[userId]` | Inspect one user’s plan, usage, and generations | Admin Supabase client | 2 |
-| `/admin/generations` | Inspect generation runs and failures | Admin Supabase client | 2 |
-| `/admin/billing` | Inspect subscriptions and founder slots | Admin Supabase client | 2 |
-| `/admin/feedback` | Read user feedback | Admin Supabase client | 2 |
-| `/settings` | Redirect to `/account` | None | 1 |
-| `/demo` | Removed; the landing page carries the walkthrough | None | — |
+| Route                   | One-line purpose                                                                                   | Backend features exposed                                                                                                                                                                                               | Phase |
+| ----------------------- | -------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| `/`                     | Explain the product and let a visitor turn a rough sentence into a structured prompt in the hero   | None required; local demo; links to `/login`, `/plan`, `/builder`                                                                                                                                                      | 1     |
+| `/builder`              | The core workspace: idea, clarification, generation, optimization, scoring, saving, packs, library | `/api/prompts/clarify`, `/generate`, `/optimize`, `/score`, `/api/prompts` (POST/GET), `/api/prompt-packs` and `/generate` and `/[id]`, `/api/workspace`, `/api/usage`, `/api/billing/status`, `/api/billing/checkout` | 1     |
+| `/dashboard`            | Show saved prompts, usage, and a way back into the builder                                         | `/api/prompts` GET, `/api/usage`, `/api/billing/status`                                                                                                                                                                | 1     |
+| `/history`              | Browse, filter, reopen, and delete prompts and prompt packs                                        | `/api/prompts` GET/PATCH/DELETE, `/api/prompt-packs` GET/PATCH/DELETE                                                                                                                                                  | 1     |
+| `/library`              | Manage private context profiles and reusable playbooks                                             | `/api/workspace` GET/POST/PATCH/DELETE                                                                                                                                                                                 | 1     |
+| `/templates`            | Browse starter templates and open one in the builder                                               | `lib/templates.ts`; builder query parameter                                                                                                                                                                            | 1     |
+| `/login`                | Sign in with Google, GitHub, or an email link                                                      | Supabase Auth, `/auth/callback`, `lib/auth-redirect`                                                                                                                                                                   | 1     |
+| `/account`              | Manage account, plan, usage, language, and sign-out                                                | `/api/billing/status`, `/api/billing/portal`, `signOut`                                                                                                                                                                | 1     |
+| `/plan`                 | Compare plans and start checkout                                                                   | `/api/billing/founder-count`, `/api/billing/checkout`, `/api/usage`, `/api/billing/status`                                                                                                                             | 1     |
+| `/plan/success`         | Verify a checkout and return the user to their draft or dashboard                                  | `/api/billing/sync-checkout`, `lib/checkout-draft`                                                                                                                                                                     | 1     |
+| `/help`                 | Answer common questions and collect feedback                                                       | Supabase `feedback` insert via browser client                                                                                                                                                                          | 1     |
+| `/privacy`              | State the privacy policy                                                                           | None                                                                                                                                                                                                                   | 1     |
+| `/terms`                | State the terms of service                                                                         | None                                                                                                                                                                                                                   | 1     |
+| `/model-lab`            | Compare model outputs and record a winner                                                          | `/api/model-lab/compare`, `/api/model-lab/comparisons`                                                                                                                                                                 | 2     |
+| `/admin`                | Overview of users, generations, billing, and feedback                                              | Admin Supabase client, audit log                                                                                                                                                                                       | 2     |
+| `/admin/users`          | Search users, inspect segments, export CSV                                                         | Admin Supabase client, `/api/admin/users/export`                                                                                                                                                                       | 2     |
+| `/admin/users/[userId]` | Inspect one user’s plan, usage, and generations                                                    | Admin Supabase client                                                                                                                                                                                                  | 2     |
+| `/admin/generations`    | Inspect generation runs and failures                                                               | Admin Supabase client                                                                                                                                                                                                  | 2     |
+| `/admin/billing`        | Inspect subscriptions and founder slots                                                            | Admin Supabase client                                                                                                                                                                                                  | 2     |
+| `/admin/feedback`       | Read user feedback                                                                                 | Admin Supabase client                                                                                                                                                                                                  | 2     |
+| `/settings`             | Redirect to `/account`                                                                             | None                                                                                                                                                                                                                   | 1     |
+| `/demo`                 | Removed; the landing page carries the walkthrough                                                  | None                                                                                                                                                                                                                   | —     |
 
 ### 5.3 Landing page argument
 
@@ -909,50 +909,48 @@ Every image gets `width`, `height`, `alt`, and `loading="lazy"` except the hero 
 
 ## 7. Risks
 
-| # | Risk | Impact | Mitigation |
-| --- | --- | --- | --- |
-| 1 | **Auth callback drift.** Supabase allowlists the exact `origin + /auth/callback` for local, production, and preview. The login form stores `next` in a cookie scoped to `/auth/callback`. | Sign-in loops, users returned to the wrong page, or OAuth landing on production from a preview. | Do not rename `/auth/callback`. Keep `prepareAuthRedirect`, `AUTH_NEXT_COOKIE`, and `safeAuthNext`. Re-check the allowlist before testing. |
-| 2 | **Default post-login path.** `safeAuthNext` falls back to `/builder`; middleware redirects signed-in users from `/login` to `/builder`; admin users are redirected to `/dashboard`. | Renaming `/builder` or `/dashboard` silently sends users to a 404 or the wrong page. | Keep both routes. If renamed, update `lib/auth-redirect.ts`, `middleware.ts`, `app/auth/callback/route.ts`, `tests/auth-redirect.test.cjs`, and `tests/auth-session.test.cjs` in one change. |
-| 3 | **Middleware route drift.** `PROTECTED_PREFIXES` lists `/dashboard`, `/builder`, `/history`, `/library`, `/settings`, `/templates`, `/model-lab`, `/admin`. | A rebuilt private page can become public if its prefix is missing; a public page can become unreachable. | Update the list with the final route map. Keep `/` public. Remove `/settings` if it becomes a redirect. Add any new private route. |
-| 4 | **Guest drafting loss.** `/` is currently the only public composer. `/builder` is protected and `/api/prompts/generate` returns 401 for guests. | A marketing landing page removes the “start before signing in” experience described in the README. | Keep a working composer in the landing hero with a local, deterministic preview. Preserve the draft in `sessionStorage` and restore it after sign-in. Confirm this behaviour in §8. |
-| 5 | **Extension build depends on `app/icon.png`.** `scripts/build-extension.cjs`, `scripts/create-extension-store-assets.cjs`, `scripts/prepare-extension-store-screenshots.cjs`, and `scripts/test-prompt-editor.cjs` read it. | The extension cannot be built or its store assets regenerated. | Keep `app/icon.png` until a replacement is produced. If replaced, keep it square and update all four scripts and `tests/brand-icons.test.cjs`. |
-| 6 | **Extension fixture depends on `public/brand/umprompt-icon.png`.** `scripts/serve-extension-fixture.cjs` serves it for `/icons/*`. | The extension fixture shows broken icons. | Keep the file, or change the fixture to read the new icon path. |
-| 7 | **Brand icon test.** `tests/brand-icons.test.cjs` asserts that `public/brand/umprompt-icon.png` (512), `app/icon.png` (192), `public/apple-touch-icon.png` (180), and `app/favicon.ico` are square emerald PNGs. | `npm test` fails if icons are deleted, resized, or recoloured. | Keep the icons through phase 1. If the new brand changes the icon, update the test’s colour and size checks in the same change as the new assets. |
-| 8 | **UI tests and scripts import deleted files.** `tests/composer-layout.test.cjs` imports builder components. `scripts/check-start-ui.cjs` checks the old landing copy and imports `lib/composer-copy.ts` and `lib/idea-suggestions.ts`. `scripts/check-workspace-ui.cjs` creates fixtures that re-export `app/builder/page.tsx` and `app/library/page.tsx`. `scripts/test-prompt-editor.cjs` imports `app/builder/page.tsx`, `lib/i18n/language-provider`, `lib/composer-copy`, `lib/i18n/dictionaries/en.ts`, and `tailwind.config.ts`. | `npm test` and the UI checks fail during the rebuild. | Treat these as UI tests, not backend tests. Rewrite them against the new pages. Keep the backend tests untouched. Do not delete a test to make the suite green. |
-| 9 | **Checkout and deep-link contracts.** `lib/checkout.ts` hardcodes `CHECKOUT_RETURN = "/builder?resume=checkout"`. The builder also reads `?id`, `?pack`, `?template`, `?profile`, and `?playbook`. Stripe metadata and `tests/checkout.test.cjs` use the return path. | Checkout returns to a missing page, a template link stops prefilling, or a library link stops opening the right item. | Keep the `/builder` path and every query parameter. If any changes, update `lib/checkout.ts`, the Stripe checkout metadata, the success page, the library links, and the tests together. |
-| 10 | **Environment variable drift.** Required names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, the four `STRIPE_PRICE_*` values, and `ADMIN_EMAILS`. Optional: `DEFAULT_AI_PROVIDER`, `DEFAULT_AI_MODEL`, `SCORE_AI_MODEL`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`. | Missing or renamed values break generation, checkout, admin access, or analytics. | Keep the names unchanged. Update `.env.example` only if a new variable is genuinely added. Do not commit `.env.local`. |
-| 11 | **Vercel configuration.** The project has no `vercel.json`; Next.js is auto-detected. `next.config.mjs` sets `distDir` to `.next-dev` in development and `.next` in production. `.vercelignore` excludes `.next-dev`, `extension/dist`, and `extension/artifacts`. | A config change can break preview builds or upload development artefacts. | Do not change the `distDir` split. Add redirects in `next.config.mjs`, not in a new platform config. Test a preview before production. |
-| 12 | **Font delivery.** The direction uses Imbue and Albert Sans, which are not in `package.json`. The current app self-hosts fonts to avoid build-time network requests. | Vercel build failure, flash of fallback type, or a runtime request to a third-party CDN. | Self-host via `@fontsource-variable` if the packages exist; otherwise use `next/font/google` and confirm the build has network access. Do not use a runtime `<link>` to Google Fonts. |
-| 13 | **Image licensing and weight.** The skill’s floor asks for real pictures; archival images need credit lines. Large PNGs in `public/` increase build and page weight. | Licence risk, slow pages, or missing credits. | Download only commercial-use licences, keep the source and licence in the build report, add credits to the footer, convert to WebP/AVIF with correct dimensions. Prefer interface fragments that already exist in the app. |
-| 14 | **Analytics continuity.** Event names such as `landing_view`, `templates_opened`, `prompt_generated`, `prompt_copied`, `prompt_saved`, `upgrade_clicked`, and feedback events feed PostHog dashboards. | Rebuilt pages stop reporting, or dashboards break. | Preserve event names and properties. Keep `components/providers/posthog-provider.tsx` behaviour in the new analytics component. Do not add prompt text or profile content to events. |
-| 15 | **Localization regression.** The current app supports EN/ES/RU with a cookie, server translations, and text-script detection. | Rebuilt pages ship English-only, or the language switch breaks. | Keep the `lib/i18n` system. Build pages with dictionary keys from the start. If English-only is acceptable for phase 1, say so explicitly and hide the selector rather than leaving a dead control. |
-| 16 | **Build order.** The root layout, `globals.css`, and Tailwind config are deleted and replaced. | The app cannot build between deletion and replacement. | Do the scaffold in one commit: new tokens, new root layout, new primitives, one route at a time. Keep the backup branch. Never leave `master` unbuildable. |
-| 17 | **Admin scope.** Rebuilding `/admin/**` and `/model-lab` in the new system is a second frontend. | The redesign stalls on internal screens; public pages ship late. | Phase 2. If the old admin pages must stay temporarily, keep them on the old design and state that clearly; do not half-restyle them. |
-| 18 | **SEO and redirects.** The current root metadata hardcodes title, description, and icons. Deleting `/demo` and `/settings` leaves old links and bookmarks. | Search results show the old brand; old links 404. | New metadata, Open Graph image, canonical URL. Add permanent redirects for `/settings` → `/account` and `/demo` → `/` (or a landing anchor). Add `sitemap.ts` and `robots.ts` if the project wants them; they do not exist today. |
-| 19 | **The skill is not written for app screens.** Its description says “Not for dashboards or app screens.” | Applying the landing-page rubric to dense builder/admin screens produces the wrong result. | Use the full direction and inspector on `/` and the marketing pages. Use the same tokens, type, grid, and component shapes on app pages, but judge them by task clarity and density, not by the four-picture floor. State this in the build report. |
-| 20 | **Provider stack in the root layout.** The current layout wraps the app in PostHog, Motion, and Language providers and reads the language cookie. | Removing a provider breaks analytics, reduced motion, or translations. | Rebuild the providers in the new root layout with the same behaviour. Keep the `lang` attribute and the cookie read. |
+| #  | Risk                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | Impact                                                                                                                | Mitigation                                                                                                                                                                                                                                          |
+| -- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1  | **Auth callback drift.** Supabase allowlists the exact `origin + /auth/callback` for local, production, and preview. The login form stores `next` in a cookie scoped to `/auth/callback`.                                                                                                                                                                                                                                                                                                                                               | Sign-in loops, users returned to the wrong page, or OAuth landing on production from a preview.                       | Do not rename `/auth/callback`. Keep `prepareAuthRedirect`, `AUTH_NEXT_COOKIE`, and `safeAuthNext`. Re-check the allowlist before testing.                                                                                                          |
+| 2  | **Default post-login path.** `safeAuthNext` falls back to `/builder`; middleware redirects signed-in users from `/login` to `/builder`; admin users are redirected to `/dashboard`.                                                                                                                                                                                                                                                                                                                                                     | Renaming `/builder` or `/dashboard` silently sends users to a 404 or the wrong page.                                  | Keep both routes. If renamed, update `lib/auth-redirect.ts`, `middleware.ts`, `app/auth/callback/route.ts`, `tests/auth-redirect.test.cjs`, and `tests/auth-session.test.cjs` in one change.                                                        |
+| 3  | **Middleware route drift.** `PROTECTED_PREFIXES` lists `/dashboard`, `/builder`, `/history`, `/library`, `/settings`, `/templates`, `/model-lab`, `/admin`.                                                                                                                                                                                                                                                                                                                                                                             | A rebuilt private page can become public if its prefix is missing; a public page can become unreachable.              | Update the list with the final route map. Keep `/` public. Remove `/settings` if it becomes a redirect. Add any new private route.                                                                                                                  |
+| 4  | **Guest drafting loss.** `/` is currently the only public composer. `/builder` is protected and `/api/prompts/generate` returns 401 for guests.                                                                                                                                                                                                                                                                                                                                                                                         | A marketing landing page removes the “start before signing in” experience described in the README.                    | Keep a working composer in the landing hero with a local, deterministic preview. Preserve the draft in `sessionStorage` and restore it after sign-in. Confirm this behaviour in §8.                                                                 |
+| 5  | **Extension build depends on `app/icon.png`.** `scripts/build-extension.cjs`, `scripts/create-extension-store-assets.cjs`, `scripts/prepare-extension-store-screenshots.cjs`, and `scripts/test-prompt-editor.cjs` read it.                                                                                                                                                                                                                                                                                                             | The extension cannot be built or its store assets regenerated.                                                        | Keep `app/icon.png` until a replacement is produced. If replaced, keep it square and update all four scripts and `tests/brand-icons.test.cjs`.                                                                                                      |
+| 6  | **Extension fixture depends on `public/brand/umprompt-icon.png`.** `scripts/serve-extension-fixture.cjs` serves it for `/icons/*`.                                                                                                                                                                                                                                                                                                                                                                                                      | The extension fixture shows broken icons.                                                                             | Keep the file, or change the fixture to read the new icon path.                                                                                                                                                                                     |
+| 7  | **Brand icon test.** `tests/brand-icons.test.cjs` asserts that `public/brand/umprompt-icon.png` (512), `app/icon.png` (192), `public/apple-touch-icon.png` (180), and `app/favicon.ico` are square emerald PNGs.                                                                                                                                                                                                                                                                                                                        | `npm test` fails if icons are deleted, resized, or recoloured.                                                        | Keep the icons through phase 1. If the new brand changes the icon, update the test’s colour and size checks in the same change as the new assets.                                                                                                   |
+| 8  | **UI tests and scripts import deleted files.** `tests/composer-layout.test.cjs` imports builder components. `scripts/check-start-ui.cjs` checks the old landing copy and imports `lib/composer-copy.ts` and `lib/idea-suggestions.ts`. `scripts/check-workspace-ui.cjs` creates fixtures that re-export `app/builder/page.tsx` and `app/library/page.tsx`. `scripts/test-prompt-editor.cjs` imports `app/builder/page.tsx`, `lib/i18n/language-provider`, `lib/composer-copy`, `lib/i18n/dictionaries/en.ts`, and `tailwind.config.ts`. | `npm test` and the UI checks fail during the rebuild.                                                                 | Treat these as UI tests, not backend tests. Rewrite them against the new pages. Keep the backend tests untouched. Do not delete a test to make the suite green.                                                                                     |
+| 9  | **Checkout and deep-link contracts.** `lib/checkout.ts` hardcodes `CHECKOUT_RETURN = "/builder?resume=checkout"`. The builder also reads `?id`, `?pack`, `?template`, `?profile`, and `?playbook`. Stripe metadata and `tests/checkout.test.cjs` use the return path.                                                                                                                                                                                                                                                                   | Checkout returns to a missing page, a template link stops prefilling, or a library link stops opening the right item. | Keep the `/builder` path and every query parameter. If any changes, update `lib/checkout.ts`, the Stripe checkout metadata, the success page, the library links, and the tests together.                                                            |
+| 10 | **Environment variable drift.** Required names: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `NEXT_PUBLIC_SITE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `ANTHROPIC_API_KEY` or `OPENROUTER_API_KEY`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, the four `STRIPE_PRICE_*` values, and `ADMIN_EMAILS`. Optional: `DEFAULT_AI_PROVIDER`, `DEFAULT_AI_MODEL`, `SCORE_AI_MODEL`, `NEXT_PUBLIC_POSTHOG_KEY`, `NEXT_PUBLIC_POSTHOG_HOST`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`.                                  | Missing or renamed values break generation, checkout, admin access, or analytics.                                     | Keep the names unchanged. Update `.env.example` only if a new variable is genuinely added. Do not commit `.env.local`.                                                                                                                              |
+| 11 | **Vercel configuration.** The project has no `vercel.json`; Next.js is auto-detected. `next.config.mjs` sets `distDir` to `.next-dev` in development and `.next` in production. `.vercelignore` excludes `.next-dev`, `extension/dist`, and `extension/artifacts`.                                                                                                                                                                                                                                                                      | A config change can break preview builds or upload development artefacts.                                             | Do not change the `distDir` split. Add redirects in `next.config.mjs`, not in a new platform config. Test a preview before production.                                                                                                              |
+| 12 | **Font delivery.** The direction uses Imbue and Albert Sans, which are not in `package.json`. The current app self-hosts fonts to avoid build-time network requests.                                                                                                                                                                                                                                                                                                                                                                    | Vercel build failure, flash of fallback type, or a runtime request to a third-party CDN.                              | Self-host via `@fontsource-variable` if the packages exist; otherwise use `next/font/google` and confirm the build has network access. Do not use a runtime `<link>` to Google Fonts.                                                               |
+| 13 | **Image licensing and weight.** The skill’s floor asks for real pictures; archival images need credit lines. Large PNGs in `public/` increase build and page weight.                                                                                                                                                                                                                                                                                                                                                                    | Licence risk, slow pages, or missing credits.                                                                         | Download only commercial-use licences, keep the source and licence in the build report, add credits to the footer, convert to WebP/AVIF with correct dimensions. Prefer interface fragments that already exist in the app.                          |
+| 14 | **Analytics continuity.** Event names such as `landing_view`, `templates_opened`, `prompt_generated`, `prompt_copied`, `prompt_saved`, `upgrade_clicked`, and feedback events feed PostHog dashboards.                                                                                                                                                                                                                                                                                                                                  | Rebuilt pages stop reporting, or dashboards break.                                                                    | Preserve event names and properties. Keep `components/providers/posthog-provider.tsx` behaviour in the new analytics component. Do not add prompt text or profile content to events.                                                                |
+| 15 | **Localization regression.** The current app supports EN/ES/RU with a cookie, server translations, and text-script detection.                                                                                                                                                                                                                                                                                                                                                                                                           | Rebuilt pages ship English-only, or the language switch breaks.                                                       | Keep the `lib/i18n` system. Build pages with dictionary keys from the start. If English-only is acceptable for phase 1, say so explicitly and hide the selector rather than leaving a dead control.                                                 |
+| 16 | **Build order.** The root layout, `globals.css`, and Tailwind config are deleted and replaced.                                                                                                                                                                                                                                                                                                                                                                                                                                          | The app cannot build between deletion and replacement.                                                                | Do the scaffold in one commit: new tokens, new root layout, new primitives, one route at a time. Keep the backup branch. Never leave `master` unbuildable.                                                                                          |
+| 17 | **Admin scope.** Rebuilding `/admin/**` and `/model-lab` in the new system is a second frontend.                                                                                                                                                                                                                                                                                                                                                                                                                                        | The redesign stalls on internal screens; public pages ship late.                                                      | Phase 2. If the old admin pages must stay temporarily, keep them on the old design and state that clearly; do not half-restyle them.                                                                                                                |
+| 18 | **SEO and redirects.** The current root metadata hardcodes title, description, and icons. Deleting `/demo` and `/settings` leaves old links and bookmarks.                                                                                                                                                                                                                                                                                                                                                                              | Search results show the old brand; old links 404.                                                                     | New metadata, Open Graph image, canonical URL. Add permanent redirects for `/settings` → `/account` and `/demo` → `/` (or a landing anchor). Add `sitemap.ts` and `robots.ts` if the project wants them; they do not exist today.                   |
+| 19 | **The skill is not written for app screens.** Its description says “Not for dashboards or app screens.”                                                                                                                                                                                                                                                                                                                                                                                                                                 | Applying the landing-page rubric to dense builder/admin screens produces the wrong result.                            | Use the full direction and inspector on `/` and the marketing pages. Use the same tokens, type, grid, and component shapes on app pages, but judge them by task clarity and density, not by the four-picture floor. State this in the build report. |
+| 20 | **Provider stack in the root layout.** The current layout wraps the app in PostHog, Motion, and Language providers and reads the language cookie.                                                                                                                                                                                                                                                                                                                                                                                       | Removing a provider breaks analytics, reduced motion, or translations.                                                | Rebuild the providers in the new root layout with the same behaviour. Keep the `lang` attribute and the cookie read.                                                                                                                                |
 
 ---
 
-## 8. Open questions
+## 8. Decisions (closed)
 
-1. **Direction.** Do you approve Direction C, “The printed annual”? Or do you want A (“Dressed as something else”) or B (“The well-kept board”)?
-2. **Brand palette.** The code brand is emerald (`#047857`); the root PNG is orange; the dealt direction is bottle green ink + yellow accent. Which is canonical? Options:
-   - Adopt the dealt bottle green + yellow.
-   - Keep emerald as the accent and use bottle green as ink; drop yellow.
-   - Keep the current emerald palette entirely and take only composition/type from the direction.
-3. **Guest drafting.** Should `/` keep a working guest composer (current behaviour), or become a marketing page with a local demo and send all composing to `/builder` after sign-in? My recommendation is the former: a real composer in the hero, local preview, sign-in on Generate.
-4. **Admin and model-lab.** Rebuild `/admin/**` and `/model-lab` in phase 2, or keep the old screens temporarily? If they stay, they will not share the new design system.
-5. **Localization.** Keep EN/ES/RU on every rebuilt page, or ship English first and port the dictionaries later? The current product advertises three languages.
-6. **`/demo`.** Delete it and fold the walkthrough into `/`, or keep a separate `/demo` page? I recommend delete + redirect.
-7. **Photography.** Do you approve downloading 2–4 open-license archival images (letterpress, card catalogue, manuscript margin) into the repo with credits? Or should the page use only built interface fragments and flat colour? The interface fragments alone can satisfy the software picture floor.
-8. **Brand icons.** May I replace `app/favicon.ico`, `app/icon.png`, `public/apple-touch-icon.png`, and `public/brand/umprompt-icon.png` if the new wordmark needs it? These are tested and the extension build reads `app/icon.png`.
-9. **Root marketing files.** Can I move or delete `hero-*.png`, `Umprompt*.png`, and `POSTS/1-linkedin.png`? They are unused by the app and conflict with the code brand.
-10. **Extension.** I am treating the Chrome extension panel as out of scope. Confirm that the extension UI stays as it is.
+No design question remains open. These are the decisions the build follows.
 
----
+1. **Direction:** C, “The printed annual”. Imbue + Albert Sans, bottle-green ink, yellow accent, 42% axis, input/output spread, score as margin notes.
+2. **Brand palette:** the dealt palette is adopted. The old emerald, cream, clay, sage, zinc, Bricolage, and card/shadow language are removed. The new palette is `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
+3. **Guest drafting:** `/` keeps a working guest composer in the hero. It produces a deterministic local preview; pressing Generate asks the guest to sign in and preserves the draft in `sessionStorage`.
+4. **Admin and model-lab:** rebuilt in the same system in this pass. No old screens remain.
+5. **Localization:** the EN/ES/RU system stays. Shared chrome and app flows use the dictionaries; new marketing copy is written in English first and moved into the dictionaries as it stabilises.
+6. **`/demo`:** deleted. Permanent redirect to `/`.
+7. **Photography:** no external photography. The picture floor is met with built interface fragments (composer, sheet, score margin, ledger, library, pack output), which the skill counts for software. Flat colour fields carry the rest.
+8. **Brand icons:** replaced. New square icons use the bottle-green and yellow palette. `tests/brand-icons.test.cjs` and the extension scripts are updated to the new assets.
+9. **Root marketing files:** deleted, as listed in §2.6.
+10. **Extension:** the panel is rethemed to the new palette and type stack. Its behaviour and API contract stay unchanged.
+11. **Old design language:** removed. No old Tailwind theme, old components, old fonts, old colours, old icon set, old card/shadow/badge patterns, or old marketing pages are reused. The new UI is written from the tokens and primitives in §5.1.
 
-## 9. What happens on confirmation
+## 9. Build record
 
 1. Create a build branch from `backup/pre-redesign-frontend` (for example `redesign/frontend-v1`). Run `npm ci`; `node_modules` is not present in the clone.
 2. Add the design tokens, root layout, providers, and new primitives. Keep the app buildable.
@@ -962,6 +960,6 @@ Every image gets `width`, `height`, `alt`, and `loading="lazy"` except the hero 
 6. Rebuild `/builder` and the app pages in the same system. Keep every API call and auth guard.
 7. Rewrite the UI tests and scripts listed in §3.6 and §3.7. Keep backend tests green.
 8. Run `npm test`, `npm run build`, and the browser checks. Report what passed, what was not run, and every redraw.
-9. Phase 2: rebuild `/model-lab` and `/admin/**`, or leave them on the old design by explicit decision.
+9. Rebuild `/model-lab` and `/admin/**` in the same system.
 
-No deletion starts before you confirm this scope.
+This scope was approved and executed. The build record is in [`docs/redesign-report.md`](redesign-report.md).

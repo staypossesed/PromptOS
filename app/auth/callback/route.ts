@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
   try { storedNext = decodeURIComponent(request.cookies.get(AUTH_NEXT_COOKIE)?.value ?? ""); } catch {}
   const next = safeAuthNext(requestUrl.searchParams.get("next") ?? storedNext);
 
-  // Base URL for redirects — works on localhost and Vercel previews
+  // Base URL for redirects - works on localhost and Vercel previews
   const origin = requestUrl.origin;
   function redirect(path: string) {
     const response = NextResponse.redirect(new URL(path, origin));
@@ -36,6 +36,6 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  // No code param — something unexpected happened
+  // No code param - something unexpected happened
   return fail("Authentication did not complete. Please try again.");
 }

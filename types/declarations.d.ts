@@ -5,5 +5,5 @@ declare module "*.css" {
 }
 
 // @fontsource-variable packages ship CSS only — no TS declarations needed
-declare module "@fontsource-variable/fraunces";
-declare module "@fontsource-variable/fraunces/index.css";
+declare module "@fontsource-variable/imbue";
+declare module "@fontsource-variable/albert-sans";

@@ -1,19 +1,22 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Check, Crown, Zap, Infinity, ArrowLeft, AlertCircle } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { useTranslations } from "@/lib/i18n/use-translations";
-import { track } from "@/lib/analytics";
-import { checkoutReturn, checkoutPrice } from "@/lib/checkout";
+import { Button } from "@/components/system/button";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
+import { track } from "@/lib/analytics";
+import { checkoutPrice, checkoutReturn } from "@/lib/checkout";
+import { PageViewTracker } from "@/components/system/page-view-tracker";
+import { Footer } from "@/components/system/footer";
 
 const FOUNDER_LIMIT = 100;
 
-export default function PlanPage() {
-  const { t } = useTranslations();
+function dollars(cents: number) {
+  return `$${(cents / 100).toFixed(2).replace(/\.00$/, "")}`;
+}
+
+function PlanInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("checkout") === "cancelled";
@@ -35,13 +38,12 @@ export default function PlanPage() {
     track("plan_page_viewed");
     if (cancelled) track("checkout_cancelled");
     fetch("/api/billing/founder-count")
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then((data) => { if (typeof data?.count === "number") setFounderCount(data.count); })
       .catch(() => null)
       .finally(() => setFounderLoading(false));
   }, [cancelled]);
 
-  // Auto-apply promo code from URL (?promo=UMPROMPT)
   useEffect(() => {
     const promo = searchParams.get("promo");
     if (promo?.toUpperCase() === "UMPROMPT" && !autoAppliedRef.current) {
@@ -52,6 +54,11 @@ export default function PlanPage() {
       track("promo_code_applied", { is_founder: true, source: "url_param" });
     }
   }, [searchParams]);
+
+  const spotsLeft = founderCount !== null ? Math.max(0, FOUNDER_LIMIT - founderCount) : null;
+  const founderAvailable = founderCount !== null && founderCount < FOUNDER_LIMIT;
+  const founderPrice = promoApplied && founderAvailable;
+  const isAnyLoading = loading !== null || usageLoading || isPaid || (promoApplied && founderLoading);
 
   function applyPromo() {
     const code = promoInput.trim().toUpperCase();
@@ -73,7 +80,7 @@ export default function PlanPage() {
     setCheckoutError(null);
     track("upgrade_clicked", { offer_type: offerType, is_founder: founderPrice });
     try {
-      const res = await fetch("/api/billing/checkout", {
+      const response = await fetch("/api/billing/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -82,15 +89,14 @@ export default function PlanPage() {
           returnTo,
         }),
       });
-      const json = await res.json();
-      if (res.ok && typeof json.url === "string" && new URL(json.url).origin === "https://checkout.stripe.com") {
+      const json = await response.json();
+      if (response.ok && typeof json.url === "string" && new URL(json.url).origin === "https://checkout.stripe.com") {
         redirecting = true;
         track("checkout_started", { offer_type: offerType, is_founder: founderPrice });
         window.location.href = json.url;
         return;
       }
 
-      // Handle structured error codes
       const code = json.error as string | undefined;
       if (code === "AUTH_REQUIRED") {
         const next = `/plan?${new URLSearchParams({ returnTo, ...(promoApplied ? { promo: "UMPROMPT" } : {}) })}`;
@@ -101,7 +107,8 @@ export default function PlanPage() {
       if (code === "MISSING_CONFIG") {
         setCheckoutError("Payments are temporarily unavailable. Your prompt is safe; you can return to it below.");
       } else if (code === "OFFER_UNAVAILABLE") {
-        setPromoApplied(false); setPromoAutoApplied(false);
+        setPromoApplied(false);
+        setPromoAutoApplied(false);
         setFounderCount(FOUNDER_LIMIT);
         setCheckoutError("The founder offer has ended. Please review the regular prices before continuing.");
       } else if (code === "ALREADY_PAID") {
@@ -109,297 +116,148 @@ export default function PlanPage() {
       } else if (code === "PRICE_MISMATCH") {
         setCheckoutError("This price is being updated. Checkout is paused so you are not charged an unexpected amount.");
       } else if (code === "OFFER_CHECK_FAILED") {
-        setCheckoutError("We couldn't confirm this offer. Please retry; no checkout has started.");
+        setCheckoutError("We could not confirm this offer. Please retry; no checkout has started.");
       } else if (code === "STRIPE_ERROR") {
         setCheckoutError("Stripe checkout could not start. Please try again.");
       } else {
         setCheckoutError(json.message ?? "Checkout could not start. Please try again.");
       }
-      setLoading(null);
-    } catch (err) {
-      if (process.env.NODE_ENV === "development") console.error("[checkout] fetch error:", err);
+    } catch {
       setCheckoutError("Checkout could not start. Please try again.");
-      setLoading(null);
       track("checkout_failed", { reason: "NETWORK", offer_type: offerType });
     } finally {
-      if (!redirecting) { checkoutLock.current = false; setLoading(null); }
+      if (!redirecting) {
+        checkoutLock.current = false;
+        setLoading(null);
+      }
     }
   }
 
-  const spotsLeft = founderCount !== null ? Math.max(0, FOUNDER_LIMIT - founderCount) : null;
-  const isAnyLoading = loading !== null || usageLoading || isPaid || (promoApplied && founderLoading);
-  const founderAvailable = founderCount !== null && founderCount < FOUNDER_LIMIT;
-  const founderPrice = promoApplied && founderAvailable;
-
   return (
-    <div className="min-h-screen bg-paper">
-      <div className="max-w-4xl mx-auto px-4 py-10 md:py-16">
-        {/* Back */}
-        <Link
-          href={returnTo}
-          className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-ink-700 transition-colors mb-8"
-        >
-          <ArrowLeft className="size-3.5" />
-          Back to workspace
-        </Link>
-
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <h1 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 mb-3">
-            {t("billing.planTitle")}
-          </h1>
-          <p className="text-ink-500 text-[15px]">{t("billing.planSubtitle")}</p>
+    <>
+    <div className="wrap" style={{ paddingBlock: "clamp(32px, 5vw, 72px)" }}>
+      <PageViewTracker event="plan_page_viewed" />
+      <header className="app-head">
+        <div className="stack">
+          <h1 className="app-head__title">Plans.</h1>
+          <p className="app-head__sub">
+            Start free. Pay when the workspace earns it. Monthly or once, with a founder price
+            for the first 100.
+          </p>
         </div>
+      </header>
 
-        {/* Auto-applied founder unlock notice */}
-        {promoAutoApplied && founderAvailable && (
-          <div className="mb-6 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
-            <Crown className="size-4 shrink-0 mt-0.5 text-emerald-700" />
-            <p><span className="font-semibold">Founder prices unlocked.</span>{" "}You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</p>
-          </div>
-        )}
-        {promoApplied && !founderLoading && founderCount === null && <p role="status" className="mb-6 text-center text-sm text-ink-500">Founder availability could not be confirmed. Regular prices are shown.</p>}
-
-        {/* Cancelled notice */}
-        {cancelled && (
-          <div className="mb-6 flex items-center gap-2 rounded-xl border border-ink-100 bg-cream-100/60 px-4 py-3 text-sm text-ink-600">
-            <AlertCircle className="size-4 shrink-0 text-ink-400" />
-            Checkout was cancelled. Your plan has not changed.
-          </div>
-        )}
-
-        {/* Founder banner */}
-        {founderAvailable && <div className="mb-8 border-y border-border py-5">
-          <div className="flex items-start gap-3">
-            <div className="size-8 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0 mt-0.5">
-              <Crown className="size-4 text-clay-600" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-ink-800 mb-1">
-                {t("billing.founderBanner")}
-              </p>
-              <p className="text-xs text-ink-500">
-                {t("billing.featureFirstHundred")}
-                {spotsLeft !== null && ` — ${spotsLeft} ${t("billing.founderSpotsLeft")}`}
-              </p>
-            </div>
-          </div>
-
-          {/* Promo code input */}
-          <div className="mt-4 flex items-center gap-2 max-w-sm">
-            <input
-              type="text"
-              value={promoInput}
-              onChange={(e) => { setPromoInput(e.target.value); setPromoError(false); }}
-              onKeyDown={(e) => e.key === "Enter" && applyPromo()}
-              placeholder={t("billing.promoCodePlaceholder")}
-              aria-label={t("billing.promoCodePlaceholder")}
-              className="flex-1 min-w-0 h-9 rounded-lg border border-ink-200 bg-white px-3 text-sm text-ink-900 placeholder-ink-400 focus:outline-none focus:ring-2 focus:ring-clay-500/30 focus:border-clay-500"
-            />
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={applyPromo}
-              className="shrink-0 border-clay-500/40 text-clay-700 hover:bg-clay-500/10"
-            >
-              {t("billing.applyCode")}
-            </Button>
-          </div>
-          {promoApplied && (
-            <p className="mt-2 text-xs text-emerald-700 flex items-center gap-1">
-              <Check className="size-3.5" />
-              {t("billing.codeApplied")}
-            </p>
-          )}
-          {promoError && (
-            <p className="mt-2 text-xs text-destructive">{t("billing.codeInvalid")}</p>
-          )}
-        </div>}
-        {isPaid && <p role="status" className="mb-6 text-center text-sm text-emerald-800">You already have a paid plan. <Link href="/account" className="underline">Manage billing</Link></p>}
-
-        {/* Pricing grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          {/* Free */}
-          <PricingCard
-            name={t("billing.freePlanName")}
-            price="$0"
-            period=""
-            description="Get started with the basics."
-            features={[
-              t("billing.featureFreePrompts"),
-              t("billing.featureBuilder"),
-              t("billing.featureTemplates"),
-            ]}
-            cta={t("billing.getStartedFree")}
-            ctaHref={returnTo}
-            variant="neutral"
-          />
-
-          {/* Monthly */}
-          <PricingCard
-            name={founderPrice ? t("billing.founderMonthlyName") : t("billing.proMonthlyName")}
-            price={`$${(checkoutPrice("monthly", founderPrice) / 100).toFixed(2)}`}
-            period="/mo"
-            originalPrice={founderPrice ? "$9.99/mo" : undefined}
-            description="Billed monthly. Cancel future renewals anytime."
-            features={[
-              t("billing.featureUnlimited"),
-              t("billing.featurePacks"),
-              t("billing.featureHistory"),
-              t("billing.featureTemplates"),
-            ]}
-            cta={t("billing.upgradeMonthly")}
-            onCta={() => startCheckout("monthly")}
-            loading={loading === "monthly"}
-            disabled={isAnyLoading}
-            variant="primary"
-            founderBadge={founderPrice}
-          />
-
-          {/* Lifetime */}
-          <PricingCard
-            name={founderPrice ? t("billing.founderLifetimeName") : t("billing.lifetimeName")}
-            price={`$${(checkoutPrice("lifetime", founderPrice) / 100).toFixed(2)}`}
-            period=""
-            originalPrice={founderPrice ? "$99.99" : undefined}
-            description="One payment. No recurring subscription."
-            features={[
-              t("billing.featureUnlimited"),
-              t("billing.featureLifetime"),
-              t("billing.featurePacks"),
-              t("billing.featureHistory"),
-            ]}
-            cta={t("billing.upgradeLifetime")}
-            onCta={() => startCheckout("lifetime")}
-            loading={loading === "lifetime"}
-            disabled={isAnyLoading}
-            variant="accent"
-            bestValueBadge
-            founderBadge={founderPrice}
-          />
-        </div>
-
-        {/* Checkout error */}
-        {checkoutError && (
-          <div role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-            <AlertCircle className="size-4 shrink-0" />
-            {checkoutError}
-          </div>
-        )}
-        <div className="mb-6 text-center"><Link href={returnTo} className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"><ArrowLeft className="size-4" />Back to workspace</Link></div>
-
-        {/* Fine print */}
-        <p className="text-center text-xs text-ink-400">
-          Payments secured by Stripe. Cancel anytime for monthly plans. No refunds on lifetime purchases.
+      {promoAutoApplied && founderAvailable ? (
+        <p className="small" style={{ marginBottom: 24 }}>
+          Founder prices unlocked. {spotsLeft} spots left.
         </p>
+      ) : null}
+
+      {founderAvailable ? (
+        <section className="sheet sheet--surface" style={{ marginBottom: 32 }}>
+          <div className="stack">
+            <p className="body">
+              Founder price: {dollars(checkoutPrice("monthly", true))} a month or{" "}
+              {dollars(checkoutPrice("lifetime", true))} once. {spotsLeft} spots left.
+            </p>
+            <div className="composer__actions">
+              <label className="sr-only" htmlFor="promo">Promo code</label>
+              <input
+                id="promo"
+                className="field__input"
+                style={{ maxWidth: 220 }}
+                value={promoInput}
+                onChange={(event) => { setPromoInput(event.target.value); setPromoError(false); }}
+                onKeyDown={(event) => { if (event.key === "Enter") applyPromo(); }}
+                placeholder="UMPROMPT"
+              />
+              <Button size="sm" variant="ghost" onClick={applyPromo}>Apply code</Button>
+              {promoApplied ? <span className="small">Code applied.</span> : null}
+              {promoError ? <span className="field__error">That code is not valid.</span> : null}
+            </div>
+          </div>
+        </section>
+      ) : null}
+
+      {cancelled ? <p className="small" style={{ marginBottom: 20 }}>Checkout was cancelled. Your plan has not changed.</p> : null}
+      {isPaid ? <p className="small" style={{ marginBottom: 20 }}>You already have a paid plan. <Link href="/account" className="link-arrow">Manage billing</Link></p> : null}
+
+      <div className="grid-3">
+        <section className="plan-card">
+          <h2 className="plan-card__price">$0</h2>
+          <p className="body">Seven prompts a week. The full composer, the score, and your saved history. No card.</p>
+          <ul className="plan-card__list">
+            <li>7 prompts a week</li>
+            <li>Single prompt builder</li>
+            <li>Saved prompts and history</li>
+            <li>Templates</li>
+          </ul>
+          <Link href={returnTo} className="button button--ghost button--small">Back to the workspace</Link>
+        </section>
+
+        <section className="plan-card plan-card--accent">
+          <div>
+            <h2 className="plan-card__price">{dollars(checkoutPrice("monthly", founderPrice))}</h2>
+            <p className="small">{founderPrice ? "Founder monthly" : "Pro monthly"} · per month{founderPrice ? ` · normally ${dollars(checkoutPrice("monthly", false))}` : ""}</p>
+          </div>
+          <p className="body">Unlimited fair use. Prompt packs, profiles, playbooks, and the full workspace. Cancel future renewals anytime.</p>
+          <ul className="plan-card__list">
+            <li>Unlimited fair use</li>
+            <li>Prompt packs</li>
+            <li>Library profiles and playbooks</li>
+            <li>Full history</li>
+          </ul>
+          <Button
+            variant="ink"
+            onClick={() => startCheckout("monthly")}
+            disabled={isAnyLoading}
+          >
+            {loading === "monthly" ? "Opening checkout" : "Choose monthly"}
+          </Button>
+        </section>
+
+        <section className="plan-card">
+          <div>
+            <h2 className="plan-card__price">{dollars(checkoutPrice("lifetime", founderPrice))}</h2>
+            <p className="small">{founderPrice ? "Founder lifetime" : "Lifetime"} · once{founderPrice ? ` · normally ${dollars(checkoutPrice("lifetime", false))}` : ""}</p>
+          </div>
+          <p className="body">One payment. No recurring subscription. The same Pro workspace.</p>
+          <ul className="plan-card__list">
+            <li>Unlimited fair use</li>
+            <li>Prompt packs</li>
+            <li>Library profiles and playbooks</li>
+            <li>Full history</li>
+          </ul>
+          <Button
+            variant="ghost"
+            onClick={() => startCheckout("lifetime")}
+            disabled={isAnyLoading}
+          >
+            {loading === "lifetime" ? "Opening checkout" : "Choose lifetime"}
+          </Button>
+        </section>
       </div>
+
+      {checkoutError ? <p className="field__error" role="alert" style={{ marginTop: 24 }}>{checkoutError}</p> : null}
+
+      <p style={{ marginTop: 32 }}>
+        <Link href={returnTo} className="link-arrow">Back to the workspace</Link>
+      </p>
+
+      <p className="small" style={{ marginTop: 16, maxWidth: "60ch", color: "var(--ink)" }}>
+        Payments are handled by Stripe. Cancel anytime for monthly plans. No refunds on
+        lifetime purchases.
+      </p>
     </div>
+    <Footer strip />
+    </>
   );
 }
 
-interface PricingCardProps {
-  name: string;
-  price: string;
-  period: string;
-  originalPrice?: string;
-  description: string;
-  features: string[];
-  cta: string;
-  ctaHref?: string;
-  onCta?: () => void;
-  loading?: boolean;
-  disabled?: boolean;
-  variant: "neutral" | "primary" | "accent";
-  bestValueBadge?: boolean;
-  founderBadge?: boolean;
-}
-
-function PricingCard({
-  name,
-  price,
-  period,
-  originalPrice,
-  description,
-  features,
-  cta,
-  ctaHref,
-  onCta,
-  loading,
-  disabled,
-  variant,
-  bestValueBadge,
-  founderBadge,
-}: PricingCardProps) {
-  const isPrimary = variant === "primary";
-  const isAccent = variant === "accent";
-
+export default function PlanPage() {
   return (
-    <div
-      className={`rounded-lg border p-5 flex flex-col ${
-        isPrimary
-          ? "border-emerald-600 bg-white ring-1 ring-emerald-600"
-          : isAccent
-          ? "border-ink-200 bg-white"
-          : "border-ink-100/70 bg-card card-soft"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-2 mb-4">
-        <div className="min-w-0">
-          <div className="flex flex-wrap items-center gap-2 mb-1">
-            <h3 className="text-sm font-semibold text-ink-800">{name}</h3>
-            {founderBadge && (
-              <span className="text-[10px] uppercase tracking-wider text-clay-700 bg-clay-500/10 border border-clay-500/20 rounded-full px-1.5 py-0.5 font-medium flex items-center gap-0.5">
-                <Crown className="size-2.5" /> Founder
-              </span>
-            )}
-            {bestValueBadge && !founderBadge && (
-              <span className="text-[10px] uppercase tracking-wider text-ink-700 bg-ink-900/8 border border-ink-900/15 rounded-full px-1.5 py-0.5 font-medium">
-                Best value
-              </span>
-            )}
-          </div>
-          <p className="text-xs text-ink-500">{description}</p>
-        </div>
-        {isAccent && <Infinity className="size-4 text-ink-400 shrink-0" />}
-        {isPrimary && <Zap className="size-4 text-clay-500 shrink-0" />}
-      </div>
-
-      {/* Price */}
-      <div className="mb-5">
-        <div className="flex items-baseline gap-1">
-          <span className="text-3xl font-bold text-ink-900">{price}</span>
-          {period && <span className="text-sm text-ink-400">{period}</span>}
-        </div>
-        {originalPrice && (
-          <div className="text-xs text-ink-400 line-through mt-0.5">{originalPrice}</div>
-        )}
-      </div>
-
-      {/* Features */}
-      <ul className="space-y-2 mb-6 flex-1">
-        {features.map((f) => (
-          <li key={f} className="flex items-center gap-2 text-sm text-ink-600">
-            <Check className="size-3.5 text-emerald-700 shrink-0" />
-            {f}
-          </li>
-        ))}
-      </ul>
-
-      {/* CTA */}
-      {ctaHref ? (
-        <Button asChild variant={isPrimary ? "default" : "outline"} className="w-full">
-          <Link href={ctaHref}>{cta}</Link>
-        </Button>
-      ) : (
-        <Button
-          variant={isPrimary || isAccent ? "default" : "outline"}
-          className="w-full"
-          onClick={onCta}
-          disabled={disabled || loading}
-        >
-          {loading ? "Redirecting…" : cta}
-        </Button>
-      )}
-    </div>
+    <Suspense fallback={<div className="wrap" style={{ paddingBlock: 64 }}><p className="body">Loading the plans.</p></div>}>
+      <PlanInner />
+    </Suspense>
   );
 }

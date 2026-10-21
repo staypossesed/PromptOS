@@ -1,59 +1,64 @@
 "use client";
 
-import { useEffect, useState, useCallback, useTransition, useRef } from "react";
-import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
-import { ActionIcon } from "@/components/ui/action-icon";
+import { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { AppShell } from "@/components/layout/app-shell";
-import { Topbar } from "@/components/layout/topbar";
-import { IdeaInput } from "@/components/builder/idea-input";
-import { IdeaComposer } from "@/components/builder/idea-composer";
-import { ExpansionExample } from "@/components/builder/expansion-example";
-import { composerCopy } from "@/lib/composer-copy";
-import { ContextPanel } from "@/components/builder/context-panel";
-import { PromptOutput } from "@/components/builder/prompt-output";
-import { ScorePanel } from "@/components/builder/score-panel";
+import { AppShell } from "@/components/system/app-shell";
+import { Button } from "@/components/system/button";
+import { ContextFields } from "@/components/builder/context-fields";
+import { PromptSheet } from "@/components/builder/prompt-sheet";
+import { ScoreMargin } from "@/components/builder/score-margin";
+import { ResultActions } from "@/components/builder/result-actions";
+import { LibraryPanel } from "@/components/builder/library-panel";
 import { PackTypeSelector } from "@/components/builder/pack-type-selector";
-import { PromptPackOutput } from "@/components/builder/prompt-pack-output";
-import { Button } from "@/components/ui/button";
-import { Wand2, Save, Trash2, Loader2, CheckCircle2, AlertCircle, Layers, Crown } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { type ToolId } from "@/lib/mock-data";
-import type { PromptRecord } from "@/types/prompt";
-import type { PromptContext } from "@/types/prompt";
+import { PromptPackSheet } from "@/components/builder/prompt-pack-sheet";
+import { UpgradeCta } from "@/components/billing/upgrade-cta";
+import { PaywallDialog, dispatchPaywallOpen } from "@/components/billing/paywall-dialog";
+import { usePromptUsage } from "@/hooks/usePromptUsage";
+import { useIdeaSuggestions } from "@/hooks/useIdeaSuggestions";
+import { track } from "@/lib/analytics";
+import { TEMPLATES } from "@/lib/templates";
+import { CHECKOUT_DRAFT_KEY, parseCheckoutDraft } from "@/lib/checkout-draft";
+import {
+  rememberVersion,
+  nextStepIdea,
+  shouldOfferUpgrade,
+  promptFingerprint,
+  type Refinement,
+  type PromptVersion,
+  type Playbook,
+} from "@/lib/workspace";
+import { inferTaskCategory, getSuggestions } from "@/lib/idea-suggestions";
+import { canExpandIdea, editPromptText } from "@/lib/prompt-editing";
+import { isTaskCategory, TASK_CATEGORIES, type TaskCategory } from "@/lib/task-categories";
+import type { ToolId } from "@/lib/mock-data";
+import type { PromptContext, PromptRecord, PromptScore } from "@/types/prompt";
 import { generateTitleFromIdea } from "@/types/prompt";
 import type { PackType, PromptPack, PromptPackRecord } from "@/types/prompt-pack";
-import { Suspense } from "react";
-import { track } from "@/lib/analytics";
-import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
-import { TEMPLATES } from "@/lib/templates";
-import { PacksUpsell } from "@/components/builder/packs-upsell";
-import { UpgradeCTA } from "@/components/billing/upgrade-cta";
-import { usePromptUsage } from "@/hooks/usePromptUsage";
-import { useTranslations } from "@/lib/i18n/use-translations";
-import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
-import { BuilderLibrary } from "@/components/workspace/builder-library";
-import { ResultActions, NextTaskActions } from "@/components/workspace/result-actions";
-import { CHECKOUT_DRAFT_KEY, parseCheckoutDraft } from "@/lib/checkout-draft";
-import { rememberVersion, nextStepIdea, shouldOfferUpgrade, promptFingerprint, type Refinement, type PromptVersion, type Playbook } from "@/lib/workspace";
-import { workspaceCopy } from "@/lib/workspace-copy";
-import { inferTaskCategory } from "@/lib/idea-suggestions";
-import { canExpandIdea, editPromptText } from "@/lib/prompt-editing";
 
-// ─── Inner component (uses useSearchParams → needs Suspense) ───────────────
+const TOOLS: { id: ToolId; label: string }[] = [
+  { id: "claude", label: "Claude" },
+  { id: "cursor", label: "Cursor" },
+  { id: "chatgpt", label: "ChatGPT" },
+];
+
+const CATEGORY_LABELS: Record<TaskCategory, string> = {
+  auto: "Auto",
+  writing: "Writing",
+  coding: "Coding",
+  research: "Research",
+  daily: "Everyday",
+  business: "Business",
+  creative: "Creative",
+};
 
 function BuilderInner() {
-  const reducedMotion = useReducedMotion();
   const router = useRouter();
   const searchParams = useSearchParams();
   const promptId = searchParams.get("id");
   const templateId = searchParams.get("template");
   const packId = searchParams.get("pack");
 
-  // ── Mode ────────────────────────────────────────────────────────────────
   const [mode, setMode] = useState<"single" | "pack">(searchParams.get("mode") === "pack" ? "pack" : "single");
-
-  // ── Core builder state ──────────────────────────────────────────────────
   const [idea, setIdea] = useState("");
   const [tool, setTool] = useState<ToolId>("claude");
   const [context, setContext] = useState<PromptContext>({});
@@ -61,7 +66,7 @@ function BuilderInner() {
   const [resultIdea, setResultIdea] = useState("");
   const [promptEdited, setPromptEdited] = useState(false);
   const manualEdit = useRef(false);
-  const [score, setScore] = useState<import("@/types/prompt").PromptScore | null>(null);
+  const [score, setScore] = useState<PromptScore | null>(null);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const [hasCopied, setHasCopied] = useState(false);
@@ -71,24 +76,17 @@ function BuilderInner() {
   const initializedDraft = useRef(false);
   const generationController = useRef<AbortController | null>(null);
   const scoreController = useRef<AbortController | null>(null);
-  useEffect(() => () => { generationController.current?.abort(); scoreController.current?.abort(); }, []);
 
-  // ── Pack save state ─────────────────────────────────────────────────────
   const [savedPackId, setSavedPackId] = useState<string | null>(null);
   const [isPackSaved, setIsPackSaved] = useState(false);
-
-  // ── Generation run request IDs (for linking saves to generation_runs) ───
   const [generateRequestId, setGenerateRequestId] = useState<string | null>(null);
   const [packRequestId, setPackRequestId] = useState<string | null>(null);
-
-  // ── Pack state ──────────────────────────────────────────────────────────
   const [packType, setPackType] = useState<PackType>("build_an_app");
   const [packResult, setPackResult] = useState<PromptPack | null>(null);
   const [isGeneratingPack, setIsGeneratingPack] = useState(false);
   const [packError, setPackError] = useState<string | null>(null);
 
-  // ── Async operation states ──────────────────────────────────────────────
-  const [isLoading, setIsLoading] = useState(!!promptId || !!packId);
+  const [isLoading, setIsLoading] = useState(Boolean(promptId || packId));
   const [isGenerating, setIsGenerating] = useState(false);
   const [isScoring, setIsScoring] = useState(false);
   const [scoreError, setScoreError] = useState<string | null>(null);
@@ -96,49 +94,48 @@ function BuilderInner() {
   const [optimizeError, setOptimizeError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const saveLock = useRef(false);
-  const [isDeleting, startDeleteTransition] = useTransition();
-  const [isSavingPack, startSavingPackTransition] = useTransition();
-  const [isDeletingPack, startDeletingPackTransition] = useTransition();
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSavingPack, setIsSavingPack] = useState(false);
+  const [isDeletingPack, setIsDeletingPack] = useState(false);
+  const [toast, setToast] = useState<{ kind: "success" | "error"; message: string } | null>(null);
+  const [questions, setQuestions] = useState<{ question: string; placeholder?: string }[]>([]);
+  const [answers, setAnswers] = useState<string[]>([]);
+  const [checking, setChecking] = useState(false);
 
-  // ── Toast feedback ──────────────────────────────────────────────────────
-  const [toast, setToast] = useState<{
-    kind: "success" | "error";
-    message: string;
-  } | null>(null);
+  const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
+  const { seed } = useIdeaSuggestions();
 
   function showToast(kind: "success" | "error", message: string) {
     setToast({ kind, message });
-    setTimeout(() => setToast(null), 3000);
+    window.setTimeout(() => setToast(null), 3200);
   }
 
-  const { t, language } = useTranslations();
-  const copy = composerCopy(language);
-  const workspaceText = workspaceCopy(language);
-  const hasCurrentResult = canExpandIdea(idea) && resultIdea === idea && (!!generatedPrompt.trim() || promptEdited);
+  const hasCurrentResult = canExpandIdea(idea) && resultIdea === idea && Boolean(generatedPrompt.trim() || promptEdited);
+  const category = isTaskCategory(context.category) ? context.category : "auto";
+
+  useEffect(() => () => { generationController.current?.abort(); scoreController.current?.abort(); }, []);
   useEffect(() => { setOptimizeError(null); }, [idea, generatedPrompt]);
-  const { isPaid, remainingThisWeek, isLoading: usageLoading } = usePromptUsage();
-  const resumeLoaded = useRef(false);
+
   useEffect(() => {
-    if (searchParams.get("resume") !== "checkout" || resumeLoaded.current || promptId || packId) return;
-    resumeLoaded.current = true;
+    if (searchParams.get("resume") !== "checkout" || promptId || packId) return;
     try {
       const draft = parseCheckoutDraft(sessionStorage.getItem(CHECKOUT_DRAFT_KEY));
       sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
       if (draft) {
-        setIdea(draft.idea); setContext(draft.context); setTool(draft.tool); setGeneratedPrompt(draft.prompt); setResultIdea(draft.idea);
-        setSavedId(draft.savedId); setHasCopied(draft.copied); setIsSaved(draft.saved);
-        if (draft.saved) savedFingerprint.current = promptFingerprint({ idea: draft.idea, context: draft.context, target_tool: draft.tool, generated_prompt: draft.prompt, score: null });
+        setIdea(draft.idea);
+        setContext(draft.context);
+        setTool(draft.tool);
+        setGeneratedPrompt(draft.prompt);
+        setResultIdea(draft.idea);
+        setSavedId(draft.savedId);
+        setHasCopied(draft.copied);
+        setIsSaved(draft.saved);
       }
-    } catch { /* Storage may be unavailable; saved prompts remain in History. */ }
+    } catch {
+      // Storage can be blocked.
+    }
   }, [searchParams, promptId, packId]);
-  function preserveCheckoutDraft() {
-    try {
-      sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify({ idea, context, prompt: generatedPrompt, tool, savedId, copied: hasCopied, saved: isSaved, createdAt: Date.now() }));
-    } catch { showToast("error", "Save your prompt before leaving; browser storage is unavailable."); return false; }
-    return true;
-  }
 
-  // ── Analytics: builder_opened (fires once on mount) ─────────────────────
   useEffect(() => {
     if (initializedDraft.current) return;
     initializedDraft.current = true;
@@ -152,108 +149,76 @@ function BuilderInner() {
         if (parsed.context && typeof parsed.context === "object") setContext(parsed.context);
         sessionStorage.removeItem("ump:idea_draft");
       }
-    } catch { /* A malformed draft must not prevent opening the builder. */ }
+    } catch {
+      // A malformed draft must not block the builder.
+    }
   }, [promptId, templateId, packId, searchParams]);
 
-  // ── Prefill from Model Lab "Use this output" ──────────────────────────────
-  // Reads sessionStorage once on mount. Runs before other load effects so that
-  // promptId / packId effects (which run on their own deps) can override if needed.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const raw = sessionStorage.getItem("ump:lab_output");
     if (!raw) return;
     sessionStorage.removeItem("ump:lab_output");
     try {
-      const {
-        idea: i,
-        tool: labTool,
-        generatedPrompt: p,
-        score: s,
-      } = JSON.parse(raw) as {
-        idea?: string;
-        tool?: ToolId;
-        generatedPrompt?: string;
-        score?: import("@/types/prompt").PromptScore | null;
-        model?: string;
-        source?: string;
-      };
-      if (i) setIdea(i);
-      const parsedTool: ToolId | undefined =
-        labTool === "claude" || labTool === "cursor" || labTool === "chatgpt" ? labTool : undefined;
-      if (parsedTool) setTool(parsedTool);
-      if (p) {
-        setGeneratedPrompt(p);
-        setResultIdea(i ?? "");
+      const parsed = JSON.parse(raw) as { idea?: string; tool?: ToolId; generatedPrompt?: string; score?: PromptScore | null };
+      if (parsed.idea) setIdea(parsed.idea);
+      if (parsed.tool === "claude" || parsed.tool === "cursor" || parsed.tool === "chatgpt") setTool(parsed.tool);
+      if (parsed.generatedPrompt) {
+        setGeneratedPrompt(parsed.generatedPrompt);
+        setResultIdea(parsed.idea ?? "");
         setIsSaved(false);
-        if (s && typeof s === "object") {
-          // Score already available from Model Lab — restore it directly.
-          setScore(s as import("@/types/prompt").PromptScore);
-          showToast("success", t("builder.modelLabLoaded"));
-        } else {
-          // No score in payload — trigger scoring now.
-          // Pass idea/tool explicitly because runScoring's closure still
-          // holds the empty initial values at this point in the mount cycle.
-          showToast("success", t("builder.modelLabScoring"));
-          if (i && canExpandIdea(i)) runScoring(p, { idea: i, tool: parsedTool });
-        }
+        setScore(parsed.score ?? null);
       }
     } catch {
-      // malformed storage — ignore
+      // Ignore malformed storage.
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Load existing prompt when ?id= is present ───────────────────────────
   useEffect(() => {
     if (!promptId) return;
-
     setIsLoading(true);
     const controller = new AbortController();
     fetch(`/api/prompts/${promptId}`, { signal: controller.signal })
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then(({ data, error }: { data?: PromptRecord; error?: string }) => {
         if (error || !data) {
-          showToast("error", error ?? "Failed to load prompt.");
+          showToast("error", error ?? "Failed to load the prompt.");
           return;
         }
         setIdea(data.idea);
         setTool(data.target_tool);
-        savedFingerprint.current = promptFingerprint({ ...data, context: data.context ?? {} });
-        setHasCopied(false); setSavedThisSession(false);
         setContext(data.context ?? {});
         setGeneratedPrompt(data.generated_prompt);
         setResultIdea(data.idea);
         setScore(data.score);
         setSavedId(data.id);
         setIsSaved(true);
+        savedFingerprint.current = promptFingerprint({ ...data, context: data.context ?? {} });
         track("prompt_reopened", { target_tool: data.target_tool });
       })
-      .catch(() => { if (!controller.signal.aborted) showToast("error", "Failed to load prompt."); })
+      .catch(() => { if (!controller.signal.aborted) showToast("error", "Failed to load the prompt."); })
       .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
     return () => controller.abort();
   }, [promptId]);
 
-  // ── Prefill from ?template= param (only when not loading an existing prompt)
   useEffect(() => {
     if (!templateId || promptId) return;
-    const template = TEMPLATES.find((t) => t.id === templateId);
+    const template = TEMPLATES.find((item) => item.id === templateId);
     if (!template) return;
     setIdea(template.idea);
     setTool(template.target_tool);
     if (template.context) setContext(template.context);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [templateId]);
+  }, [templateId, promptId]);
 
-  // ── Load existing pack when ?pack= is present ─────────────────────────────
   useEffect(() => {
     if (!packId) return;
-    const controller = new AbortController();
     setIsLoading(true);
+    const controller = new AbortController();
     fetch(`/api/prompt-packs/${packId}`, { signal: controller.signal })
-      .then((r) => r.json())
+      .then((response) => response.json())
       .then(({ data, error }: { data?: PromptPackRecord; error?: string }) => {
         if (error || !data) {
-          showToast("error", error ?? "Failed to load pack.");
+          showToast("error", error ?? "Failed to load the pack.");
           return;
         }
         setMode("pack");
@@ -263,90 +228,71 @@ function BuilderInner() {
         setPackResult({ title: data.title, pack_type: data.pack_type, prompts: data.prompts });
         setSavedPackId(data.id);
         setIsPackSaved(true);
-        track("prompt_pack_reopened", { pack_type: data.pack_type });
       })
-      .catch((err) => {
-        if ((err as Error).name === "AbortError") return;
-        showToast("error", "Failed to load pack.");
-      })
-      .finally(() => setIsLoading(false));
+      .catch(() => { if (!controller.signal.aborted) showToast("error", "Failed to load the pack."); })
+      .finally(() => { if (!controller.signal.aborted) setIsLoading(false); });
     return () => controller.abort();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packId]);
 
-  // ── Mark pack as "unsaved" whenever the user edits after loading ──────────
   useEffect(() => {
     if (savedPackId) setIsPackSaved(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [idea, packType, context]);
+  }, [idea, packType, context, savedPackId]);
 
-  // ── Mark as "unsaved" whenever the user edits after loading ─────────────
   useEffect(() => {
     if (savedId) setIsSaved(savedFingerprint.current === promptFingerprint({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idea, tool, context, generatedPrompt, score, savedId]);
 
-  // ── Score helper (shared by generate flow, manual retry, and optimize) ─────
-  const runScoring = useCallback(async (
-    prompt: string,
-    opts?: { idea?: string; tool?: ToolId; universal?: boolean; signal?: AbortSignal; publish?: boolean }
-  ): Promise<import("@/types/prompt").PromptScore | null> => {
-    const effectiveIdea = opts?.idea ?? idea;
-    const effectiveTool = opts?.tool ?? tool;
+  const runScoring = useCallback(async (prompt: string, options?: { signal?: AbortSignal; universal?: boolean }): Promise<PromptScore | null> => {
     setScoreError(null);
     setIsScoring(true);
     scoreController.current?.abort();
     const controller = new AbortController();
     scoreController.current = controller;
-    const abort = () => controller.abort();
-    if (opts?.signal?.aborted) controller.abort();
-    else opts?.signal?.addEventListener("abort", abort, { once: true });
+    if (options?.signal?.aborted) controller.abort();
     try {
-      const res = await fetch("/api/prompts/score", {
+      const response = await fetch("/api/prompts/score", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ generated_prompt: prompt, idea: effectiveIdea, target_tool: effectiveTool, universal: opts?.universal ?? context.universal }),
+        body: JSON.stringify({ generated_prompt: prompt, idea, target_tool: tool, universal: options?.universal ?? context.universal }),
       });
       if (controller.signal.aborted) return null;
-      if (res.ok) {
-        const { data } = await res.json();
-        if (controller.signal.aborted) return null;
-        if (opts?.publish !== false) setScore(data);
-        track("prompt_scored", { target_tool: effectiveTool, score_overall: data.overall });
-        return data;
-      } else {
-        const json = await res.json().catch(() => ({}));
-        if (controller.signal.aborted) return null;
+      if (!response.ok) {
+        const json = await response.json().catch(() => ({}));
         setScoreError(json.error ?? "Scoring failed. Try again.");
         return null;
       }
+      const { data } = await response.json();
+      setScore(data);
+      track("prompt_scored", { target_tool: tool, score_overall: data.overall });
+      return data;
     } catch {
       if (!controller.signal.aborted) setScoreError("Scoring failed. Check your connection and try again.");
       return null;
     } finally {
-      opts?.signal?.removeEventListener("abort", abort);
-      if (scoreController.current === controller) { scoreController.current = null; setIsScoring(false); }
+      if (scoreController.current === controller) {
+        scoreController.current = null;
+        setIsScoring(false);
+      }
     }
   }, [idea, tool, context.universal]);
 
   const handleEditPrompt = useCallback((value: string) => {
-    if (!hasCurrentResult || isLoading || isGenerating || isOptimizing || isSaving || saveLock.current || (generationLock.current && !isScoring)) return;
+    if (!hasCurrentResult || isLoading || isGenerating || isOptimizing || isSaving || (generationLock.current && !isScoring)) return;
     const next = editPromptText(generatedPrompt, value, context.versions, !manualEdit.current);
     if (!next.changed) return;
     manualEdit.current = true;
     scoreController.current?.abort();
     setGeneratedPrompt(next.prompt);
     setContext({ ...context, versions: next.versions });
-    setPromptEdited(true); setScore(null); setScoreError(null);
-    setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+    setPromptEdited(true);
+    setScore(null);
+    setScoreError(null);
+    setIsSaved(false);
+    setHasCopied(false);
+    setSavedThisSession(false);
+    setGenerateRequestId(null);
   }, [hasCurrentResult, generatedPrompt, context, isLoading, isGenerating, isOptimizing, isSaving, isScoring]);
-
-  // ── Manual retry (called from ScorePanel error state) ────────────────────
-  const handleRetryScore = useCallback(() => {
-    if (!hasCurrentResult || !generatedPrompt || generationLock.current || isScoring || isGenerating || isSaving) return;
-    runScoring(generatedPrompt);
-  }, [hasCurrentResult, generatedPrompt, isScoring, isGenerating, isSaving, runScoring]);
 
   const handleOptimize = useCallback(async () => {
     if (!hasCurrentResult || !generatedPrompt.trim() || !score || generationLock.current || saveLock.current || isLoading || isGenerating || isScoring || isOptimizing || isSaving) return;
@@ -355,60 +301,59 @@ function BuilderInner() {
     setOptimizeError(null);
     const controller = new AbortController();
     generationController.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 90000);
-    let applied = false;
+    const timeout = window.setTimeout(() => controller.abort(), 90000);
     try {
       const response = await fetch("/api/prompts/optimize", {
-        method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-        body: JSON.stringify({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score, outputLanguage: detectTextLanguage(generatedPrompt, language) }),
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score, outputLanguage: "en" }),
       });
       const json = await response.json();
-      if (!response.ok) throw new Error(copy.optimizeError);
+      if (!response.ok) throw new Error(json.error ?? "Optimization failed.");
       const improved = json.data?.improved_prompt;
-      if (controller.signal.aborted || typeof improved !== "string" || !improved.trim() || improved.length > 16000) throw new Error(copy.optimizeError);
-      applied = true;
-      setContext({ ...context, versions: rememberVersion(context.versions, generatedPrompt, copy.optimize) });
+      if (controller.signal.aborted || typeof improved !== "string" || !improved.trim()) throw new Error("Optimization returned no prompt.");
+      setContext({ ...context, versions: rememberVersion(context.versions, generatedPrompt, "Optimization") });
       setGeneratedPrompt(improved);
-      setPromptEdited(false); manualEdit.current = false;
-      setScore(null); setScoreError(null);
-      setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
+      setPromptEdited(false);
+      manualEdit.current = false;
+      setScore(null);
+      setScoreError(null);
+      setIsSaved(false);
+      setHasCopied(false);
+      setSavedThisSession(false);
+      setGenerateRequestId(null);
       track("prompt_optimized", { target_tool: tool });
-      showToast("success", copy.optimizeDone);
+      showToast("success", "Prompt optimized.");
       await runScoring(improved, { signal: controller.signal });
     } catch {
-      if (applied) setScoreError(copy.optimizeRescoreError);
-      else setOptimizeError(copy.optimizeError);
+      setOptimizeError("Could not optimize the prompt. Try again.");
     } finally {
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
       generationController.current = null;
       generationLock.current = false;
       setIsOptimizing(false);
     }
-  }, [hasCurrentResult, generatedPrompt, score, isLoading, isGenerating, isScoring, isOptimizing, isSaving, idea, tool, context, language, copy.optimize, copy.optimizeDone, copy.optimizeError, copy.optimizeRescoreError, runScoring]);
+  }, [hasCurrentResult, generatedPrompt, score, isLoading, isGenerating, isScoring, isOptimizing, isSaving, idea, tool, context, runScoring]);
 
-  // ── Generate Pack ────────────────────────────────────────────────────────
   const handleGeneratePack = useCallback(async () => {
     if (!idea.trim()) {
-      showToast("error", t("builder.addIdeaFirst"));
+      showToast("error", "Add an idea first.");
       return;
     }
     if (isGeneratingPack) return;
-
     setIsGeneratingPack(true);
     setPackResult(null);
     setPackError(null);
     setPackRequestId(null);
-
-    const outputLanguage = detectTextLanguage(idea, language);
-
     try {
-      const res = await fetch("/api/prompt-packs/generate", {
+      const response = await fetch("/api/prompt-packs/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ idea, pack_type: packType, context, outputLanguage }),
+        body: JSON.stringify({ idea, pack_type: packType, context, outputLanguage: "en" }),
       });
-      const json = await res.json();
-      if (!res.ok) {
+      const json = await response.json();
+      if (!response.ok) {
         if (json?.upgradeRequired) {
           dispatchPaywallOpen();
           window.dispatchEvent(new Event("prompt_usage_refresh"));
@@ -419,22 +364,20 @@ function BuilderInner() {
       }
       setPackResult(json.data);
       if (savedPackId) setIsPackSaved(false);
-      const packReqId = res.headers.get("X-Request-Id");
-      if (packReqId) setPackRequestId(packReqId);
+      const requestId = response.headers.get("X-Request-Id");
+      if (requestId) setPackRequestId(requestId);
       track("prompt_pack_generated", { pack_type: packType });
       window.dispatchEvent(new Event("prompt_usage_refresh"));
-    } catch (err) {
-      console.error("[handleGeneratePack]", err);
+    } catch {
       setPackError("Pack generation failed. Check your connection and try again.");
     } finally {
       setIsGeneratingPack(false);
     }
-  }, [idea, packType, context, language, isGeneratingPack, savedPackId, t]);
+  }, [idea, packType, context, isGeneratingPack, savedPackId]);
 
-  // ── Generate (real AI streaming via /api/prompts/generate) ──────────────
   const handleGenerate = useCallback(async (nextContext?: PromptContext, refinement?: Refinement) => {
     if (!canExpandIdea(idea) && !refinement) {
-      showToast("error", copy.ideaTooShort);
+      showToast("error", "Add a few words about what you want help with.");
       return;
     }
     if (generationLock.current || isGenerating || isScoring || isSaving) return;
@@ -448,12 +391,11 @@ function BuilderInner() {
     let completed = false;
     const effectiveContext = nextContext ?? { ...context, universal: true, category: context.category ?? "auto" };
     setContext(effectiveContext);
-
-    const outputLanguage = detectTextLanguage(idea, language);
-    track("prompt_language_detected", { inputLanguage: outputLanguage, outputLanguage } as never);
-
     setIsGenerating(true);
-    if (!refinement) { setGeneratedPrompt(""); setScore(null); }
+    if (!refinement) {
+      setGeneratedPrompt("");
+      setScore(null);
+    }
     setHasCopied(false);
     setSavedThisSession(false);
     setScoreError(null);
@@ -462,206 +404,266 @@ function BuilderInner() {
 
     const controller = new AbortController();
     generationController.current = controller;
-    const timeout = setTimeout(() => controller.abort(), 90000);
+    const timeout = window.setTimeout(() => controller.abort(), 90000);
     try {
-      const res = await fetch("/api/prompts/generate", {
+      const response = await fetch("/api/prompts/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         signal: controller.signal,
-        body: JSON.stringify({ idea, target_tool: tool, context: effectiveContext, outputLanguage, refinement: refinement ? { action: refinement, prompt: originalPrompt } : undefined }),
+        body: JSON.stringify({
+          idea,
+          target_tool: tool,
+          context: effectiveContext,
+          outputLanguage: "en",
+          refinement: refinement ? { action: refinement, prompt: originalPrompt } : undefined,
+        }),
       });
 
-      if (!res.ok) {
+      if (!response.ok) {
         try {
-          const j = await res.json();
-          if (j?.upgradeRequired) {
+          const json = await response.json();
+          if (json?.upgradeRequired) {
             dispatchPaywallOpen();
-            // Refresh sidebar so it shows 0 remaining
             window.dispatchEvent(new Event("prompt_usage_refresh"));
             return;
           }
-          if (j?.error) {
-            showToast("error", j.error);
+          if (json?.error) {
+            showToast("error", json.error);
             return;
           }
-        } catch { /* fall through to generic */ }
-        showToast("error", `Generation failed (HTTP ${res.status}).`);
+        } catch {
+          // Fall through.
+        }
+        showToast("error", `Generation failed (HTTP ${response.status}).`);
         return;
       }
 
-      if (!res.body) {
-        showToast("error", "No response body from generation endpoint.");
+      if (!response.body) {
+        showToast("error", "No response body from the generation endpoint.");
         return;
       }
 
-      const reader = res.body.getReader();
+      const reader = response.body.getReader();
       const decoder = new TextDecoder();
       let accumulated = "";
-
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         accumulated += decoder.decode(value, { stream: true });
         setGeneratedPrompt(accumulated);
       }
-
       accumulated += decoder.decode();
       if (!accumulated.trim()) throw new Error("No prompt was returned. Please try again.");
-      if (accumulated.length > 16000) throw new Error("The generated prompt is too long. Please try a smaller task.");
+      if (accumulated.length > 16000) throw new Error("The generated prompt is too long. Try a smaller task.");
       completed = true;
       setGeneratedPrompt(accumulated);
       setResultIdea(idea);
-      if (resultIdea && resultIdea !== idea) { setSavedId(null); savedFingerprint.current = null; router.replace("/builder", { scroll: false }); }
-      setPromptEdited(false); manualEdit.current = false;
+      setPromptEdited(false);
+      manualEdit.current = false;
       setContext({ ...effectiveContext, versions: refinement ? rememberVersion(effectiveContext.versions, originalPrompt, refinement) : [] });
       setScore(null);
-      if (refinement) track("prompt_refined", { action_type: refinement, category: effectiveContext.category });
-
-      // Capture request_id from header for linking to saved prompt
-      const reqId = res.headers.get("X-Request-Id");
-      if (reqId) setGenerateRequestId(reqId);
-
-      // Generation done — hand off to scoring (separate phase)
+      if (refinement) track("prompt_refined", { action_type: refinement });
+      const requestId = response.headers.get("X-Request-Id");
+      if (requestId) setGenerateRequestId(requestId);
       setIsGenerating(false);
       track("prompt_generated", { target_tool: tool });
       window.dispatchEvent(new Event("prompt_usage_refresh"));
       await runScoring(accumulated, { universal: effectiveContext.universal, signal: controller.signal });
-    } catch (err) {
+    } catch (error) {
       setGeneratedPrompt(originalPrompt);
       setScore(originalScore);
       setIsSaved(wasSaved);
-      const message = err instanceof Error ? err.message : "Generation failed.";
-      showToast("error", message);
+      showToast("error", error instanceof Error ? error.message : "Generation failed.");
     } finally {
       if (!completed) {
-        setGeneratedPrompt(originalPrompt); setScore(originalScore); setIsSaved(wasSaved);
-        setHasCopied(wasCopied); setGenerateRequestId(previousRequestId);
+        setGeneratedPrompt(originalPrompt);
+        setScore(originalScore);
+        setIsSaved(wasSaved);
+        setHasCopied(wasCopied);
+        setGenerateRequestId(previousRequestId);
         setSavedThisSession(wasSavedThisSession);
       }
-      clearTimeout(timeout);
+      window.clearTimeout(timeout);
       generationLock.current = false;
       generationController.current = null;
-      setIsGenerating(false); // safety reset if streaming itself threw
+      setIsGenerating(false);
     }
-  }, [idea, resultIdea, router, tool, context, language, isGenerating, isScoring, isSaving, generatedPrompt, score, isSaved, hasCopied, savedThisSession, generateRequestId, runScoring, copy.ideaTooShort]);
+  }, [idea, tool, context, isGenerating, isScoring, isSaving, generatedPrompt, score, isSaved, hasCopied, savedThisSession, generateRequestId, runScoring]);
 
-  // ── Save ──────────────────────────────────────────────────────────────────
+  async function prepareGenerate() {
+    if (!canExpandIdea(idea) || checking || isGenerating) return;
+    const universalContext: PromptContext = { ...context, universal: true, category };
+    if (context.clarifications) {
+      await handleGenerate(universalContext);
+      return;
+    }
+    setChecking(true);
+    setQuestions([]);
+    setAnswers([]);
+    try {
+      const response = await fetch("/api/prompts/clarify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ idea, category, context, outputLanguage: "en" }),
+      });
+      const json = await response.json();
+      if (json?.upgradeRequired) {
+        dispatchPaywallOpen();
+        return;
+      }
+      if (!response.ok) throw new Error(json.error ?? "Could not prepare the prompt.");
+      const nextQuestions: { question: string; placeholder?: string }[] = json.data ?? [];
+      if (nextQuestions.length) {
+        setQuestions(nextQuestions);
+        setAnswers(nextQuestions.map(() => ""));
+      } else {
+        await handleGenerate(universalContext);
+      }
+    } catch (error) {
+      showToast("error", error instanceof Error ? error.message : "Could not prepare the prompt.");
+    } finally {
+      setChecking(false);
+    }
+  }
+
+  function submitAnswers() {
+    const clarifications = questions
+      .map((question, index) => `${question.question}\n${(answers[index] ?? "").trim()}`)
+      .filter((item) => item.split("\n").slice(1).join("\n").trim())
+      .join("\n\n");
+    setQuestions([]);
+    void handleGenerate({ ...context, universal: true, category, clarifications: clarifications || undefined });
+  }
+
   const handleSave = useCallback(async () => {
     if (saveLock.current || generationLock.current || isGenerating || isScoring) return;
     if (!hasCurrentResult || !generatedPrompt.trim()) {
-      showToast("error", t("builder.generateFirst"));
+      showToast("error", "Generate a prompt first.");
       return;
     }
-
     saveLock.current = true;
     setIsSaving(true);
-      const body = {
-        idea,
-        target_tool: tool,
-        context,
-        generated_prompt: generatedPrompt,
-        score,
-        title: generateTitleFromIdea(idea),
-      };
-
-      try {
-        if (savedId) {
-          // Update existing record
-          const res = await fetch(`/api/prompts/${savedId}`, {
-            method: "PATCH",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(body),
-          });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error ?? "Update failed.");
-          savedFingerprint.current = promptFingerprint(body);
-          setIsSaved(true);
-          setSavedThisSession(true);
-          showToast("success", t("builder.promptUpdated"));
-          track("prompt_saved", { target_tool: tool, action_type: "update" });
-        } else {
-          // Create new record
-          const res = await fetch("/api/prompts", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ ...body, request_id: generateRequestId }),
-          });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error ?? "Save failed.");
-          savedFingerprint.current = promptFingerprint(body);
-          setSavedId(json.data.id);
-          setIsSaved(true);
-          setSavedThisSession(true);
-          // Update URL without a full navigation so the page knows its ID
-          router.replace(`/builder?id=${json.data.id}`, { scroll: false });
-          showToast("success", t("builder.promptSaved"));
-          track("prompt_saved", { target_tool: tool, action_type: "create" });
-          window.dispatchEvent(new Event("prompt_usage_refresh"));
-        }
-      } catch (err) {
-        showToast("error", err instanceof Error ? err.message : "Save failed.");
-      } finally {
-        saveLock.current = false;
-        setIsSaving(false);
+    const body = {
+      idea,
+      target_tool: tool,
+      context,
+      generated_prompt: generatedPrompt,
+      score,
+      title: generateTitleFromIdea(idea),
+    };
+    try {
+      if (savedId) {
+        const response = await fetch(`/api/prompts/${savedId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(body),
+        });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? "Update failed.");
+        savedFingerprint.current = promptFingerprint(body);
+        setIsSaved(true);
+        setSavedThisSession(true);
+        showToast("success", "Prompt updated.");
+        track("prompt_saved", { target_tool: tool, action_type: "update" });
+      } else {
+        const response = await fetch("/api/prompts", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...body, request_id: generateRequestId }),
+        });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? "Save failed.");
+        savedFingerprint.current = promptFingerprint(body);
+        setSavedId(json.data.id);
+        setIsSaved(true);
+        setSavedThisSession(true);
+        router.replace(`/builder?id=${json.data.id}`, { scroll: false });
+        showToast("success", "Prompt saved.");
+        track("prompt_saved", { target_tool: tool, action_type: "create" });
+        window.dispatchEvent(new Event("prompt_usage_refresh"));
       }
-  }, [hasCurrentResult, idea, tool, context, generatedPrompt, score, savedId, router, t, generateRequestId, isGenerating, isScoring]);
+    } catch (error) {
+      showToast("error", error instanceof Error ? error.message : "Save failed.");
+    } finally {
+      saveLock.current = false;
+      setIsSaving(false);
+    }
+  }, [hasCurrentResult, idea, tool, context, generatedPrompt, score, savedId, router, generateRequestId, isGenerating, isScoring]);
 
   const startTask = useCallback((nextIdea: string, nextContext: PromptContext): boolean => {
     if (generationLock.current || isGenerating || isScoring || isSaving) return false;
-    if (generatedPrompt && !isSaved && !window.confirm(workspaceText.confirmReplace)) return false;
-    setIdea(nextIdea); setContext(nextContext); setGeneratedPrompt(""); setResultIdea(""); setScore(null);
-    setPromptEdited(false); manualEdit.current = false;
+    if (generatedPrompt && !isSaved && !window.confirm("Replace the current unsaved prompt?")) return false;
+    setIdea(nextIdea);
+    setContext(nextContext);
+    setGeneratedPrompt("");
+    setResultIdea("");
+    setScore(null);
+    setPromptEdited(false);
+    manualEdit.current = false;
     savedFingerprint.current = null;
-    setSavedId(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
-    setScoreError(null); setIsLoading(false);
+    setSavedId(null);
+    setIsSaved(false);
+    setHasCopied(false);
+    setSavedThisSession(false);
+    setGenerateRequestId(null);
+    setScoreError(null);
+    setIsLoading(false);
     router.replace("/builder", { scroll: false });
-    window.scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+    window.scrollTo({ top: 0, behavior: "smooth" });
     return true;
-  }, [generatedPrompt, isSaved, isGenerating, isScoring, isSaving, workspaceText.confirmReplace, router, reducedMotion]);
+  }, [generatedPrompt, isSaved, isGenerating, isScoring, isSaving, router]);
+
   const applyPlaybook = useCallback((playbook: Playbook) => startTask(playbook.idea, { ...playbook.context, universal: true }), [startTask]);
+
   function restoreVersion(version: PromptVersion) {
     if (generationLock.current || isGenerating || isScoring || isSaving) return;
-    setContext({ ...context, versions: rememberVersion((context.versions ?? []).filter((v) => v !== version), generatedPrompt, "Restored version") });
-    setGeneratedPrompt(version.prompt); setScore(null); setIsSaved(false); setHasCopied(false); setSavedThisSession(false); setGenerateRequestId(null);
-    setPromptEdited(false); manualEdit.current = false;
+    setContext({ ...context, versions: rememberVersion((context.versions ?? []).filter((item) => item !== version), generatedPrompt, "Restored version") });
+    setGeneratedPrompt(version.prompt);
+    setScore(null);
+    setIsSaved(false);
+    setHasCopied(false);
+    setSavedThisSession(false);
+    setGenerateRequestId(null);
+    setPromptEdited(false);
+    manualEdit.current = false;
     setScoreError(null);
-    track("prompt_version_restored"); showToast("success", workspaceText.restored);
+    track("prompt_version_restored");
+    showToast("success", "Version restored.");
   }
 
-  // ── Delete ────────────────────────────────────────────────────────────────
   const handleDelete = useCallback(() => {
     if (!savedId || generationLock.current || saveLock.current || isOptimizing || isSaving || isLoading || isGenerating || isScoring) return;
-    if (!window.confirm(t("builder.deleteConfirm"))) return;
-
-    startDeleteTransition(async () => {
+    if (!window.confirm("Delete this saved prompt?")) return;
+    setIsDeleting(true);
+    void (async () => {
       try {
-        const res = await fetch(`/api/prompts/${savedId}`, { method: "DELETE" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Delete failed.");
-        // Reset to a fresh builder
+        const response = await fetch(`/api/prompts/${savedId}`, { method: "DELETE" });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? "Delete failed.");
         setIdea("");
-        setTool("claude");
         setGeneratedPrompt("");
-        setPromptEdited(false); manualEdit.current = false;
+        setPromptEdited(false);
+        manualEdit.current = false;
         setScore(null);
         setSavedId(null);
         setIsSaved(false);
         router.replace("/builder", { scroll: false });
-        showToast("success", t("builder.promptDeleted"));
-      } catch (err) {
-        showToast("error", err instanceof Error ? err.message : t("builder.loadFailed"));
+        showToast("success", "Prompt deleted.");
+      } catch (error) {
+        showToast("error", error instanceof Error ? error.message : "Delete failed.");
+      } finally {
+        setIsDeleting(false);
       }
-    });
-  }, [savedId, router, t, isOptimizing, isSaving, isLoading, isGenerating, isScoring]);
+    })();
+  }, [savedId, router, isOptimizing, isSaving, isLoading, isGenerating, isScoring]);
 
-  // ── Save Pack ─────────────────────────────────────────────────────────────
   const handleSavePack = useCallback(() => {
     if (!idea.trim() || !packResult) {
-      showToast("error", t("builder.generatePackFirst"));
+      showToast("error", "Generate a pack first.");
       return;
     }
-
-    startSavingPackTransition(async () => {
+    setIsSavingPack(true);
+    void (async () => {
       const body = {
         idea,
         pack_type: packType,
@@ -669,325 +671,339 @@ function BuilderInner() {
         prompts: packResult.prompts,
         title: generateTitleFromIdea(idea),
       };
-
       try {
         if (savedPackId) {
-          const res = await fetch(`/api/prompt-packs/${savedPackId}`, {
+          const response = await fetch(`/api/prompt-packs/${savedPackId}`, {
             method: "PATCH",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(body),
           });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error ?? "Update failed.");
+          const json = await response.json();
+          if (!response.ok) throw new Error(json.error ?? "Update failed.");
           setIsPackSaved(true);
-          showToast("success", t("builder.packUpdated"));
-          track("prompt_pack_saved", { pack_type: packType, action_type: "update" });
+          showToast("success", "Pack updated.");
         } else {
-          const res = await fetch("/api/prompt-packs", {
+          const response = await fetch("/api/prompt-packs", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...body, request_id: packRequestId }),
           });
-          const json = await res.json();
-          if (!res.ok) throw new Error(json.error ?? "Save failed.");
+          const json = await response.json();
+          if (!response.ok) throw new Error(json.error ?? "Save failed.");
           setSavedPackId(json.data.id);
           setIsPackSaved(true);
-          showToast("success", t("builder.packSaved"));
-          track("prompt_pack_saved", { pack_type: packType, action_type: "create" });
+          showToast("success", "Pack saved.");
           window.dispatchEvent(new Event("prompt_usage_refresh"));
         }
-      } catch (err) {
-        showToast("error", err instanceof Error ? err.message : "Save failed.");
+      } catch (error) {
+        showToast("error", error instanceof Error ? error.message : "Save failed.");
+      } finally {
+        setIsSavingPack(false);
       }
-    });
-  }, [idea, packType, context, packResult, savedPackId, t, packRequestId]);
+    })();
+  }, [idea, packType, context, packResult, savedPackId, packRequestId]);
 
-  // ── Delete Pack ───────────────────────────────────────────────────────────
   const handleDeletePack = useCallback(() => {
     if (!savedPackId) return;
-    if (!window.confirm(t("builder.deletePackConfirm"))) return;
-
-    startDeletingPackTransition(async () => {
+    if (!window.confirm("Delete this saved pack?")) return;
+    setIsDeletingPack(true);
+    void (async () => {
       try {
-        const res = await fetch(`/api/prompt-packs/${savedPackId}`, { method: "DELETE" });
-        const json = await res.json();
-        if (!res.ok) throw new Error(json.error ?? "Delete failed.");
+        const response = await fetch(`/api/prompt-packs/${savedPackId}`, { method: "DELETE" });
+        const json = await response.json();
+        if (!response.ok) throw new Error(json.error ?? "Delete failed.");
         setPackResult(null);
         setPackError(null);
         setSavedPackId(null);
         setIsPackSaved(false);
-        setIsLoading(false);
         router.replace("/builder", { scroll: false });
-        showToast("success", t("builder.packDeleted"));
-        track("prompt_pack_deleted", { pack_type: packType });
-      } catch (err) {
-        showToast("error", err instanceof Error ? err.message : "Delete failed.");
+        showToast("success", "Pack deleted.");
+      } catch (error) {
+        showToast("error", error instanceof Error ? error.message : "Delete failed.");
+      } finally {
+        setIsDeletingPack(false);
       }
-    });
-  }, [savedPackId, packType, router, t]);
+    })();
+  }, [savedPackId, router]);
 
-  // ── Title for breadcrumb ──────────────────────────────────────────────────
-  const breadcrumbTitle = idea.trim()
-    ? generateTitleFromIdea(idea)
-    : t("builder.untitledPrompt");
+  const suggestions = getSuggestions(idea, category, seed, 4, "en");
+  const title = idea.trim() ? generateTitleFromIdea(idea) : "Untitled prompt";
+  const busy = isGenerating || isOptimizing || isScoring || isSaving || checking;
 
   return (
-    <AppShell modern>
-      <Topbar
-        breadcrumb={[
-          { label: t("nav.workspace") },
-          { label: t("nav.builder") },
-          { label: breadcrumbTitle },
-        ]}
-        actions={
-          <div className="hidden md:flex items-center gap-2">
-            {mode === "pack" && isPaid ? (
-              <>
-                {savedPackId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDeletePack}
-                    disabled={isDeletingPack}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/5"
-                  >
-                    {isDeletingPack ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="size-3.5" />
-                    )}
-                    {t("builder.delete")}
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSavePack}
-                  disabled={isSavingPack || isLoading || isGeneratingPack || !packResult}
-                >
-                  <ActionIcon pending={isSavingPack} success={isPackSaved} icon={Save} />
-                  {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
-                </Button>
-              </>
-            ) : (
-              <>
-                {savedId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={handleDelete}
-                    disabled={isDeleting || isOptimizing || isSaving || isLoading || isGenerating || isScoring}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/5"
-                  >
-                    {isDeleting ? (
-                      <Loader2 className="size-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="size-3.5" />
-                    )}
-                    Delete
-                  </Button>
-                )}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSave}
-                  disabled={isSaving || isLoading || isGenerating || isOptimizing || isScoring || !hasCurrentResult || !generatedPrompt.trim()}
-                >
-                  <ActionIcon pending={isSaving} success={isSaved} icon={Save} />
-                  {isSaved ? t("builder.saved") : savedId ? t("builder.update") : t("builder.saveDraft")}
-                </Button>
-              </>
-            )}
-          </div>
-        }
-      />
-
-      {/* Toast notification */}
-      <AnimatePresence>
-      {toast && (
-        <motion.div role="status"
-          initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-          transition={{ duration: reducedMotion ? 0 : 0.18 }}
-          className={cn(
-            "fixed bottom-5 right-5 z-50 flex max-w-[calc(100vw-2.5rem)] items-center gap-2.5 rounded-lg border px-4 py-3 text-sm font-medium shadow-lg backdrop-blur-sm",
-            toast.kind === "success"
-              ? "border-sage-200 bg-card text-ink-800"
-              : "border-destructive/20 bg-card text-destructive"
-          )}
-        >
-          {toast.kind === "success" ? (
-            <CheckCircle2 className="size-4 text-sage-600 shrink-0" />
-          ) : (
-            <AlertCircle className="size-4 shrink-0" />
-          )}
+    <AppShell>
+      <PaywallDialog />
+      {toast ? (
+        <div className={`toast ${toast.kind === "error" ? "toast--error" : ""}`} role="status">
           {toast.message}
-        </motion.div>
-      )}
-      </AnimatePresence>
-
-      <main className="flex-1 px-4 md:px-8 lg:px-10 py-8 md:py-12">
-        <div className={cn("mx-auto mb-8 flex flex-wrap items-start justify-between gap-4", mode === "single" && !generatedPrompt && !isGenerating ? "max-w-5xl" : "max-w-3xl")}>
-          <div>
-            <h1 className="font-serif text-2xl md:text-3xl text-zinc-900 leading-tight">
-              {mode === "pack" ? t("builder.packTitle") : copy.title}
-            </h1>
-            <p className="text-sm text-ink-400 mt-1">
-              {mode === "pack"
-                ? t("builder.packSubtitle")
-                : copy.subtitle}
-            </p>
-          </div>
-
-          {/* Mode toggle */}
-          <div className="flex p-1 bg-white rounded-md border border-zinc-200 shrink-0 gap-0.5">
-            <button
-              type="button"
-              onClick={() => setMode("single")}
-              disabled={isOptimizing}
-              className={cn(
-                "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
-                mode === "single" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
-              )}
-            >
-              <Wand2 className="size-3.5" />
-              {t("builder.single")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("pack")}
-              disabled={isOptimizing}
-              className={cn(
-                "flex items-center gap-1.5 text-sm font-medium px-4 py-1.5 rounded-full transition-all",
-                mode === "pack" ? "bg-white text-ink-900 card-soft shadow-sm" : "text-ink-500 hover:text-ink-700"
-              )}
-            >
-              <Layers className="size-3.5" />
-              {t("builder.pack")}
-              {!usageLoading && !isPaid && (
-                <span className="flex items-center gap-0.5 text-[9px] font-bold uppercase tracking-wider text-clay-600 bg-clay-500/10 border border-clay-200/50 rounded-full px-1.5 py-0.5 leading-none">
-                  <Crown className="size-2.5" />
-                  Pro
-                </span>
-              )}
-            </button>
-          </div>
         </div>
+      ) : null}
 
-        {isLoading || (mode === "pack" && usageLoading) ? (
-          <BuilderSkeleton />
-        ) : mode === "pack" && !isPaid ? (
-          <PacksUpsell />
-        ) : mode === "pack" ? (
-          /* ── Pack mode layout ─────────────────────────────────────────── */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
-            <div className="lg:col-span-4 space-y-5">
-              <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-5 space-y-5">
-                <IdeaInput value={idea} onChange={setIdea} />
-                <ContextPanel value={context} onChange={setContext} />
-                <PackTypeSelector value={packType} onChange={setPackType} />
-              </div>
-              <Button
-                size="lg"
-                className="w-full"
-                onClick={handleGeneratePack}
-                disabled={!idea.trim() || isGeneratingPack}
-              >
-                {isGeneratingPack ? (
-                  <><Loader2 className="size-4 animate-spin" />{t("builder.generatingPack")}</>
-                ) : (
-                  <><Layers className="size-4" />{packResult ? t("builder.regeneratePack") : t("builder.generatePack")}</>
-                )}
+      <header className="app-head">
+        <div className="stack">
+          <p className="small muted">Workspace / Builder</p>
+          <h1 className="app-head__title">{mode === "pack" ? "Prompt packs" : "The builder"}</h1>
+          <p className="app-head__sub">
+            {mode === "pack"
+              ? "Break a multi-step task into prompts that run in order."
+              : "Write the rough version. The document on the right is the prompt Umprompt builds from it."}
+          </p>
+        </div>
+        <div className="composer__actions">
+          {mode === "single" ? (
+            <>
+              {savedId ? (
+                <Button size="sm" variant="ghost" onClick={handleDelete} disabled={isDeleting || busy}>
+                  {isDeleting ? "Deleting" : "Delete"}
+                </Button>
+              ) : null}
+              <Button size="sm" onClick={handleSave} disabled={isSaving || isLoading || busy || !hasCurrentResult || !generatedPrompt.trim()}>
+                {isSaving ? "Saving" : isSaved ? "Saved" : savedId ? "Update" : "Save"}
               </Button>
-              <Button
-                size="lg"
-                variant="outline"
-                className="w-full md:hidden"
-                onClick={handleSavePack}
-                disabled={isSavingPack || isGeneratingPack || !packResult}
-              >
-                <ActionIcon pending={isSavingPack} success={isPackSaved} icon={Save} />
-                {isPackSaved ? t("builder.saved") : savedPackId ? t("builder.updatePack") : t("builder.savePack")}
+            </>
+          ) : (
+            <>
+              {savedPackId ? (
+                <Button size="sm" variant="ghost" onClick={handleDeletePack} disabled={isDeletingPack || busy}>
+                  {isDeletingPack ? "Deleting" : "Delete"}
+                </Button>
+              ) : null}
+              <Button size="sm" onClick={handleSavePack} disabled={isSavingPack || isLoading || isGeneratingPack || !packResult}>
+                {isSavingPack ? "Saving" : isPackSaved ? "Saved" : savedPackId ? "Update" : "Save pack"}
               </Button>
-            </div>
-            <div className="lg:col-span-8">
-              <PromptPackOutput pack={packResult} isGenerating={isGeneratingPack} error={packError} />
-            </div>
+            </>
+          )}
+        </div>
+      </header>
+
+      <div className="tabs" style={{ marginBottom: 28 }}>
+        <button type="button" aria-current={mode === "single" ? "page" : undefined} onClick={() => setMode("single")}>Single prompt</button>
+        <button type="button" aria-current={mode === "pack" ? "page" : undefined} onClick={() => setMode("pack")}>Prompt pack {!isPaid ? "· Pro" : ""}</button>
+      </div>
+
+      {isLoading || (mode === "pack" && usageLoading) ? (
+        <div className="sheet">
+          <p className="body muted">Loading.</p>
+        </div>
+      ) : mode === "pack" && !isPaid ? (
+        <section className="sheet">
+          <h2 className="sheet__title">Prompt packs are a Pro feature.</h2>
+          <p className="body" style={{ marginTop: 14 }}>
+            A pack turns a multi-step task into a set of prompts that run in order. The single
+            prompt builder stays free.
+          </p>
+          <div className="composer__actions" style={{ marginTop: 20 }}>
+            <a href="/plan?returnTo=/builder?resume=checkout" className="button button--accent">See the plans</a>
           </div>
-        ) : (
-          <>
-          <BuilderLibrary idea={idea} context={context} busy={isGenerating || isOptimizing || isScoring || isSaving} onPlaybook={applyPlaybook} onContextChange={setContext} onNavigate={preserveCheckoutDraft} playbookId={searchParams.get("playbook")} profileId={searchParams.get("profile")} />
-          <IdeaComposer idea={idea} onIdeaChange={setIdea} context={context} onContextChange={setContext}
-            example={<ExpansionExample copy={copy.expansionExample} onUse={!idea.trim() && !generatedPrompt && !isGenerating ? () => {
-              setIdea(copy.expansionExample.idea);
-              setContext({ ...context, category: "writing", universal: true, clarifications: undefined });
-              document.getElementById("studio-idea")?.focus();
-            } : undefined} />}
-            onGenerate={handleGenerate} busy={isGenerating || isOptimizing || isScoring || isSaving}
-            generating={isGenerating} hasResult={hasCurrentResult} canSave={hasCurrentResult && !!generatedPrompt.trim()}
-            onSave={handleSave} saving={isSaving} saved={isSaved}
-            onNewIdea={() => { if (startTask("", { universal: true, category: "auto" })) setTimeout(() => document.getElementById("studio-idea")?.focus(), 0); }}
-            outcomeEligible={hasCopied}
-            resultActions={hasCurrentResult && !isGenerating && <ResultActions busy={isOptimizing || isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
-            nextActions={hasCurrentResult && !!generatedPrompt && !isGenerating && <NextTaskActions busy={isOptimizing || isScoring || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
-              const { versions: _versions, clarifications: _answers, ...reusable } = context;
-              if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category: context.category, option: String(index) });
-            }} />}
-            upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
-            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isOptimizing || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
-            quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeDisabled={isLoading || isGenerating || isSaving || !hasCurrentResult || !generatedPrompt.trim()} optimizeError={optimizeError} />}
-          />
-          </>
-        )}
+        </section>
+      ) : mode === "pack" ? (
+        <div className="builder">
+          <section className="builder__composer">
+            <div className="composer">
+              <div className="field">
+                <label className="field__label" htmlFor="pack-idea">The task</label>
+                <textarea
+                  id="pack-idea"
+                  className="field__textarea"
+                  rows={5}
+                  value={idea}
+                  onChange={(event) => setIdea(event.target.value.slice(0, 4000))}
+                  placeholder="Build a usage dashboard for my SaaS. I need daily active users, monthly revenue, and churn, with charts."
+                />
+              </div>
+              <ContextFields value={context} onChange={setContext} />
+              <PackTypeSelector value={packType} onChange={setPackType} />
+              <div className="composer__actions">
+                <Button variant="accent" onClick={handleGeneratePack} disabled={!idea.trim() || isGeneratingPack}>
+                  {isGeneratingPack ? "Writing the pack" : packResult ? "Generate again" : "Generate pack"}
+                </Button>
+                <span className="composer__hint">Uses one prompt</span>
+              </div>
+            </div>
+          </section>
+          <section className="builder__document">
+            <PromptPackSheet pack={packResult} isGenerating={isGeneratingPack} error={packError} onCopied={() => track("prompt_pack_copied", { pack_type: packType })} />
+          </section>
+        </div>
+      ) : (
+        <div className="builder">
+          <section className="builder__composer">
+            <div className="composer">
+              <div className="field">
+                <label className="field__label" htmlFor="idea">What do you want to do?</label>
+                <textarea
+                  id="idea"
+                  className="field__textarea"
+                  rows={5}
+                  value={idea}
+                  onChange={(event) => setIdea(event.target.value.slice(0, 4000))}
+                  placeholder="Write the rough version. For example: plan a two-week study schedule for a history exam, I lose focus after forty minutes."
+                />
+                <span className="field__hint">{idea.trim().length}/4000 · The rough version is fine.</span>
+              </div>
 
+              <div className="field">
+                <span className="field__label">What kind of task?</span>
+                <div className="composer__chips">
+                  {TASK_CATEGORIES.map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      className="composer__chip"
+                      aria-pressed={category === item}
+                      onClick={() => setContext({ ...context, category: item, clarifications: undefined })}
+                    >
+                      {CATEGORY_LABELS[item]}
+                    </button>
+                  ))}
+                </div>
+              </div>
 
-      </main>
+              <div className="field">
+                <span className="field__label">Target assistant</span>
+                <div className="composer__chips">
+                  {TOOLS.map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="composer__chip"
+                      aria-pressed={tool === item.id}
+                      onClick={() => setTool(item.id)}
+                    >
+                      {item.label}
+                    </button>
+                  ))}
+                  <button type="button" className="composer__chip" aria-pressed={context.universal === true} onClick={() => setContext({ ...context, universal: !context.universal })}>
+                    Portable
+                  </button>
+                </div>
+              </div>
+
+              <ContextFields value={context} onChange={setContext} />
+
+              {questions.length ? (
+                <div className="sheet sheet--surface" aria-live="polite">
+                  <h2 className="sheet__title" style={{ fontSize: 24 }}>Two questions before the prompt.</h2>
+                  <p className="small muted" style={{ marginTop: 8 }}>
+                    Answer only what is useful. Empty answers are skipped.
+                  </p>
+                  <div className="stack" style={{ marginTop: 16 }}>
+                    {questions.map((question, index) => (
+                      <div className="field" key={`${question.question}-${index}`}>
+                        <label className="field__label" htmlFor={`question-${index}`}>{question.question}</label>
+                        <input
+                          id={`question-${index}`}
+                          className="field__input"
+                          value={answers[index] ?? ""}
+                          onChange={(event) => setAnswers((current) => current.map((answer, answerIndex) => answerIndex === index ? event.target.value : answer))}
+                          placeholder={question.placeholder ?? "Your answer"}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                  <div className="composer__actions" style={{ marginTop: 16 }}>
+                    <Button variant="accent" onClick={submitAnswers} disabled={isGenerating}>Generate prompt</Button>
+                    <Button variant="ghost" onClick={() => { setQuestions([]); void handleGenerate({ ...context, universal: true, category }); }} disabled={isGenerating}>Skip</Button>
+                  </div>
+                </div>
+              ) : null}
+
+              {!generatedPrompt && suggestions.length ? (
+                <div className="composer__suggestions">
+                  <span className="field__label">Need a start?</span>
+                  {suggestions.map((suggestion) => (
+                    <button
+                      key={suggestion.id}
+                      type="button"
+                      className="composer__suggestion"
+                      onClick={() => { setIdea(suggestion.idea); setContext({ ...context, category: suggestion.category, universal: true, clarifications: undefined }); }}
+                    >
+                      {suggestion.idea}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+
+              <div className="composer__actions">
+                <Button variant="accent" onClick={prepareGenerate} disabled={busy || !canExpandIdea(idea)}>
+                  {checking ? "Reading the idea" : isGenerating ? "Writing the prompt" : hasCurrentResult ? "Generate again" : "Generate prompt"}
+                </Button>
+                <Button variant="ghost" onClick={() => { if (startTask("", { universal: true, category: "auto" })) setTimeout(() => document.getElementById("idea")?.focus(), 0); }} disabled={busy}>
+                  New idea
+                </Button>
+                {!usageLoading ? <span className="composer__hint">{isPaid ? "Unlimited fair use" : `${remainingThisWeek ?? 7} free prompts left this week`}</span> : null}
+              </div>
+            </div>
+
+            <LibraryPanel
+              idea={idea}
+              context={context}
+              busy={busy}
+              onPlaybook={applyPlaybook}
+              onContextChange={setContext}
+              playbookId={searchParams.get("playbook")}
+              profileId={searchParams.get("profile")}
+            />
+
+            {shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring ? (
+              <UpgradeCta returnTo="/builder?resume=checkout" />
+            ) : null}
+          </section>
+
+          <section className="builder__document">
+            <PromptSheet
+              prompt={generatedPrompt}
+              targetTool={tool}
+              universal={context.universal}
+              edited={promptEdited}
+              isSaved={isSaved}
+              isGenerating={isGenerating}
+              isScoring={isScoring}
+              busy={isLoading || isOptimizing || isSaving}
+              onPromptChange={handleEditPrompt}
+              onPromptEditEnd={() => { manualEdit.current = false; }}
+              onCopied={() => { setHasCopied(true); track("prompt_copied", { target_tool: tool }); }}
+              onRegenerate={() => void handleGenerate()}
+            />
+
+            <ScoreMargin
+              score={score}
+              isScoring={isScoring}
+              error={scoreError}
+              onRetry={() => { if (generatedPrompt) void runScoring(generatedPrompt); }}
+              onOptimize={handleOptimize}
+              isOptimizing={isOptimizing}
+              optimizeDisabled={isLoading || isGenerating || isSaving || !hasCurrentResult || !generatedPrompt.trim()}
+              optimizeError={optimizeError}
+            />
+
+            {hasCurrentResult && !isGenerating ? (
+              <ResultActions
+                busy={isOptimizing || isScoring || isSaving}
+                canRefine={Boolean(generatedPrompt.trim())}
+                category={category !== "auto" ? category : inferTaskCategory(idea, "en")}
+                versions={context.versions}
+                onRefine={(action) => void handleGenerate(undefined, action)}
+                onRestore={restoreVersion}
+                onNext={(instruction, index) => {
+                  const { versions: _versions, clarifications: _answers, ...reusable } = context;
+                  if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category, option: String(index) });
+                }}
+              />
+            ) : null}
+
+            <div className="small muted">{title}</div>
+          </section>
+        </div>
+      )}
     </AppShell>
   );
 }
-
-function BuilderSkeleton() {
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 animate-pulse">
-      <div className="lg:col-span-4">
-        <div className="rounded-2xl bg-cream-100 h-96" />
-      </div>
-      <div className="hidden lg:block lg:col-span-5">
-        <div className="rounded-2xl bg-cream-100 h-[calc(100vh-13rem)]" />
-      </div>
-      <div className="hidden lg:block lg:col-span-3">
-        <div className="rounded-2xl bg-cream-100 h-[calc(100vh-13rem)]" />
-      </div>
-    </div>
-  );
-}
-
-// ─── Page export: wraps inner in Suspense for useSearchParams ──────────────
 
 export default function BuilderPage() {
   return (
-    <Suspense fallback={<BuilderFallback />}>
+    <Suspense fallback={<AppShell><div className="sheet"><p className="body muted">Loading the builder.</p></div></AppShell>}>
       <BuilderInner />
     </Suspense>
-  );
-}
-
-function BuilderFallback() {
-  return (
-    <AppShell>
-      <div className="h-16 border-b border-ink-100/70 bg-cream-50/85" />
-      <main className="flex-1 px-4 md:px-8 lg:px-10 py-6 md:py-8">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 animate-pulse">
-          <div className="lg:col-span-4">
-            <div className="rounded-2xl bg-cream-100 h-96" />
-          </div>
-          <div className="hidden lg:block lg:col-span-5">
-            <div className="rounded-2xl bg-cream-100 h-[calc(100vh-13rem)]" />
-          </div>
-          <div className="hidden lg:block lg:col-span-3">
-            <div className="rounded-2xl bg-cream-100 h-[calc(100vh-13rem)]" />
-          </div>
-        </div>
-      </main>
-    </AppShell>
   );
 }

@@ -1,197 +1,87 @@
 import Link from "next/link";
-import { Logo } from "@/components/brand/logo";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { Nav } from "@/components/system/nav";
+import { Footer } from "@/components/system/footer";
 
 export const metadata = {
-  title: "Privacy Policy — Umprompt",
+  title: "Privacy policy",
   description: "How Umprompt handles your data.",
 };
 
 const LAST_UPDATED = "October 10, 2026";
 
-export default function PrivacyPage() {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="min-h-screen bg-paper">
-      {/* Nav */}
-      <header className="sticky top-0 z-30 backdrop-blur-md bg-cream-50/70 border-b border-ink-100/40">
-        <div className="max-w-4xl mx-auto px-5 lg:px-8 h-16 flex items-center justify-between">
-          <Link href="/">
-            <Logo />
-          </Link>
-          <Button asChild variant="ghost" size="sm">
-            <Link href="/">
-              <ArrowLeft className="size-3.5" />
-              Back
-            </Link>
-          </Button>
-        </div>
-      </header>
-
-      {/* Content */}
-      <main className="max-w-2xl mx-auto px-5 lg:px-8 py-14 md:py-20">
-        <div className="mb-10">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
-            Legal
-          </p>
-          <h1 className="font-serif text-4xl md:text-5xl tracking-tight text-ink-900 leading-[1.05] mb-4">
-            Privacy Policy
-          </h1>
-          <p className="text-sm text-ink-400">Last updated: {LAST_UPDATED}</p>
-        </div>
-
-        <div className="prose-custom space-y-8">
-          <Section title="What we collect">
-            <p>
-              When you sign in, we store your email address and a unique account ID in our
-              database. We do not collect your name, phone number, or payment information.
-            </p>
-            <p>
-              Prompts you explicitly save, including the idea, context, generated text, and quality
-              score, appear in your personal Supabase-backed workspace. Generation inputs and
-              outputs may also be recorded separately for reliability, debugging, and support;
-              choosing not to save a prompt does not mean that no server-side records exist.
-            </p>
-          </Section>
-
-          <Section title="How we use your data">
-            <ul>
-              <li>To authenticate you and display your saved prompts.</li>
-              <li>
-                To send your prompt idea and relevant context to the configured AI provider,
-                Anthropic or OpenRouter, for generation, scoring, and optimization. These
-                providers process data subject to their own privacy policies, including{" "}
-                <a
-                  href="https://www.anthropic.com/privacy"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-clay-700 underline underline-offset-2"
-                >
-                  privacy policy
-                </a>
-                {" and "}<a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-clay-700 underline underline-offset-2">OpenRouter&apos;s privacy policy</a>
-                .
-              </li>
-              <li>To improve Umprompt (aggregated, anonymized usage only — no prompt content).</li>
-            </ul>
-          </Section>
-
-          <Section title="Your data is not sold">
-            <p>
-              We do not sell, rent, or trade your personal data or prompt content to any third
-              party. Full stop.
-            </p>
-          </Section>
-
-          <Section title="API keys are server-only">
-            <p>
-              Your Anthropic API key (and any other AI provider keys) are stored as server-side
-              environment variables. They are never exposed to the browser, logged, or stored in
-              the database.
-            </p>
-          </Section>
-
-          <Section title="Deleting your data">
-            <p>
-              You can delete any saved prompt from the Builder or History page at any time. Deleted
-              prompts are removed from our database immediately and permanently.
-            </p>
-            <p>
-              To delete your account and all associated data, email us at the address in the
-              Contact section below.
-            </p>
-          </Section>
-
-          <Section title="Cookies and sessions">
-            <p>
-              We use Supabase Auth for authentication. Session tokens are stored in secure,
-              HTTP-only cookies. We do not use third-party advertising or tracking cookies.
-            </p>
-          </Section>
-
-          <Section title="Browser extension">
-            <p>
-              The Umprompt extension stores its sign-in session and unfinished prompt draft in
-              the browser&apos;s local extension storage. Drafts are separate from saved account
-              history. Signing out through the extension removes its current account session
-              and that account&apos;s local draft, but does not delete saved website history.
-            </p>
-            <p>
-              The extension does not automatically read webpages, browsing history, or the
-              clipboard. It processes text you type or paste into its panel, and writes a prompt
-              to the clipboard only when you choose Copy. Expanding, scoring, optimizing, and
-              simplifying send relevant task text to Umprompt&apos;s server and configured AI
-              provider. Choosing Save stores the prompt in the same private account history
-              used by the website.
-            </p>
-          </Section>
-
-          <Section title="Data storage">
-            <p>
-              Your data is stored in a Supabase-hosted Postgres database. Row-level security
-              policies ensure that each user can only access their own data. Data is encrypted at
-              rest and in transit.
-            </p>
-            <p>
-              Umprompt stores user-provided prompts and generated outputs to provide workspace
-              history, improve reliability, debug issues, and support users.
-            </p>
-          </Section>
-
-          <Section title="Changes to this policy">
-            <p>
-              If we make material changes to this policy, we will update the &ldquo;Last updated&rdquo; date
-              above. Continued use of Umprompt after changes constitutes acceptance.
-            </p>
-          </Section>
-
-          <Section title="Contact">
-            <p>
-              Questions about privacy? Email us at{" "}
-              <a
-                href="mailto:umpromptsupport@gmail.com"
-                className="text-clay-700 underline underline-offset-2"
-              >
-                umpromptsupport@gmail.com
-              </a>
-              .
-            </p>
-          </Section>
-        </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-ink-100/60 bg-cream-50/40 mt-10">
-        <div className="max-w-4xl mx-auto px-5 lg:px-8 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
-          <Logo />
-          <div className="flex items-center gap-4 text-xs text-ink-400">
-            <Link href="/privacy" className="hover:text-ink-700 transition-colors font-medium text-ink-600">
-              Privacy
-            </Link>
-            <span className="text-ink-200">·</span>
-            <Link href="/terms" className="hover:text-ink-700 transition-colors">
-              Terms
-            </Link>
-            <span className="text-ink-200">·</span>
-            <span>© {new Date().getFullYear()} Umprompt</span>
-          </div>
-        </div>
-      </footer>
-    </div>
+    <section className="stack">
+      <h2 style={{ fontSize: "clamp(24px, 2vw, 34px)" }}>{title}</h2>
+      <div className="stack">{children}</div>
+    </section>
   );
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+export default function PrivacyPage() {
   return (
-    <section>
-      <h2 className="font-serif text-xl font-medium text-ink-900 mb-3">{title}</h2>
-      <div className="space-y-3 text-[15px] text-ink-600 leading-relaxed">{children}</div>
-    </section>
+    <>
+      <Nav />
+      <main id="main" className="wrap band">
+        <div className="axis">
+          <aside className="axis__side" aria-hidden="true" />
+          <article className="axis__main stack--loose stack">
+            <h1 style={{ fontSize: "clamp(48px, 6vw, 96px)" }}>Privacy policy.</h1>
+            <p className="small muted">Last updated: {LAST_UPDATED}</p>
+            <p className="lead">
+              What we store, why, and what we do not do with it.
+            </p>
+
+            <Section title="What we collect">
+              <p className="body">When you sign in, we store your email address and a unique account ID in our database. We do not collect your name, phone number, or payment information.</p>
+              <p className="body">Prompts you explicitly save, including the idea, context, generated text, and quality score, appear in your personal Supabase-backed workspace. Generation inputs and outputs may also be recorded separately for reliability, debugging, and support; choosing not to save a prompt does not mean that no server-side records exist.</p>
+            </Section>
+
+            <Section title="How we use your data">
+              <p className="body">To authenticate you and display your saved prompts. To send your prompt idea and relevant context to the configured AI provider, Anthropic or OpenRouter, for generation, scoring, and optimization. These providers process data under their own privacy policies. To improve Umprompt with aggregated, anonymized usage only; no prompt content.</p>
+            </Section>
+
+            <Section title="Your data is not sold">
+              <p className="body">We do not sell, rent, or trade your personal data or prompt content to any third party.</p>
+            </Section>
+
+            <Section title="API keys are server-only">
+              <p className="body">AI provider keys are stored as server-side environment variables. They are never exposed to the browser, logged, or stored in the database.</p>
+            </Section>
+
+            <Section title="Deleting your data">
+              <p className="body">You can delete any saved prompt from the builder or history page. Deleted prompts are removed from the database immediately. To delete your account and all associated data, email <a href="mailto:umpromptsupport@gmail.com">umpromptsupport@gmail.com</a>.</p>
+            </Section>
+
+            <Section title="Cookies and sessions">
+              <p className="body">We use Supabase Auth. Session tokens are stored in secure, HTTP-only cookies. We do not use third-party advertising or tracking cookies.</p>
+            </Section>
+
+            <Section title="Browser extension">
+              <p className="body">The extension stores its sign-in session and unfinished prompt draft in the browser’s local extension storage. Drafts are separate from saved account history. Signing out through the extension removes its current account session and that account’s local draft, but does not delete saved website history.</p>
+              <p className="body">The extension does not automatically read webpages, browsing history, or the clipboard. It processes text you type or paste into its panel, and writes a prompt to the clipboard only when you choose Copy.</p>
+            </Section>
+
+            <Section title="Data storage">
+              <p className="body">Your data is stored in a Supabase-hosted Postgres database. Row-level security policies ensure that each user can only access their own data. Data is encrypted at rest and in transit.</p>
+            </Section>
+
+            <Section title="Changes to this policy">
+              <p className="body">If we make material changes, we will update the date above. Continued use after changes constitutes acceptance.</p>
+            </Section>
+
+            <div className="composer__actions">
+              <Link href="/privacy">Privacy policy</Link>
+              <Link href="/terms">Terms of service</Link>
+            </div>
+
+            <Section title="Contact">
+              <p className="body">Questions? Email <a href="mailto:umpromptsupport@gmail.com">umpromptsupport@gmail.com</a>.</p>
+            </Section>
+          </article>
+        </div>
+      </main>
+      <Footer strip />
+    </>
   );
 }

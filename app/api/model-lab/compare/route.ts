@@ -2,7 +2,7 @@
  * POST /api/model-lab/compare
  *
  * Generates prompts from multiple models in parallel and scores each output.
- * Returns an array of results — one per model requested.
+ * Returns an array of results - one per model requested.
  *
  * Body:
  *   - idea: string (required)
@@ -139,7 +139,7 @@ export async function POST(request: NextRequest) {
   const { idea, target_tool, context, models } = validation.data;
 
   // 5. Generate + score each model in parallel.
-  //    Each model is isolated — one failure doesn't kill the others.
+  //    Each model is isolated - one failure doesn't kill the others.
   const settled = await Promise.allSettled(
     models.map(async (modelId): Promise<ModelLabResult> => {
       const start = Date.now();
@@ -206,7 +206,7 @@ export async function POST(request: NextRequest) {
 
       const latencyMs = Date.now() - start;
 
-      // Score (best-effort — failure doesn't break the result)
+      // Score (best-effort - failure doesn't break the result)
       let score = null;
       try {
         score = await scorePrompt(text, idea, target_tool);
@@ -234,7 +234,7 @@ export async function POST(request: NextRequest) {
     })
   );
 
-  // Unwrap allSettled — unexpected Promise rejections become error results
+  // Unwrap allSettled - unexpected Promise rejections become error results
   const results: ModelLabResult[] = settled.map((r, i) => {
     if (r.status === "fulfilled") return r.value;
     const config = isValidModelId(models[i]) ? getModelConfig(models[i]) : null;
@@ -250,7 +250,7 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  // Log metadata only — never prompt content
+  // Log metadata only - never prompt content
   console.info("[model-lab:compare]", {
     timestamp: new Date().toISOString(),
     userId: user.id,

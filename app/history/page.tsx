@@ -1,23 +1,18 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Plus, History as HistoryIcon, Layers } from "lucide-react";
-import { AppShell } from "@/components/layout/app-shell";
-import { Topbar } from "@/components/layout/topbar";
-import { PromptCard } from "@/components/dashboard/prompt-card";
-import { PromptPackCard } from "@/components/dashboard/prompt-pack-card";
-import { EmptyState } from "@/components/dashboard/empty-state";
-import { Button } from "@/components/ui/button";
+import { AppShell } from "@/components/system/app-shell";
+import { ButtonLink } from "@/components/system/button";
+import { PageViewTracker } from "@/components/system/page-view-tracker";
 import { createClient } from "@/lib/supabase/server";
 import { listPrompts } from "@/lib/prompts";
 import { listPromptPacks } from "@/lib/prompt-packs";
-import { getServerTranslations } from "@/lib/i18n/server";
 import type { PromptSummary } from "@/types/prompt";
 import type { PromptPackSummary } from "@/types/prompt-pack";
-import { PageViewTracker } from "@/components/analytics/page-view-tracker";
 
 export const dynamic = "force-dynamic";
 
 const TOOLS = ["claude", "cursor", "chatgpt"] as const;
+const TOOL_LABEL: Record<string, string> = { claude: "Claude", cursor: "Cursor", chatgpt: "ChatGPT" };
 
 export default async function HistoryPage({
   searchParams,
@@ -32,35 +27,28 @@ export default async function HistoryPage({
 
   const { q = "", tool: toolFilter = "", tab = "prompts" } = await searchParams;
   const activeTab = tab === "packs" ? "packs" : "prompts";
-  const { t } = await getServerTranslations();
-
-  const toolLabel: Record<string, string> = { claude: "Claude", cursor: "Cursor", chatgpt: "ChatGPT" };
 
   let prompts: PromptSummary[] = [];
   let promptsError: string | null = null;
-
   if (activeTab === "prompts") {
     const result = await listPrompts(200);
     promptsError = result.error;
     prompts = result.data;
-
     const lq = q.toLowerCase().trim();
     if (lq) {
-      prompts = prompts.filter(
-        (p) =>
-          p.title.toLowerCase().includes(lq) ||
-          p.idea.toLowerCase().includes(lq) ||
-          p.generated_prompt.toLowerCase().includes(lq)
+      prompts = prompts.filter((prompt) =>
+        prompt.title.toLowerCase().includes(lq) ||
+        prompt.idea.toLowerCase().includes(lq) ||
+        prompt.generated_prompt.toLowerCase().includes(lq)
       );
     }
     if (toolFilter && TOOLS.includes(toolFilter as (typeof TOOLS)[number])) {
-      prompts = prompts.filter((p) => p.target_tool === toolFilter);
+      prompts = prompts.filter((prompt) => prompt.target_tool === toolFilter);
     }
   }
 
   let packs: PromptPackSummary[] = [];
   let packsError: string | null = null;
-
   if (activeTab === "packs") {
     const result = await listPromptPacks(200);
     packsError = result.error;
@@ -70,173 +58,107 @@ export default async function HistoryPage({
   return (
     <AppShell>
       <PageViewTracker event="history_opened" />
-      <Topbar
-        breadcrumb={[{ label: t("nav.workspace") }, { label: t("nav.history") }]}
-        actions={
-          <Button asChild size="sm" className="hidden md:inline-flex">
-            <Link href="/builder">
-              <Plus className="size-3.5" />
-              {t("nav.newPrompt")}
-            </Link>
-          </Button>
-        }
-      />
-
-      <main className="flex-1 px-4 md:px-8 lg:px-10 py-8 md:py-10">
-        <div className="mb-8">
-          <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-clay-600 mb-3">
-            <HistoryIcon className="size-3.5" />
-            {t("history.eyebrow")}
-          </div>
-          <h1 className="font-serif text-3xl md:text-[36px] tracking-tight text-ink-900 leading-tight mb-1">
-            {t("history.title")}
-          </h1>
-          <p className="text-ink-500 text-[15px] leading-relaxed">
-            {t("history.subtitle")}
+      <header className="app-head">
+        <div className="stack">
+          <p className="small muted">Workspace / History</p>
+          <h1 className="app-head__title">The record.</h1>
+          <p className="app-head__sub">
+            Every saved prompt and pack, in the order you made it. Open one to read it again.
           </p>
         </div>
+        <ButtonLink href="/builder" variant="accent">New prompt</ButtonLink>
+      </header>
 
-        {/* Tab switcher */}
-        <div className="mb-6 flex p-1 bg-cream-100 rounded-full border border-ink-100/60 w-fit">
-          <TabButton href="/history?tab=prompts" active={activeTab === "prompts"}>
-            {t("history.promptsTab")}
-          </TabButton>
-          <TabButton href="/history?tab=packs" active={activeTab === "packs"}>
-            <Layers className="size-3.5" />
-            {t("history.packsTab")}
-          </TabButton>
-        </div>
+      <div className="tabs" style={{ marginBottom: 28 }}>
+        <Link href="/history?tab=prompts" aria-current={activeTab === "prompts" ? "page" : undefined}>Prompts</Link>
+        <Link href="/history?tab=packs" aria-current={activeTab === "packs" ? "page" : undefined}>Prompt packs</Link>
+      </div>
 
-        {/* ── Prompts tab ─────────────────────────────────────────────────── */}
-        {activeTab === "prompts" && (
-          <>
-            {promptsError && (
-              <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {t("history.loadPromptsError", { error: promptsError })} {t("common.tryRefreshing")}
+      {activeTab === "prompts" ? (
+        <>
+          <form className="composer__actions" style={{ marginBottom: 24 }} action="/history" method="get">
+            <input type="hidden" name="tab" value="prompts" />
+            <label className="sr-only" htmlFor="history-q">Search prompts</label>
+            <input id="history-q" name="q" defaultValue={q} className="field__input" style={{ maxWidth: 360 }} placeholder="Search your prompts" />
+            <button type="submit" className="button button--small">Search</button>
+            {q ? <Link href="/history" className="link-arrow">Clear</Link> : null}
+          </form>
+
+          <div className="tabs" style={{ marginBottom: 20 }}>
+            <Link href={q ? `/history?q=${encodeURIComponent(q)}` : "/history"} aria-current={!toolFilter ? "page" : undefined}>All</Link>
+            {TOOLS.map((tool) => (
+              <Link key={tool} href={q ? `/history?q=${encodeURIComponent(q)}&tool=${tool}` : `/history?tool=${tool}`} aria-current={toolFilter === tool ? "page" : undefined}>
+                {TOOL_LABEL[tool]}
+              </Link>
+            ))}
+          </div>
+
+          {promptsError ? <p className="field__error">Could not load your prompts: {promptsError}</p> : null}
+          {!promptsError && prompts.length === 0 ? (
+            <section className="sheet">
+              <h2 className="sheet__title">No prompts here.</h2>
+              <p className="body" style={{ marginTop: 12 }}>
+                {q || toolFilter ? "Nothing matches that filter." : "Your saved prompts will appear here."}
+              </p>
+            </section>
+          ) : null}
+          {!promptsError && prompts.length > 0 ? (
+            <table className="ledger">
+              <thead>
+                <tr><th>Prompt</th><th>Tool</th><th>Score</th><th>Saved</th></tr>
+              </thead>
+              <tbody>
+                {prompts.map((prompt) => (
+                  <tr key={prompt.id}>
+                    <td>
+                      <Link href={`/builder?id=${prompt.id}`} className="ledger__title">{prompt.title || prompt.idea.slice(0, 60)}</Link>
+                      <p className="small muted" style={{ marginTop: 4 }}>{prompt.idea.slice(0, 100)}</p>
+                    </td>
+                    <td>{TOOL_LABEL[prompt.target_tool] ?? prompt.target_tool}</td>
+                    <td className="ledger__num">{prompt.score?.overall ?? "–"}</td>
+                    <td>{new Date(prompt.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+        </>
+      ) : (
+        <>
+          {packsError ? <p className="field__error">Could not load your packs: {packsError}</p> : null}
+          {!packsError && packs.length === 0 ? (
+            <section className="sheet">
+              <h2 className="sheet__title">No packs yet.</h2>
+              <p className="body" style={{ marginTop: 12 }}>
+                A prompt pack breaks a multi-step task into prompts that run in order.
+              </p>
+              <div className="composer__actions" style={{ marginTop: 20 }}>
+                <ButtonLink href="/builder?mode=pack" variant="accent">Make a pack</ButtonLink>
               </div>
-            )}
-
-            {!promptsError && (
-              <>
-                <div className="mb-6 flex flex-col sm:flex-row sm:items-center gap-3">
-                  {q && (
-                    <p className="text-sm text-ink-500">
-                      {t("history.showingResults", { n: prompts.length })}{" "}
-                      <span className="font-medium text-ink-800">&ldquo;{q}&rdquo;</span>
-                      {" — "}
-                      <Link href="/history" className="text-clay-600 hover:underline">
-                        {t("history.clear")}
-                      </Link>
-                    </p>
-                  )}
-
-                  <div className="flex items-center gap-1.5 sm:ml-auto">
-                    <FilterChip href={q ? `/history?q=${encodeURIComponent(q)}` : "/history"} active={!toolFilter}>
-                      {t("common.all")}
-                    </FilterChip>
-                    {TOOLS.map((toolId) => (
-                      <FilterChip
-                        key={toolId}
-                        href={q ? `/history?q=${encodeURIComponent(q)}&tool=${toolId}` : `/history?tool=${toolId}`}
-                        active={toolFilter === toolId}
-                      >
-                        {toolLabel[toolId]}
-                      </FilterChip>
-                    ))}
-                  </div>
-                </div>
-
-                {prompts.length === 0 && !q && !toolFilter ? (
-                  <EmptyState />
-                ) : prompts.length === 0 ? (
-                  <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
-                    <p className="text-sm text-ink-500">{t("history.noPromptsMatch")}</p>
-                    <Link href="/history" className="text-sm text-clay-600 hover:underline mt-2 inline-block">
-                      {t("common.clearFilters")}
-                    </Link>
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {prompts.map((prompt: PromptSummary, i: number) => (
-                      <PromptCard key={prompt.id} prompt={prompt} index={i} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-
-        {/* ── Packs tab ───────────────────────────────────────────────────── */}
-        {activeTab === "packs" && (
-          <>
-            {packsError && (
-              <div className="mb-6 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-                {t("history.loadPacksError", { error: packsError })} {t("common.tryRefreshing")}
-              </div>
-            )}
-
-            {!packsError && (
-              <>
-                {packs.length === 0 ? (
-                  <div className="relative rounded-3xl border border-ink-100/70 bg-card card-soft overflow-hidden">
-                    <div className="absolute inset-0 bg-dotgrid opacity-40 pointer-events-none" />
-                    <div className="relative p-10 md:p-14 text-center max-w-lg mx-auto">
-                      <div className="size-12 rounded-2xl bg-clay-500/10 mx-auto mb-5 flex items-center justify-center">
-                        <Layers className="size-5 text-clay-600" />
-                      </div>
-                      <h3 className="font-serif text-2xl font-medium text-ink-900 mb-2">
-                        {t("history.noPacksTitle")}
-                      </h3>
-                      <p className="text-sm text-ink-500 leading-relaxed mb-7 text-pretty max-w-sm mx-auto">
-                        {t("history.noPacksSubtitle")}
-                      </p>
-                      <Button asChild size="lg">
-                        <Link href="/builder">
-                          <Plus className="size-4" />
-                          {t("history.createFirstPack")}
-                        </Link>
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {packs.map((pack: PromptPackSummary, i: number) => (
-                      <PromptPackCard key={pack.id} pack={pack} index={i} />
-                    ))}
-                  </div>
-                )}
-              </>
-            )}
-          </>
-        )}
-      </main>
+            </section>
+          ) : null}
+          {!packsError && packs.length > 0 ? (
+            <table className="ledger">
+              <thead>
+                <tr><th>Pack</th><th>Kind</th><th>Prompts</th><th>Saved</th></tr>
+              </thead>
+              <tbody>
+                {packs.map((pack) => (
+                  <tr key={pack.id}>
+                    <td>
+                      <Link href={`/builder?pack=${pack.id}`} className="ledger__title">{pack.title}</Link>
+                      <p className="small muted" style={{ marginTop: 4 }}>{pack.idea.slice(0, 100)}</p>
+                    </td>
+                    <td>{pack.pack_type.replace(/_/g, " ")}</td>
+                    <td className="ledger__num">{pack.prompts.length}</td>
+                    <td>{new Date(pack.created_at).toLocaleDateString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : null}
+        </>
+      )}
     </AppShell>
-  );
-}
-
-function TabButton({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
-        active ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function FilterChip({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`text-xs font-medium rounded-full px-3 py-1.5 transition-colors ${
-        active ? "bg-ink-900 text-cream-50" : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
-      }`}
-    >
-      {children}
-    </Link>
   );
 }

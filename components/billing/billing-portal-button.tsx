@@ -1,29 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { ExternalLink } from "lucide-react";
-import { track } from "@/lib/analytics";
+import { Button } from "@/components/system/button";
 
-export function BillingPortalButton({ label }: { label: string }) {
-  const [loading, setLoading] = useState(false);
+export function BillingPortalButton() {
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   async function openPortal() {
-    setLoading(true);
-    track("billing_portal_opened");
+    setPending(true);
+    setError(null);
     try {
-      const res = await fetch("/api/billing/portal", { method: "POST" });
-      const json = await res.json();
-      if (json.url) window.location.href = json.url;
-    } catch {
-      setLoading(false);
+      const response = await fetch("/api/billing/portal", { method: "POST" });
+      const json = await response.json();
+      if (!response.ok || !json.url) throw new Error(json.error ?? "Could not open the billing portal.");
+      window.location.assign(json.url);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Could not open the billing portal.");
+      setPending(false);
     }
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={openPortal} disabled={loading}>
-      <ExternalLink className="size-3.5" />
-      {loading ? "…" : label}
-    </Button>
+    <div className="stack">
+      <Button size="sm" variant="ghost" onClick={openPortal} disabled={pending}>
+        {pending ? "Opening" : "Manage billing"}
+      </Button>
+      {error ? <p className="field__error">{error}</p> : null}
+    </div>
   );
 }

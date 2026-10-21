@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 export interface PromptUsage {
   planName: string;
@@ -11,7 +11,6 @@ export interface PromptUsage {
   usedThisWeek: number;
   remainingThisWeek: number | null;
   fairUseLabel: string | null;
-  // Legacy (backward compat with existing sidebar/account callers)
   dailyLimit: number;
   usedToday: number;
   remainingToday: number;
@@ -37,9 +36,9 @@ export function usePromptUsage(): PromptUsage {
 
   const fetchUsage = useCallback(async () => {
     try {
-      const res = await fetch("/api/usage");
-      if (!res.ok) return;
-      const json = await res.json();
+      const response = await fetch("/api/usage");
+      if (!response.ok) return;
+      const json = await response.json();
       setData({
         planName: json.plan ?? "free",
         isPaid: json.isPaid ?? false,
@@ -54,14 +53,14 @@ export function usePromptUsage(): PromptUsage {
         remainingToday: json.remainingToday ?? 7,
       });
     } catch {
-      // Keep defaults on error
+      // Keep defaults.
     } finally {
       setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    fetchUsage();
+    void fetchUsage();
     window.addEventListener("prompt_usage_refresh", fetchUsage);
     return () => window.removeEventListener("prompt_usage_refresh", fetchUsage);
   }, [fetchUsage]);

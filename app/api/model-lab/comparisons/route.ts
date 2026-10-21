@@ -1,6 +1,6 @@
 /**
- * GET  /api/model-lab/comparisons  — list last 10 comparisons (metadata only, no prompt text)
- * POST /api/model-lab/comparisons  — save a new comparison result
+ * GET  /api/model-lab/comparisons  - list last 10 comparisons (metadata only, no prompt text)
+ * POST /api/model-lab/comparisons  - save a new comparison result
  *
  * Auth-protected. Prompt output is stored in DB (user's own data) but never sent to PostHog.
  */

@@ -16,13 +16,13 @@ Umprompt helps people describe what they want without learning prompt engineerin
 - **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
 - **Visible expansion example:** a rough idea and its structured prompt appear together before generation. The signed-in builder retains a separate Example tab after generation; viewing it never replaces the current task or result.
 - **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
-- **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
+- **Relevant inspiration:** suggestions respond to the first words of an idea and match the selected category. The localized suggestion dictionaries remain in `lib/i18n`, but this interface pass ships English copy.
 - **Focused clarification:** ambiguous ideas can receive up to two follow-up questions. Clear requests proceed directly, and users can skip clarification.
 - **Portable prompts:** generation preserves the user's intent and supplied details without requiring a vendor-specific template. Existing tool-specific prompts and prompt packs remain supported.
 - **Request-first optimization:** Optimize my request works on the original idea and selected details, never on an editable error message or generated output. Incomplete one-character requests stay at the input step; old incomplete drafts cannot be mistaken for a current result. Explicit result refinements such as Simplify retain a restorable previous version.
 - **Optional quality review:** scoring remains available without interrupting the main idea-to-prompt workflow. Prompt scores are estimates, not proof of better answers.
 - **Saved workspace:** save, reopen, refine, copy, and download prompts; browse history and templates.
-- **Consistent design:** a neutral interface with emerald accents across the workspace, authentication, and pricing pages.
+- **Consistent design:** one design system across the landing page and the workspace. A printed-page composition, a bottle-green ink, a yellow accent, Imbue display type, and Albert Sans text. No card grids, gradients, or decorative icons.
 - **Accessible motion:** staggered suggestions, sliding category selection, expanding panels, generation feedback, and copy/save confirmations respect reduced-motion preferences.
 - **Account and billing:** Google, GitHub, and email-link sign-in; monthly and lifetime plans through Stripe.
 
@@ -60,14 +60,27 @@ deployed mitigations, and remaining dependency findings without claiming a clean
 | Layer | Implementation |
 |---|---|
 | Application | Next.js 15 App Router, React 18, TypeScript |
-| Interface | Tailwind CSS 3, Radix UI, Lucide icons |
-| Motion | Framer Motion and CSS animations |
+| Interface | Hand-written CSS design system, Imbue + Albert Sans, Lucide icons |
+| Motion | CSS transitions and reveals, with a reduced-motion fallback |
 | Authentication and data | Supabase Auth, PostgreSQL, row-level security |
 | AI | Vercel AI SDK 4 with Anthropic and OpenRouter providers |
 | Billing | Stripe Checkout, Customer Portal, and webhooks |
 | Rate limiting | Upstash Redis, with an in-memory development fallback |
 | Analytics | Optional PostHog integration |
 | Hosting | Vercel |
+
+## Frontend Design
+
+The interface is one system, described in [`docs/redesign-scope.md`](docs/redesign-scope.md).
+
+- **Direction:** “The printed annual”. A fixed 42% reading axis, a gutterless picture mosaic, flat colour fields, and a prompt document that reads like a page.
+- **Type:** Imbue for display, Albert Sans for text. Self-hosted through `@fontsource-variable`.
+- **Colour:** `#f7f7f7` ground, `#ebebeb` surface, `#0d2a1c` ink, `#5f6b64` muted, `#f6e016` accent.
+- **Shape:** square corners, no cards, no gradients, no shadows at rest. Real tables and form fields may use a line.
+- **Pictures:** four archival images from open collections, credited in [`docs/image-credits.md`](docs/image-credits.md) and in the footer. The product itself is shown as built interface fragments, not fake screenshots.
+- **Motion:** CSS entrances on sections, control feedback, and one slow image treatment. Every move respects `prefers-reduced-motion`.
+
+The landing page is art-directed with the `design-taste-frontend` skill. App screens inherit the same tokens, type, grid, and component shapes at higher density.
 
 ## Getting Started
 
@@ -201,8 +214,7 @@ Configure both Upstash variables for shared limits across serverless instances. 
 | `npm run start` | Serve the production build locally |
 | `npm run lint` | Run the configured ESLint checks |
 | `npm test` | Run the offline regression suite |
-| `node scripts/check-start-ui.cjs` | Check the public composer at desktop/mobile sizes in English, Spanish, and Russian |
-| `node scripts/check-workspace-ui.cjs` | Test desktop/mobile interactions against a running local dev server with synthetic API responses |
+| `node scripts/check-start-ui.cjs` | Check the landing page and live prompt sheet at desktop and mobile sizes |
 | `npm run eval:outcomes -- --dry-run` | Inspect synthetic evaluation tasks without provider calls |
 | `npm run eval:outcomes -- --limit 2` | Run a limited, billable answer-outcome evaluation |
 | `node scripts/smoke-generation.cjs` | Run billable clarification and generation smoke checks |
@@ -255,13 +267,13 @@ Vercel-protected previews may require a Vercel account to view. Do not disable d
 
 ```text
 app/                    Pages, API routes, and auth callback
-components/builder/     Composer, output, prompt packs, and quality review
+components/system/      Navigation, footer, buttons, dialogs, reveals
+components/landing/     Live prompt sheet and landing sections
+components/builder/     Composer, prompt sheet, score margin, library
+components/library/     Profiles and playbooks manager
 components/auth/        Sign-in form
 components/billing/     Upgrade flow
-components/layout/      Workspace navigation and account controls
-components/providers/   Motion and analytics providers
-components/ui/          Shared controls, disclosures, and action feedback
-hooks/                  Session-aware idea suggestions
+hooks/                  Usage and idea-suggestion state
 lib/ai/                 Clarification, generation, scoring, and model registry
 lib/i18n/               Interface localization
 lib/supabase/           Browser, server, and middleware auth clients
@@ -293,4 +305,4 @@ Reload the updated app and interact with the relevant controls. Suggestions anim
 
 ### Search Results Still Show the Old Icon
 
-The emerald brand asset is shared by the app logo, a 192px app icon, a multi-size favicon, and a 180px Apple touch icon. Deploy the updated files to production first. Search engines cache icons and update them after recrawling; a local or protected preview cannot update the live site's search result. For Google, request indexing of the production home page in Search Console and allow time for processing. See [Google's favicon guidelines](https://developers.google.com/search/docs/appearance/favicon-in-search).
+The brand asset is shared by the app icon, a 192px app icon, a multi-size favicon, and a 180px Apple touch icon. The current mark is bottle green and yellow. Deploy the updated files to production first. Search engines cache icons and update them after recrawling; a local or protected preview cannot update the live site's search result. For Google, request indexing of the production home page in Search Console and allow time for processing. See [Google's favicon guidelines](https://developers.google.com/search/docs/appearance/favicon-in-search).

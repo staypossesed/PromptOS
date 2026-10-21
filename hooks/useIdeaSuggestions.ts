@@ -6,9 +6,11 @@ import { hashSeed } from "@/lib/idea-suggestions";
 
 export function useIdeaSuggestions() {
   const [seed, setSeed] = useState(0);
+
   useEffect(() => {
     let active = true;
     const supabase = createClient();
+
     function update(user: { id: string; last_sign_in_at?: string } | null) {
       const sessionKey = user ? `${user.id}:${user.last_sign_in_at ?? "initial"}` : "guest";
       let nextSeed = hashSeed(sessionKey);
@@ -19,14 +21,24 @@ export function useIdeaSuggestions() {
           nextSeed = Math.floor(Math.random() * 0xffffffff);
           localStorage.setItem("ump:inspiration", JSON.stringify({ key: sessionKey, seed: nextSeed }));
         }
-      } catch { /* Storage is optional; the sign-in timestamp still changes the seed. */ }
+      } catch {
+        // Storage is optional.
+      }
       if (active) setSeed(nextSeed);
     }
+
     void supabase.auth.getUser().then(({ data }) => update(data.user)).catch(() => update(null));
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" || event === "SIGNED_OUT") update(session?.user ?? null);
     });
-    return () => { active = false; subscription.unsubscribe(); };
+    return () => {
+      active = false;
+      subscription.unsubscribe();
+    };
   }, []);
-  return { seed, refresh: () => setSeed((current) => hashSeed(String(current + 1))) };
+
+  return {
+    seed,
+    refresh: () => setSeed((current) => hashSeed(String(current + 1))),
+  };
 }

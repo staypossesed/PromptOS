@@ -11,7 +11,7 @@ export async function GET() {
     console.error("[founder-count] failed:", err instanceof Error ? err.message : err, {
       hasServiceKey: Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY),
     });
-    // Graceful fallback — plan page still renders, just omits spots-remaining
+    // Graceful fallback - plan page still renders, just omits spots-remaining
     return NextResponse.json({ count: null, limit: FOUNDER_LIMIT, spotsLeft: null });
   }
 }

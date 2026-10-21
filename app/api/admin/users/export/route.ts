@@ -2,7 +2,7 @@
  * GET /api/admin/users/export
  *
  * Returns a CSV of all users with segment data.
- * Admin-only — checks ADMIN_EMAILS env var.
+ * Admin-only - checks ADMIN_EMAILS env var.
  */
 
 import { NextRequest, NextResponse } from "next/server";

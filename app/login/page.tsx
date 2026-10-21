@@ -1,47 +1,38 @@
 import { Suspense } from "react";
-import { LoginForm } from "@/components/auth/login-form";
 import Link from "next/link";
-import { Logo } from "@/components/brand/logo";
+import { LoginForm } from "@/components/auth/login-form";
+import { Footer } from "@/components/system/footer";
 
-/**
- * /login  — Server Component shell.
- *
- * useSearchParams() inside LoginForm requires a Suspense boundary per Next.js 15.
- * We wrap the client component here at the page level.
- */
+export const metadata = {
+  title: "Sign in",
+  description: "Sign in to Umprompt and keep your prompts, profiles, and history.",
+};
+
 export default function LoginPage() {
   return (
-    <div className="min-h-screen bg-paper flex flex-col">
-
-      {/* Nav */}
-      <header className="flex h-16 shrink-0 items-center border-b border-zinc-200 bg-white px-6 md:px-10">
-        <Link href="/">
-          <Logo />
-        </Link>
-      </header>
-
-      {/* Card — Suspense isolates the useSearchParams() hook */}
-      <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-16">
-        <Suspense fallback={<LoginSkeleton />}>
+    <>
+    <div className="auth">
+      <aside className="auth__side">
+        <Link href="/" className="wordmark">Umprompt</Link>
+        <div className="stack--loose stack">
+          <p className="display" style={{ fontSize: "clamp(44px, 5vw, 88px)", maxWidth: "9ch" }}>
+            Say it rough.
+          </p>
+          <p className="lead" style={{ maxWidth: "28ch" }}>
+            The first seven prompts this week are free. No card. No prompt engineering.
+          </p>
+        </div>
+        <p className="small" style={{ color: "#a9b8b0" }}>
+          No card · 7 free prompts
+        </p>
+      </aside>
+      <main id="main" className="auth__main">
+        <Suspense fallback={<p className="body">Loading sign-in.</p>}>
           <LoginForm />
         </Suspense>
       </main>
     </div>
-  );
-}
-
-function LoginSkeleton() {
-  return (
-    <div className="w-full max-w-md">
-      <div className="rounded-lg border border-zinc-200 bg-white overflow-hidden">
-        <div className="p-6 sm:p-8 space-y-5 animate-pulse">
-          <div className="h-4 w-24 rounded bg-zinc-100" />
-          <div className="h-8 w-3/4 rounded bg-zinc-200" />
-          <div className="h-4 w-full rounded bg-zinc-100" />
-          <div className="h-11 w-full rounded-lg bg-zinc-100" />
-          <div className="h-12 w-full rounded-lg bg-emerald-100" />
-        </div>
-      </div>
-    </div>
+    <Footer strip />
+    </>
   );
 }
