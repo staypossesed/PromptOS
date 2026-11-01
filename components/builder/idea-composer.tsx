@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { LayoutGroup, motion, useReducedMotion } from "framer-motion";
-import { WandSparkles, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, ThumbsUp, ThumbsDown, Plus } from "lucide-react";
+import { WandSparkles, ArrowUpRight, Code2, PenLine, Search, Sun, BriefcaseBusiness, Palette, Sparkles, Shuffle, Loader2, Save, Plus } from "lucide-react";
 import { ActionIcon } from "@/components/ui/action-icon";
 import { Disclosure } from "@/components/ui/disclosure";
 import { IdeaPlaceholder } from "@/components/builder/idea-placeholder";
@@ -18,6 +18,8 @@ import { track } from "@/lib/analytics";
 import { dispatchPaywallOpen } from "@/components/billing/paywall-modal";
 import { cn } from "@/lib/utils";
 import { canExpandIdea } from "@/lib/prompt-editing";
+import { OutcomeFeedback } from "@/components/builder/outcome-feedback";
+import type { TaskMetric } from "@/lib/task-metrics";
 
 const ICONS = { auto: Sparkles, writing: PenLine, coding: Code2, research: Search, daily: Sun, business: BriefcaseBusiness, creative: Palette };
 
@@ -43,9 +45,12 @@ interface Props {
   saving?: boolean;
   saved?: boolean;
   outcomeEligible?: boolean;
+  taskMetric?: TaskMetric | null;
+  outcomeValue?: boolean | null;
+  onOutcomeChange?: (value: boolean) => void;
 }
 
-export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, resultActions, nextActions, upgrade, quality, hasResult, canSave = hasResult, onSave, onNewIdea, saving, saved, outcomeEligible }: Props) {
+export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onContextChange, onGenerate, busy, generating, result, resultActions, nextActions, upgrade, quality, hasResult, canSave = hasResult, onSave, onNewIdea, saving, saved, outcomeEligible, taskMetric, outcomeValue, onOutcomeChange }: Props) {
   const { language } = useTranslations();
   const copy = composerCopy(language);
   const reducedMotion = useReducedMotion();
@@ -61,7 +66,8 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
   const [answers, setAnswers] = useState<string[]>([]);
   const [checking, setChecking] = useState(false);
   const [notice, setNotice] = useState("");
-  const [feedback, setFeedback] = useState<boolean | null>(null);
+  const [localFeedback, setFeedback] = useState<boolean | null>(null);
+  const feedback = outcomeValue === undefined ? localFeedback : outcomeValue;
   const [qualityOpen, setQualityOpen] = useState(false);
   const [contextOpen, setContextOpen] = useState(false);
   const [categoryOpen, setCategoryOpen] = useState(false);
@@ -81,6 +87,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
 
   useEffect(() => () => requestRef.current?.abort(), []);
   useEffect(() => { if (!outcomeEligible) setFeedback(null); }, [outcomeEligible]);
+  useEffect(() => { setFeedback(null); }, [taskMetric?.result_id]);
   useEffect(() => {
     if (!editingIdea) return;
     inputRef.current?.focus();
@@ -294,16 +301,18 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
         </div>
         {resultActions}
         <div className="h-[min(640px,75dvh)] min-h-[520px]">{result}</div>
+        {hasResult && outcomeEligible && !busy && <OutcomeFeedback key={taskMetric?.result_id ?? idea} value={feedback} onFeedback={(value) => {
+          track("answer_outcome_feedback", { category, ...taskMetric, outcome: value, ...(value !== "not_tried" && { improved: value === "useful" }) });
+          if (value === "not_tried" || feedback !== null) return;
+          setFeedback(value === "useful");
+          onOutcomeChange?.(value === "useful");
+          if (value === "useful" && taskMetric) track("prompt_result_confirmed", { category, ...taskMetric, outcome: value });
+        }} />}
         {upgrade && <div className="mt-4">{upgrade}</div>}
         {nextActions}
         {quality && <Disclosure label={copy.quality} open={qualityOpen} onOpenChange={setQualityOpen}>
           <p className="my-3 text-xs text-zinc-500">{copy.qualityNote}</p><div className="min-h-[480px]">{quality}</div>
         </Disclosure>}
-        {hasResult && outcomeEligible && !busy && <div className="mt-5 flex flex-wrap items-center gap-3 text-xs text-zinc-500">
-          <span>{feedback === null ? copy.answer : copy.thanks}</span>
-          {feedback === null && ([true, false] as const).map((value) => <button key={String(value)} type="button" aria-label={value ? copy.yes : copy.no} title={value ? copy.yes : copy.no}
-            onClick={() => { setFeedback(value); track("answer_outcome_feedback", { category, improved: value }); }} className="flex size-11 items-center justify-center rounded-md border border-zinc-200 hover:bg-zinc-100">{value ? <ThumbsUp className="size-4" /> : <ThumbsDown className="size-4" />}</button>)}
-        </div>}
       </section>}
     </div>
   );

@@ -20,7 +20,7 @@ const en = {
   refresh: "More ideas", details: "A few details about your idea", skip: "Use what I have", continue: "Expand my idea", custom: "Your own answer",
   audience: "Who is this for?", constraints: "Anything to include or avoid?", format: "What should the result look like?",
   context: "More details (optional)", result: "Your expanded AI prompt", portable: "Ready for your AI assistant", quality: "Quality check", qualityNote: "An estimate of prompt quality, not a guarantee of the answer.",
-  save: "Save", saved: "Saved", copied: "Copied", copy: "Copy AI prompt", answer: "Was the AI's answer better?", yes: "Yes", no: "No", thanks: "Thanks for the feedback.",
+  save: "Save", saved: "Saved", copied: "Copied", copy: "Copy AI prompt", answer: "Did you get a useful answer from your AI assistant?", yes: "Yes", no: "No", notTried: "Not tried yet", shareOutcome: "Share how it went", thanks: "Thanks for the feedback.",
   clarifyError: "Couldn't check for missing details. You can still expand your idea.", generateError: "Couldn't expand your idea. Please try again.",
   categories: { auto: "Any task", writing: "Emails & writing", coding: "Apps & computer code", research: "Learning & comparing", daily: "Home & planning", business: "Work & business", creative: "Stories & ideas" },
 };
@@ -41,7 +41,7 @@ const es: Copy = {
   title: "Amplía tu idea en un prompt para IA", subtitle: "Tu idea, lista para el siguiente paso.", idea: "Tu idea inicial", placeholder: "correo para pedir dos días más", create: "Ampliar mi idea", guestCreate: "Iniciar sesión y ampliar mi idea", generating: "Ampliando tu idea...", category: "Tipo de tarea (opcional)",
   checking: "Comprobando los detalles...", inspiration: "Ideas para empezar", matching: "Ideas relacionadas", refresh: "Más ideas", details: "Algunos detalles de tu idea", skip: "Usar lo que tengo", continue: "Ampliar mi idea", custom: "Tu propia respuesta",
   audience: "¿Para quién es?", constraints: "¿Qué incluir o evitar?", format: "¿Cómo debe ser el resultado?", context: "Más detalles (opcional)", result: "Tu prompt ampliado", portable: "Listo para tu asistente de IA", quality: "Revisión de calidad", qualityNote: "Una estimación de la calidad del prompt, no una garantía del resultado.",
-  save: "Guardar", saved: "Guardado", copied: "Copiado", copy: "Copiar prompt", answer: "¿La respuesta de la IA fue mejor?", yes: "Sí", no: "No", thanks: "Gracias por tu opinión.", clarifyError: "No pudimos comprobar los detalles. Puedes preparar tu prompt igualmente.", generateError: "No se pudo ampliar tu idea. Inténtalo de nuevo.",
+  save: "Guardar", saved: "Guardado", copied: "Copiado", copy: "Copiar prompt", answer: "¿Tu asistente de IA te dio una respuesta útil?", yes: "Sí", no: "No", notTried: "Aún no lo probé", shareOutcome: "Contar cómo fue", thanks: "Gracias por tu opinión.", clarifyError: "No pudimos comprobar los detalles. Puedes preparar tu prompt igualmente.", generateError: "No se pudo ampliar tu idea. Inténtalo de nuevo.",
   categories: { auto: "Cualquier tarea", writing: "Correos y textos", coding: "Apps y programación", research: "Aprender y comparar", daily: "Hogar y planes", business: "Trabajo y negocios", creative: "Historias e ideas" },
 };
 const ru: Copy = {
@@ -60,7 +60,7 @@ const ru: Copy = {
   title: "Превратите идею в подробный запрос для ИИ", subtitle: "Ваша идея, готовая к следующему шагу.", idea: "Ваша черновая идея", placeholder: "письмо с просьбой дать ещё два дня", create: "Расширить мою идею", guestCreate: "Войти и расширить идею", generating: "Расширяем вашу идею...", category: "Тип задачи (необязательно)",
   checking: "Проверяем детали...", inspiration: "Идеи для начала", matching: "Похожие идеи", refresh: "Другие идеи", details: "Несколько деталей о вашей идее", skip: "Использовать то, что есть", continue: "Расширить мою идею", custom: "Свой ответ",
   audience: "Для кого это?", constraints: "Что включить или исключить?", format: "Каким должен быть результат?", context: "Больше деталей (необязательно)", result: "Ваш подробный запрос для ИИ", portable: "Готов для вашего ИИ-помощника", quality: "Проверка качества", qualityNote: "Оценка качества промпта, а не гарантия ответа.",
-  save: "Сохранить", saved: "Сохранено", copied: "Скопировано", copy: "Копировать запрос", answer: "Ответ ИИ стал лучше?", yes: "Да", no: "Нет", thanks: "Спасибо за отзыв.", clarifyError: "Не удалось проверить детали. Вы всё равно можете подготовить запрос.", generateError: "Не удалось расширить идею. Попробуйте ещё раз.",
+  save: "Сохранить", saved: "Сохранено", copied: "Скопировано", copy: "Копировать запрос", answer: "Вы получили полезный ответ от своего ИИ-помощника?", yes: "Да", no: "Нет", notTried: "Ещё не пробовал", shareOutcome: "Рассказать о результате", thanks: "Спасибо за отзыв.", clarifyError: "Не удалось проверить детали. Вы всё равно можете подготовить запрос.", generateError: "Не удалось расширить идею. Попробуйте ещё раз.",
   categories: { auto: "Любая задача", writing: "Письма и тексты", coding: "Приложения и код", research: "Учёба и сравнение", daily: "Дом и планы", business: "Работа и бизнес", creative: "Истории и идеи" },
 };
 export function composerCopy(language: AppLanguage): Copy { return ({ en, es, ru })[language] ?? en; }

@@ -10,11 +10,11 @@ Umprompt helps people describe what they want without learning prompt engineerin
 - **Explicit profile sharing:** saving a profile is separate from applying it. Applying requires a preview/confirmation explaining Anthropic/OpenRouter sharing. Only the confirmed snapshot is included; playbooks do not embed profiles and analytics events exclude library content.
 - **Read-only results by default:** generated and reopened prompts appear as a document. A small Edit control enables manual changes; Done, Copy, or a successful Save returns to read-only view. Typing does not call AI or save to cloud history. Explicit Save persists edits and up to five previous versions.
 - **Value-based upgrades:** the builder offers an upgrade after a copy/save when two or fewer free generations remain. Refinements use the existing generation allowance; subscriptions and lifetime entitlements are unchanged.
-- **Continuous checkout:** return to the same task after upgrading or cancelling. Paid access is confirmed from Stripe's current payment/subscription state; the return screen does not assume a successful charge. See [payment verification](docs/payment-verification.md) for the outstanding isolated Stripe test purchase.
-- **Content-safe measurement:** explicit PostHog events cover refinements, library use, next tasks, copies, feedback, and upgrades. Autocapture and session recording are disabled to keep profile/prompt content out of analytics.
+- **Continuous checkout:** return to the same task after upgrading or cancelling. Paid access is confirmed from Stripe's current payment/subscription state; the return screen does not assume a successful charge. See [payment verification](docs/payment-verification.md) for completed sandbox purchases, lifecycle checks, and remaining verification limits.
+- **Outcome-based measurement:** a copy is separate from a user-confirmed useful answer. Metadata-only task/version IDs connect the website funnel through later-day new tasks and server-verified purchases. Autocapture and session recording are disabled; full URLs, email, prompt, profile, and answer content are excluded. See [funnel measurement and verification limits](docs/funnel-measurement.md).
 
 - **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
-- **Visible expansion example:** a rough idea and its structured prompt appear together before generation. The signed-in builder retains a separate Example tab after generation; viewing it never replaces the current task or result.
+- **Visible expansion example:** a rough idea and its structured prompt appear together before starting. The example disappears when optimization/clarification begins; it never competes with an existing result.
 - **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
 - **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.
 - **Focused clarification:** ambiguous ideas can receive up to two follow-up questions. Clear requests proceed directly, and users can skip clarification.
@@ -175,7 +175,7 @@ Use test-mode credentials and matching test-mode price IDs for development. Prev
 
 The `UMPROMPT` promo code selects founder prices when the founder limit has not been reached. Monthly prices must be recurring; lifetime prices must be one-time. The selected price ID is required before a checkout session can be created.
 
-The webhook route is `/api/stripe/webhook`. Its handler supports `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`, and `invoice.payment_failed`. Configure the endpoint secret for the environment receiving those events.
+The webhook route is `/api/stripe/webhook`. Subscribe to all six snapshot events: `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_failed`, and `invoice.paid`. Use API version `2026-04-22.dahlia` and the destination's own signing secret for the environment receiving those events.
 
 `NEXT_PUBLIC_SITE_URL` controls checkout success, cancellation, and portal return destinations. Verify it for each environment. Restart the local server after changing environment values; redeploy after changing Vercel values.
 
@@ -223,7 +223,7 @@ Provider-backed scripts use synthetic tasks, not saved user prompts, and incur A
 - Save a playbook, reuse it with new task details, and confirm it does not apply a profile automatically.
 - Refine a result, restore an earlier version, save/reopen its history, and check failed-request recovery.
 - Optimize from the request input; confirm results are read-only until Edit is selected. Reopen an old one-character request, replace it, and verify the new result and saved record use the new request.
-- Switch between Your prompt and Example after generation; verify the current task, prompt, and clipboard actions stay separate from the example.
+- Confirm the introductory example disappears after optimization starts, during follow-up questions, and for generated or reopened results. Verify the complete rough idea remains readable and its Edit action updates the input used for regeneration.
 - Open optional quality review and test scoring retries separately.
 - Check pricing, account, feedback, history, and templates on desktop and a narrow mobile viewport.
 - Check keyboard navigation and reduced-motion behavior.
@@ -250,6 +250,10 @@ vercel deploy --prod
 Run that command only when a production release is intended. If the Git integration is enabled, pushing to Vercel's configured production branch can also trigger a production deployment. Use a feature branch for preview-only review.
 
 Vercel-protected previews may require a Vercel account to view. Do not disable deployment protection or expose secrets simply to share a preview.
+
+Before production promotion, run `node scripts/check-release-config.cjs` inside Vercel's production build environment, followed by the normal build. This read-only check verifies live payment readiness, all four prices, the six-event snapshot destination, cancellation/payment-method portal settings, required database schemas, anonymous library restrictions, and active monthly expiry dates. It supports both legacy webhook endpoints and newer Stripe event destinations. It never prints credentials or creates a purchase. Sensitive Vercel values must stay in Vercel; do not export them into a local environment file to run this check.
+
+The October 31 billing cutover archived one obsolete test purchase and its matching customer link after explicit founder approval. The guarded [archive](supabase/archive-legacy-test-billing.sql) and [recovery](supabase/restore-legacy-test-billing.sql) scripts are manual maintenance tools, not automatic migrations. Read the verification record before using either.
 
 ## Project Layout
 

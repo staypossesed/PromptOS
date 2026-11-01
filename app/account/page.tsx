@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { Mail, Zap, Link2, Wand2, History, LogOut, Crown, Sparkles, Globe } from "lucide-react";
+import { Mail, Zap, Link2, Wand2, History, LogOut, Crown, Sparkles, Globe, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
@@ -23,6 +23,15 @@ export default async function AccountPage() {
 
   const { t } = await getServerTranslations();
   const billing = await getBillingStatus(supabase, user.id);
+  const { data: billingCustomer } = await supabase.from("billing_customers")
+    .select("stripe_customer_id").eq("user_id", user.id).maybeSingle();
+  const { data: openSubscription, error: subscriptionLookupError } = billing.isPaid
+    ? { data: null, error: null }
+    : await supabase.from("billing_subscriptions").select("id")
+      .eq("user_id", user.id).eq("is_lifetime", false)
+      .in("status", ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"])
+      .limit(1).maybeSingle();
+  const needsBillingRecovery = !billing.isPaid && !!openSubscription;
 
   const provider = (user.app_metadata?.provider as string | undefined) ?? "email";
   const providerLabel =
@@ -64,6 +73,12 @@ export default async function AccountPage() {
             badge={billing.isFounder ? t("billing.founderBadge") : billing.isLifetime ? t("billing.lifetimeBadge") : undefined}
           >
             <div className="space-y-3">
+              {(needsBillingRecovery || subscriptionLookupError) && (
+                <p role="status" className="flex items-start gap-2 border-l-2 border-emerald-600 pl-3 text-sm text-ink-600">
+                  <AlertCircle className="mt-0.5 size-4 shrink-0" />
+                  {t(subscriptionLookupError ? "billing.planCheckUnavailable" : "billing.subscriptionNeedsAttention")}
+                </p>
+              )}
               <div className="flex items-center justify-between">
                 <span className="text-sm text-ink-600">{t("billing.currentPlan")}</span>
                 <span className="text-sm font-semibold text-ink-900 flex items-center gap-1.5">
@@ -101,20 +116,19 @@ export default async function AccountPage() {
                 </>
               )}
 
-              {billing.isPaid ? (
-                <div className="pt-1 flex gap-2">
+              <div className="flex flex-wrap gap-2 pt-1">
+                {(billingCustomer || billing.isPaid) &&
                   <BillingPortalButton label={t("billing.manageBilling")} />
-                </div>
-              ) : (
-                <div className="pt-1">
+                }
+                {!billing.isPaid && !needsBillingRecovery && !subscriptionLookupError &&
                   <Button asChild size="sm" className="text-sm">
                     <Link href="/plan">
                       <Zap className="size-3.5" />
                       {t("billing.upgradeToPro")}
                     </Link>
                   </Button>
-                </div>
-              )}
+                }
+              </div>
             </div>
           </Section>
 

@@ -14,12 +14,13 @@ export async function POST() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { data: customer } = await supabase
+  const { data: customer, error } = await supabase
     .from("billing_customers")
     .select("stripe_customer_id")
     .eq("user_id", user.id)
     .maybeSingle();
 
+  if (error) return NextResponse.json({ error: "Billing is temporarily unavailable." }, { status: 503 });
   if (!customer?.stripe_customer_id) {
     return NextResponse.json(
       { error: "No billing account found. Please upgrade first." },
@@ -27,10 +28,13 @@ export async function POST() {
     );
   }
 
-  const session = await stripe.billingPortal.sessions.create({
-    customer: customer.stripe_customer_id,
-    return_url: `${SITE_URL}/account`,
-  });
-
-  return NextResponse.json({ url: session.url });
+  try {
+    const session = await stripe.billingPortal.sessions.create({
+      customer: customer.stripe_customer_id,
+      return_url: `${SITE_URL}/account`,
+    });
+    return NextResponse.json({ url: session.url }, { headers: { "Cache-Control": "private, no-store" } });
+  } catch {
+    return NextResponse.json({ error: "Could not open billing management. Please try again." }, { status: 503 });
+  }
 }

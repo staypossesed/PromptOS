@@ -59,6 +59,21 @@ test("saved results show the complete original idea and an explicit Edit action"
   assert.doesNotMatch(html, /line-clamp|text-overflow/);
 });
 
+test("copying reveals explicit usefulness choices beside the result, before next tasks and quality", () => {
+  const html = render.composer({ hasResult: true, outcomeEligible: true, nextActions: "Next task marker" });
+  assert.match(html, /Did you get a useful answer/);
+  assert.match(html, /Not tried yet/);
+  assert.ok(html.indexOf("data-outcome-feedback") < html.indexOf("Next task marker"));
+});
+
+test("confirmed feedback survives result remounting instead of asking for the same vote again", () => {
+  for (const outcomeValue of [true, false]) {
+    const html = render.composer({ hasResult: true, outcomeEligible: true, outcomeValue });
+    assert.match(html, /Thanks for the feedback/);
+    assert.doesNotMatch(html, />Not tried yet</);
+  }
+});
+
 const feedback = { overall: 81, dimensions: [
   { key: "clarity", label: "Clarity", score: 78, reason: "Ambiguous output", tip: "Specify the required output" },
 ] };

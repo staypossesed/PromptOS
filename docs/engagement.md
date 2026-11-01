@@ -29,7 +29,7 @@ This timing is a conversion hypothesis, not a proven ideal moment. Validate conv
 
 ## Measurement
 
-Track activation as generation followed by successful copy, keeping copy separate from reported answer usefulness. Compare seven-day return rates, playbook reuse, refinements, upgrade clicks, successful purchases, and provider cost per active user. A longer session or higher prompt score alone does not establish improved outcomes.
+Use the [ordered outcome funnel](funnel-measurement.md): visit, signup, complete generation, successful copy, explicit useful-answer confirmation, a new task on a later UTC day, and server-verified purchase. Copy is a delivery milestone, not successful activation. Compare mature cohorts, playbook reuse, refinements, upgrade clicks, reconciled purchases, and provider cost per active user. A longer session or higher prompt score alone does not establish improved outcomes.
 
 New metadata-only events: `prompt_refined`, `prompt_version_restored`, `workspace_item_saved`, `workspace_item_used`, `workspace_item_deleted`, and `next_step_selected`. Existing copy, feedback, usage, checkout, and upgrade events remain. PostHog autocapture and session recording are disabled; events do not include profile, prompt, or answer content.
 
@@ -39,7 +39,7 @@ Apply `supabase/workspace.sql` before using the library. The table uses owner-on
 
 With the local development server running, `node scripts/check-workspace-ui.cjs` exercises the real builder/library/pricing/confirmation components using synthetic API responses at desktop/mobile sizes. It checks recovery, restoration, clipboard copy, saves, profile/playbook editing, checkout failures, redirect/cancellation, pending/confirmed activation, draft restoration, paid upsell suppression, reduced motion, console errors, and overflow. Temporary fixture routes are removed afterward. It does not validate a real user's session, live provider quality, Stripe payments, or database policies under multiple real accounts; check those integrations in an approved preview before release.
 
-For the outstanding integration check, see [Payment verification](payment-verification.md). Local Stripe/admin settings are currently missing; simulated checks must not be labelled a real test purchase.
+See [Payment verification](payment-verification.md) for the completed isolated Stripe purchases, renewal recovery, cancellation checks, and production cutover record. The UI fixtures above remain simulated checks and must not be labelled real purchases.
 
 ## References
 

@@ -15,6 +15,7 @@
 # next.js
 /.next/
 /.next-dev/
+/.next-billing-test/
 /out/
 
 # production

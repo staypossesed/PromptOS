@@ -1,4 +1,6 @@
 .next-dev/
+.next-billing-test/
+.env.billing-test.*
 .env*.local
 .env
 *.tsbuildinfo

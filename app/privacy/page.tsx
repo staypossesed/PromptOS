@@ -8,7 +8,7 @@ export const metadata = {
   description: "How Umprompt handles your data.",
 };
 
-const LAST_UPDATED = "October 10, 2026";
+const LAST_UPDATED = "October 15, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -44,7 +44,9 @@ export default function PrivacyPage() {
           <Section title="What we collect">
             <p>
               When you sign in, we store your email address and a unique account ID in our
-              database. We do not collect your name, phone number, or payment information.
+              database. Stripe handles checkout and card details. We keep Stripe customer,
+              checkout, and subscription references and plan/access status to manage billing;
+              we do not store card numbers.
             </p>
             <p>
               Prompts you explicitly save, including the idea, context, generated text, and quality
@@ -72,7 +74,7 @@ export default function PrivacyPage() {
                 {" and "}<a href="https://openrouter.ai/privacy" target="_blank" rel="noopener noreferrer" className="text-clay-700 underline underline-offset-2">OpenRouter&apos;s privacy policy</a>
                 .
               </li>
-              <li>To improve Umprompt (aggregated, anonymized usage only — no prompt content).</li>
+              <li>To improve Umprompt using limited product-usage analytics, without prompt or answer content.</li>
             </ul>
           </Section>
 
@@ -104,8 +106,27 @@ export default function PrivacyPage() {
 
           <Section title="Cookies and sessions">
             <p>
-              We use Supabase Auth for authentication. Session tokens are stored in secure,
-              HTTP-only cookies. We do not use third-party advertising or tracking cookies.
+              We use Supabase Auth for authentication and browser session storage. The website
+              can also use first-party local storage for PostHog product analytics. We do not
+              use third-party advertising cookies.
+            </p>
+          </Section>
+
+          <Section title="Product analytics">
+            <p>
+              When configured, PostHog receives account IDs, signup and sign-in times,
+              checkout creation times, random task/result identifiers, generation and copy actions, optional usefulness
+              votes, and verified purchase metadata such as plan, amount, currency, and
+              test/live status. This lets us distinguish copying a prompt from reporting a
+              useful answer and measure return visits and purchases. Account-linked analytics
+              are pseudonymous, not anonymous.
+            </p>
+            <p>
+              These events do not include email addresses, prompt text, AI answers, context
+              profiles, card details, keys, or authentication tokens. Full page URLs and
+              referrers are excluded; automatic interaction capture and session recording
+              are disabled. Usefulness feedback is optional. The extension does not add this
+              website analytics SDK to its panel.
             </p>
           </Section>
 

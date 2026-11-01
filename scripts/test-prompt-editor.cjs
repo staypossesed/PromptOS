@@ -26,7 +26,7 @@ async function main() {
     "@/components/layout/topbar": `export function Topbar(){return null}`,
     "@/components/workspace/builder-library": `export function BuilderLibrary(){return null}`,
     "@/hooks/usePromptUsage": `export function usePromptUsage(){return {isPaid:false,remainingThisWeek:7,isLoading:false}}`,
-    "@/lib/analytics": `export function track() {}`,
+    "@/lib/analytics": serveOnly ? `export function track(event,properties={}) {fetch('/api/test-analytics',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event,properties})}).catch(()=>{})}` : `export function track() {}`,
     "@/lib/supabase/client": `const user={id:'synthetic-owner',last_sign_in_at:'2026-01-01T00:00:00Z'};
       export function createClient(){return {auth:{getUser:async()=>({data:{user}}),onAuthStateChange:()=>({data:{subscription:{unsubscribe(){}}}})}}}`,
   };
@@ -35,13 +35,15 @@ async function main() {
     stdin: { contents: `import {createRoot} from 'react-dom/client';
       import {useEffect} from 'react';
       import BuilderPage from './app/builder/page';
+      import PlanSuccessPage from './app/plan/success/page';
+      import {BillingPortalButton} from './components/billing/billing-portal-button';
       import {LanguageProvider,useLanguage} from './lib/i18n/language-provider';
       function TestPage(){const {language,setLanguage}=useLanguage();useEffect(()=>{document.documentElement.lang=language},[language]);
         return <><header style={{display:'flex',justifyContent:'space-between',alignItems:'center',padding:'16px 24px',borderBottom:'1px solid #e4e4e7',background:'white'}}>
         <span style={{display:'flex',alignItems:'center',gap:8,fontWeight:600}}><img src='/brand.png' width='32' height='32' alt=''/>Umprompt</span>
         <select id='test-language' aria-label='Language' value={language} onChange={e=>setLanguage(e.target.value)}><option value='en'>EN</option><option value='es'>ES</option><option value='ru'>RU</option></select>
         </header><BuilderPage/></>};
-      createRoot(document.getElementById('root')).render(<LanguageProvider><TestPage/></LanguageProvider>);`, resolveDir: root, loader: "tsx" },
+      createRoot(document.getElementById('root')).render(<LanguageProvider>{location.pathname==='/plan/success'?<PlanSuccessPage/>:location.pathname==='/test/billing-portal'?<main style={{padding:32}}><h1>Billing recovery verification</h1><BillingPortalButton label="Manage billing"/></main>:<TestPage/>}</LanguageProvider>);`, resolveDir: root, loader: "tsx" },
     absWorkingDir: root, bundle: true, write: false, format: "iife", platform: "browser", jsx: "automatic",
     define: { "process.env.NODE_ENV": '"production"' }, alias: { "@": root }, logLevel: "silent",
     plugins: [{ name: "isolated-editor-fixtures", setup(builder) {
@@ -82,6 +84,7 @@ async function main() {
   const recoveredPrompt = "Recommend three history books. Include each title, author, and a brief reason to read it.";
   let holdScore = true;
   let failOptimize = false;
+  const syncAttempts = new Map();
   async function serveFixture(req, res) {
     const chunks = [];
     for await (const chunk of req) chunks.push(chunk);
@@ -90,6 +93,19 @@ async function main() {
     requests.push({ pathname, method: req.method, body });
     await fs.writeFile(path.join(artifacts, "browser-request-log.json"), JSON.stringify(requests, null, 2));
     const json = (value, status = 200) => { res.statusCode = status; res.setHeader("Content-Type", "application/json"); res.end(JSON.stringify(value)); };
+    if (pathname === "/api/test-analytics") return json({ ok: true });
+    if (pathname === "/api/billing/portal") return json({ error: "Synthetic portal outage" }, 503);
+    if (pathname === "/api/billing/sync-checkout") {
+      const attempts = (syncAttempts.get(body.sessionId) ?? 0) + 1;
+      syncAttempts.set(body.sessionId, attempts);
+      if (body.sessionId === "cs_test_pending") return json({ error: "PAYMENT_PENDING" }, 409);
+      if (body.sessionId === "cs_test_first_timeout" && attempts === 1) {
+        await new Promise(resolve => setTimeout(resolve, 11000));
+        if (!res.destroyed) return json({ error: "Synthetic timeout response" }, 503);
+        return;
+      }
+      return json({ ok: true, billing: { isPaid: true, plan: "pro_monthly", isFounder: false }, returnTo: "/builder?resume=checkout" });
+    }
     if (pathname === "/api/prompts/clarify") {
       await new Promise(resolve => setTimeout(resolve, 2000));
       if (body.idea.includes("simulate clarification failure")) return json({ error: "Synthetic clarification failure" }, 503);

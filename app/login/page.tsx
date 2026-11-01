@@ -10,6 +10,7 @@ import { Logo } from "@/components/brand/logo";
  * We wrap the client component here at the page level.
  */
 export default function LoginPage() {
+  const isBillingTest = process.env.UMPROMPT_BILLING_TEST === "1";
   return (
     <div className="min-h-screen bg-paper flex flex-col">
 
@@ -18,12 +19,13 @@ export default function LoginPage() {
         <Link href="/">
           <Logo />
         </Link>
+        {isBillingTest && <span className="ml-auto text-xs font-medium text-ink-500">Payment test</span>}
       </header>
 
       {/* Card — Suspense isolates the useSearchParams() hook */}
       <main className="flex flex-1 items-center justify-center px-4 py-10 sm:py-16">
         <Suspense fallback={<LoginSkeleton />}>
-          <LoginForm />
+          <LoginForm showOAuthProviders={!isBillingTest} />
         </Suspense>
       </main>
     </div>

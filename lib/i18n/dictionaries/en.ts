@@ -52,6 +52,9 @@ export const en = {
     noPasswordRequired: "No password required",
     signInTitle: "Sign in to Umprompt",
     signInSubtitle: "Enter your email — we'll send a magic link. One click and you're in.",
+    emailLinkExpired: "This email link is invalid, expired, or already used. Request a fresh link and open the newest email in the browser where you requested it.",
+    emailRateLimited: "The sign-in email limit has been reached. Wait for it to reset before requesting another link. Repeated attempts will not send an email. If this continues, contact support.",
+    signInRateLimited: "Too many sign-in requests. Please wait before trying again.",
     emailLabel: "Email address",
     emailPlaceholder: "you@company.com",
     continueWithEmail: "Continue with email",
@@ -368,6 +371,8 @@ export const en = {
     lifetimeCtaPrice: "$99.99 once",
     // Account
     manageBilling: "Manage billing",
+    subscriptionNeedsAttention: "Your subscription needs attention. Manage billing to review it or update your payment details.",
+    planCheckUnavailable: "We couldn't verify your current plan. Please try again later.",
     upgradeToPro: "Upgrade to Pro",
     currentPlan: "Current plan",
     planStatus: "Plan status",

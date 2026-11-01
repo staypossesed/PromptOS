@@ -9,12 +9,14 @@ const req = (body) => new NextRequest("http://localhost/api/billing/checkout", {
 const paidSession = { id: "cs_test_synthetic", metadata: { user_id: "owner", plan: "lifetime", return_to: checkout.CHECKOUT_RETURN }, status: "complete", payment_status: "paid", mode: "payment", customer: "cus_synthetic", line_items: { data: [{ price: { id: "price_synthetic" } }] } };
 function fulfillment(session = paidSession, dbError = null) {
   const writes = [];
+  const analytics = [];
   const query = { upsert: async (data, options) => { writes.push({ data, options }); return { error: dbError }; } };
   const helper = load("lib/fulfill-checkout.ts", {
     "@/lib/stripe": { stripe: { checkout: { sessions: { retrieve: async () => session } }, subscriptions: { retrieve: async () => ({ id: "sub_synthetic", status: "active", items: { data: [] } }) } } },
     "@/lib/supabase/admin": { createAdminClient: () => ({ from: () => query }) }, "@/lib/checkout": checkout,
+    "@/lib/server-analytics": { captureServerEvent: async (...args) => { analytics.push(args); return true; } },
   });
-  return { helper, writes };
+  return { helper, writes, analytics };
 }
 test("checkout destinations reject external redirects", () => {
   for (const path of ["https://evil.invalid", "//evil.invalid", "/builder?resume=checkout&other=1", null]) assert.equal(checkout.checkoutReturn(path), "/dashboard");
@@ -45,18 +47,56 @@ test("activation database errors are not reported as success", async () => {
   const { helper } = fulfillment(paidSession, { message: "Synthetic database failure" });
   await assert.rejects(helper.fulfillCheckout(paidSession.id, "owner"), /could not be saved/);
 });
+
+test("purchase analytics follow verified persistence and use the receipt's original checkout time", async () => {
+  const created = Math.floor(Date.parse("2026-10-15T00:00:00Z") / 1000);
+  const { helper, analytics } = fulfillment({ ...paidSession, created, livemode: false, amount_total: 9999, currency: "usd" });
+  await helper.fulfillCheckout(paidSession.id, "owner");
+  assert.equal(analytics[0][0], "purchase_confirmed");
+  assert.equal(analytics[0][3].live_mode, false);
+  assert.equal(analytics[0][3].amount_cents, 9999);
+  assert.equal(analytics[0][4], "2026-10-15T00:00:00.000Z");
+  const failed = fulfillment(paidSession, { message: "Synthetic write failure" });
+  await assert.rejects(failed.helper.fulfillCheckout(paidSession.id, "owner"));
+  assert.equal(failed.analytics.length, 0);
+  const unpaid = fulfillment({ ...paidSession, payment_status: "unpaid" });
+  await assert.rejects(unpaid.helper.fulfillCheckout(paidSession.id, "owner"));
+  assert.equal(unpaid.analytics.length, 0);
+});
 test("founder fulfillment recovers promo records even when initial checkout insert was lost", async () => {
   const { helper, writes } = fulfillment({ ...paidSession, metadata: { user_id: "owner", plan: "founder_lifetime", promo_code: "UMPROMPT" } });
   await helper.fulfillCheckout(paidSession.id, "owner");
   assert.equal(writes[2].data.status, "succeeded");
   assert.equal(writes[2].data.user_id, "owner");
 });
-function checkoutRoute({ user = { id: "owner", email: "synthetic@example.invalid" }, paid = false, founder = false, amount = 999, recurring = true, config = true } = {}) {
+function checkoutRoute({ user = { id: "owner", email: "synthetic@example.invalid" }, paid = false, founder = false, amount = 999, recurring = true, config = true, billingFails = false, customer = false, customerError = false, subscriptionStatus = null, stripeLookupFails = false, hasMore = false } = {}) {
   const calls = [];
+  const sideEffects = [];
   for (const name of ["STRIPE_SECRET_KEY", "STRIPE_WEBHOOK_SECRET", "SUPABASE_SERVICE_ROLE_KEY", "STRIPE_PRICE_PRO_MONTHLY", "STRIPE_PRICE_FOUNDER_MONTHLY", "STRIPE_PRICE_LIFETIME", "STRIPE_PRICE_FOUNDER_LIFETIME"]) process.env[name] = config ? "synthetic_test_configuration" : "";
-  const stripe = { prices: { retrieve: async () => ({ active: true, currency: "usd", unit_amount: amount, type: recurring ? "recurring" : "one_time", recurring: recurring ? { interval: "month", interval_count: 1 } : null }) }, checkout: { sessions: { create: async (data) => { calls.push(data); return { id: paidSession.id, url: "https://checkout.stripe.com/c/pay/cs_test_synthetic" }; }, expire: async () => {} } } };
-  const route = load("app/api/billing/checkout/route.ts", { "next/server": { NextResponse }, "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) } }) }, "@/lib/stripe": { stripe }, "@/lib/supabase/admin": { createAdminClient: () => ({ from: () => ({ upsert: async () => ({ error: null }) }) }) }, "@/lib/billing": { getBillingStatus: async () => ({ isPaid: paid }), isFounderEligible: async () => founder, getOrCreateStripeCustomer: async () => "cus_synthetic" }, "@/lib/checkout": checkout });
-  return { route, calls };
+  const stripe = {
+    prices: { retrieve: async () => { sideEffects.push("price"); return { active: true, currency: "usd", unit_amount: amount, type: recurring ? "recurring" : "one_time", recurring: recurring ? { interval: "month", interval_count: 1 } : null }; } },
+    subscriptions: { list: async parameters => {
+      assert.equal(parameters.customer, "cus_synthetic");
+      assert.equal(parameters.status, "all");
+      if (stripeLookupFails) throw new Error("Synthetic Stripe outage");
+      return { data: subscriptionStatus ? [{ status: subscriptionStatus }] : [], has_more: hasMore };
+    } },
+    checkout: { sessions: { create: async data => { sideEffects.push("checkout"); calls.push(data); return { id: paidSession.id, url: "https://checkout.stripe.com/c/pay/cs_test_synthetic" }; }, expire: async () => {} } },
+  };
+  const query = { select: () => query, eq: (_field, id) => { assert.equal(id, "owner"); return query; }, maybeSingle: async () => ({ data: customer ? { stripe_customer_id: "cus_synthetic" } : null, error: customerError ? { code: "SYNTHETIC" } : null }) };
+  const route = load("app/api/billing/checkout/route.ts", {
+    "next/server": { NextResponse },
+    "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) }, from: () => query }) },
+    "@/lib/stripe": { stripe },
+    "@/lib/supabase/admin": { createAdminClient: () => ({ from: () => ({ upsert: async () => ({ error: null }) }) }) },
+    "@/lib/billing": {
+      getBillingStatus: async (_client, _owner, options) => { assert.equal(options?.failOnError, true); if (billingFails) throw new Error("Synthetic billing outage"); return { isPaid: paid }; },
+      isFounderEligible: async () => founder,
+      getOrCreateStripeCustomer: async () => { sideEffects.push("customer"); return "cus_synthetic"; },
+    },
+    "@/lib/checkout": checkout,
+  });
+  return { route, calls, sideEffects };
 }
 test("checkout rejects unauthenticated, paid, malformed and expired-offer requests", async () => {
   for (const [options, body, expected] of [[{ user: null }, { offerType: "monthly" }, 401], [{ paid: true }, { offerType: "monthly" }, 409], [{}, null, 422], [{}, { offerType: "invalid" }, 422], [{}, { offerType: "monthly", promoCode: "UMPROMPT" }, 409]]) {
@@ -70,6 +110,38 @@ test("missing configuration and mismatched prices block checkout before a charge
     const { route, calls } = checkoutRoute(options);
     assert.equal((await route.POST(req({ offerType: "monthly" }))).status, 503);
     assert.equal(calls.length, 0);
+  }
+});
+
+test("a failed billing lookup blocks checkout instead of treating an existing customer as free", async () => {
+  const { route, calls } = checkoutRoute({ billingFails: true });
+  const response = await route.POST(req({ offerType: "monthly" }));
+  assert.equal(response.status, 503);
+  assert.equal((await response.json()).error, "BILLING_UNAVAILABLE");
+  assert.equal(calls.length, 0);
+});
+
+test("unresolved Stripe subscriptions lead to billing recovery, not another purchase", async () => {
+  for (const subscriptionStatus of ["active", "trialing", "past_due", "unpaid", "incomplete", "paused"]) {
+    const { route, sideEffects } = checkoutRoute({ customer: true, subscriptionStatus });
+    const response = await route.POST(req({ offerType: "monthly" }));
+    assert.equal(response.status, 409);
+    assert.equal((await response.json()).error, "BILLING_ACTION_REQUIRED");
+    assert.deepEqual(sideEffects, []);
+  }
+  for (const subscriptionStatus of ["canceled", "incomplete_expired"]) {
+    const { route } = checkoutRoute({ customer: true, subscriptionStatus });
+    assert.equal((await route.POST(req({ offerType: "monthly" }))).status, 200);
+  }
+});
+
+test("customer lookup failures and incomplete Stripe history cannot start another checkout", async () => {
+  for (const options of [{ customerError: true }, { customer: true, stripeLookupFails: true }, { customer: true, hasMore: true }]) {
+    const { route, sideEffects } = checkoutRoute(options);
+    const response = await route.POST(req({ offerType: "monthly" }));
+    assert.equal(response.status, 503);
+    assert.equal((await response.json()).error, "BILLING_UNAVAILABLE");
+    assert.deepEqual(sideEffects, []);
   }
 });
 test("monthly and lifetime offers have matching totals, mode and safe return destination", async () => {
@@ -90,6 +162,11 @@ test("checkout draft restores only bounded, fresh data and preserves version his
   assert.equal(drafts.parseCheckoutDraft(JSON.stringify(draft), 1000 + 31 * 60 * 1000), null);
   assert.equal(drafts.parseCheckoutDraft("malformed"), null);
   assert.equal(drafts.parseCheckoutDraft(JSON.stringify({ ...draft, prompt: "x".repeat(16001) }), 1500), null);
+  const taskMetric = { task_id: "12345678-1234-4123-8123-123456789abc", result_id: "12345678-1234-4123-8123-123456789abd" };
+  const resumed = drafts.parseCheckoutDraft(JSON.stringify({ ...draft, taskMetric, feedback: false }), 1500);
+  assert.deepEqual(resumed.taskMetric, taskMetric);
+  assert.equal(resumed.feedback, false);
+  assert.equal(drafts.parseCheckoutDraft(JSON.stringify({ ...draft, taskMetric: { task_id: "private text" }, feedback: "true" }), 1500).taskMetric, null);
 });
 test("signed webhooks share verified fulfillment and retry failed persistence", async () => {
   process.env.STRIPE_WEBHOOK_SECRET = "synthetic_secret";
@@ -98,6 +175,7 @@ test("signed webhooks share verified fulfillment and retry failed persistence", 
     const route = load("app/api/stripe/webhook/route.ts", {
       "next/server": { NextResponse }, "@/lib/stripe": { stripe: { webhooks: { constructEvent: () => ({ type: "checkout.session.async_payment_succeeded", id: "evt_synthetic", data: { object: { id: paidSession.id } } }) } } },
       "@/lib/supabase/admin": { createAdminClient: () => ({}) },
+      "@/lib/subscription-state": { syncSubscriptionState: async () => {} },
       "@/lib/fulfill-checkout": { fulfillCheckout: async (id) => { fulfilled++; assert.equal(id, paidSession.id); if (fail) throw new Error("Synthetic persistence failure"); }, CheckoutVerificationError: class extends Error {} },
     });
     const request = new NextRequest("http://localhost/api/stripe/webhook", { method: "POST", body: "{}", headers: { "stripe-signature": "synthetic_signature" } });

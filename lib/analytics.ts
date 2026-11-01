@@ -3,7 +3,6 @@
  *
  * Noops safely when:
  *  - NEXT_PUBLIC_POSTHOG_KEY is not set
- *  - PostHog has not finished initializing
  *  - Running server-side (SSR guard)
  *
  * Do NOT import this file in Server Components.
@@ -29,8 +28,11 @@ export type AnalyticsEvent =
   | "clarification_shown"
   | "clarification_answered"
   | "answer_outcome_feedback"
+  | "prompt_result_confirmed"
   | "landing_view"
+  | "site_visited"
   | "signup_started"
+  | "signup_completed"
   | "login_success"
   | "builder_opened"
   | "prompt_generated"
@@ -106,22 +108,64 @@ export interface EventProperties {
   user_segment?: string;
   remaining_this_week?: number;
   source_page?: string;
+  task_id?: string;
+  result_id?: string;
+  new_task?: boolean;
+  outcome?: "useful" | "not_useful" | "not_tried";
+  funnel_version?: number;
 }
 
-export function track(event: AnalyticsEvent, properties?: EventProperties): void {
+type PendingEvent = { event: AnalyticsEvent; properties: EventProperties; occurredAt: Date };
+let ready = false;
+const pending: PendingEvent[] = [];
+
+const allowed = new Set([
+  "category", "suggestion_id", "improved", "target_tool", "score_overall", "action_type", "option", "template_id", "pack_type", "models_compared", "model_count", "selected_model", "winner_model", "reason", "latencyMs", "estimatedCostUSD", "language", "source", "inputLanguage", "outputLanguage", "plan", "offer_type", "is_founder", "cta_variant", "user_segment", "remaining_this_week", "source_page", "task_id", "result_id", "new_task", "outcome",
+]);
+
+export function analyticsProperties(properties: EventProperties = {}): EventProperties {
+  return Object.fromEntries(Object.entries(properties).filter(([key, value]) => allowed.has(key) &&
+    (typeof value === "boolean" || (typeof value === "number" && Number.isFinite(value)) || (typeof value === "string" && value.length <= 120))));
+}
+
+export function stripPrivateAnalytics(properties: Record<string, unknown>): Record<string, unknown> {
+  const safe = { ...properties };
+  for (const key of Object.keys(safe)) {
+    if (/url|referrer|email/i.test(key)) delete safe[key];
+    else if (["$set", "$set_once"].includes(key) && safe[key] && typeof safe[key] === "object") safe[key] = stripPrivateAnalytics(safe[key] as Record<string, unknown>);
+  }
+  return safe;
+}
+
+export function analyticsReady(): void {
+  ready = true;
+  for (const item of pending.splice(0)) track(item.event, item.properties, item.occurredAt);
+}
+
+export function track(event: AnalyticsEvent, properties?: EventProperties, occurredAt = new Date()): void {
   if (typeof window === "undefined") return;
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  if (!ready) {
+    if (pending.length < 50) pending.push({ event, properties: analyticsProperties(properties), occurredAt });
+    return;
+  }
   try {
-    posthog.capture(event, properties ?? {});
+    posthog.capture(event, { ...analyticsProperties(properties), funnel_version: 1 }, { timestamp: occurredAt });
   } catch {
     // Analytics must never crash the app
   }
 }
 
-export function identify(userId: string, traits?: { email?: string }): void {
+export function identify(userId: string): void {
   if (typeof window === "undefined") return;
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
   try {
-    posthog.identify(userId, traits);
+    posthog.identify(userId);
   } catch {}
+}
+
+export function resetAnalytics(clearPending = true): void {
+  if (clearPending) pending.length = 0;
+  if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  try { posthog.reset(); } catch {}
 }

@@ -8,6 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "test": "node --test tests/*.test.cjs",
+    "billing:test": "node scripts/billing-test.cjs",
+    "funnel:report": "node scripts/report-funnel.cjs",
     "eval:outcomes": "node scripts/evaluate-outcomes.cjs",
     "extension:build": "node scripts/build-extension.cjs",
     "extension:test": "node scripts/test-extension.cjs"

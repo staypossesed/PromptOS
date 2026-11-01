@@ -2,7 +2,7 @@
  * lib/billing.ts — Server-side billing helpers.
  *
  * All functions require the Supabase server client from the calling route handler.
- * The service-role admin client is used only in the webhook handler (lib/supabase/admin.ts).
+ * Server writes use the service-role client; never import this module in a browser.
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -45,18 +45,21 @@ export const PROMO_CODE = "UMPROMPT";
 
 export async function getBillingStatus(
   supabase: SupabaseClient,
-  userId: string
+  userId: string,
+  options: { failOnError?: boolean } = {}
 ): Promise<BillingStatus> {
   try {
     // Active subscription or lifetime purchase
-    const { data: sub } = await supabase
+    const { data: sub, error: subscriptionError } = await supabase
       .from("billing_subscriptions")
       .select("plan, status, is_lifetime, is_founder, current_period_end")
       .eq("user_id", userId)
       .in("status", ["active", "trialing"])
+      .or(`is_lifetime.eq.true,current_period_end.gt.${new Date().toISOString()}`)
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle();
+    if (options.failOnError && subscriptionError) throw new Error("Billing status unavailable.");
 
     const isPaid = !!sub;
     const plan: PlanType = (sub?.plan as PlanType) ?? "free";
@@ -68,7 +71,7 @@ export async function getBillingStatus(
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
 
-    const [{ count: weekCount }, { count: todayCount }] = await Promise.all([
+    const [{ count: weekCount, error: weekError }, { count: todayCount, error: todayError }] = await Promise.all([
       supabase
         .from("usage_events")
         .select("*", { count: "exact", head: true })
@@ -80,6 +83,7 @@ export async function getBillingStatus(
         .eq("user_id", userId)
         .gte("created_at", todayStart.toISOString()),
     ]);
+    if (options.failOnError && (weekError || todayError)) throw new Error("Billing usage unavailable.");
 
     const usedThisWeek = weekCount ?? 0;
     const usedToday = todayCount ?? 0;
@@ -112,6 +116,7 @@ export async function getBillingStatus(
       fairUseLabel: null,
     };
   } catch {
+    if (options.failOnError) throw new Error("Billing is temporarily unavailable. Please try again.");
     // Billing tables not yet migrated — treat as free
     return {
       plan: "free",

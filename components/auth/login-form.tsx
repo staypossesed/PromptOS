@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -11,10 +11,11 @@ import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { prepareAuthRedirect, safeAuthNext } from "@/lib/auth-redirect";
+import { emailSignInErrorKey } from "@/lib/auth-errors";
 
 type Stage = "idle" | "sent";
 
-export function LoginForm() {
+export function LoginForm({ showOAuthProviders = true }: { showOAuthProviders?: boolean }) {
   const searchParams = useSearchParams();
   const next = safeAuthNext(searchParams.get("next"));
   const urlError = searchParams.get("error");
@@ -26,6 +27,13 @@ export function LoginForm() {
   const [isPending, setIsPending] = useState(false);
   const [isGooglePending, setIsGooglePending] = useState(false);
   const [isGithubPending, setIsGithubPending] = useState(false);
+
+  useEffect(() => {
+    const fragment = new URLSearchParams(window.location.hash.slice(1));
+    if (fragment.get("error_code") === "otp_expired" || searchParams.get("error_code") === "otp_expired") {
+      setErrorMsg(t("auth.emailLinkExpired"));
+    }
+  }, [searchParams, t]);
 
   // Create the client once at mount so PKCE storage is warm before the first click.
   const supabase = useMemo(() => createClient(), []);
@@ -75,10 +83,13 @@ export function LoginForm() {
           shouldCreateUser: true,
         },
       });
-      if (error) setErrorMsg(error.message);
-      else setStage("sent");
+      if (error) {
+        const errorKey = emailSignInErrorKey(error);
+        setErrorMsg(errorKey ? t(errorKey) : error.message);
+      } else setStage("sent");
     } catch (error) {
-      setErrorMsg(error instanceof Error ? error.message : "Could not send the sign-in link. Please try again.");
+      const errorKey = emailSignInErrorKey(error);
+      setErrorMsg(errorKey ? t(errorKey) : error instanceof Error ? error.message : "Could not send the sign-in link. Please try again.");
     } finally {
       setIsPending(false);
     }
@@ -108,6 +119,7 @@ export function LoginForm() {
                 isGooglePending={isGooglePending}
                 onGithubSignIn={handleGithubSignIn}
                 isGithubPending={isGithubPending}
+                showOAuthProviders={showOAuthProviders}
                 t={t}
               />
             )}
@@ -150,11 +162,13 @@ export function LoginForm() {
 function FormState({
   email, setEmail, onSubmit, isPending, errorMsg,
   onGoogleSignIn, isGooglePending, onGithubSignIn, isGithubPending, t,
+  showOAuthProviders,
 }: {
   email: string; setEmail: (v: string) => void; onSubmit: (e: React.FormEvent) => void;
   isPending: boolean; errorMsg: string | null;
   onGoogleSignIn: () => void; isGooglePending: boolean;
   onGithubSignIn: () => void; isGithubPending: boolean;
+  showOAuthProviders: boolean;
   t: (key: string) => string;
 }) {
   return (
@@ -203,23 +217,27 @@ function FormState({
         </Button>
       </form>
 
-      <div className="relative my-6">
-        <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-ink-100" /></div>
-        <div className="relative flex justify-center">
-          <span className="bg-white px-3 text-xs text-ink-400">{t("common.or")}</span>
-        </div>
-      </div>
+      {showOAuthProviders && (
+        <>
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-ink-100" /></div>
+            <div className="relative flex justify-center">
+              <span className="bg-white px-3 text-xs text-ink-400">{t("common.or")}</span>
+            </div>
+          </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGoogleSignIn} disabled={isGooglePending || isGithubPending || isPending} type="button">
-          {isGooglePending ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
-          {isGooglePending ? t("common.redirecting") : t("auth.continueWithGoogle")}
-        </Button>
-        <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGithubSignIn} disabled={isGithubPending || isGooglePending || isPending} type="button">
-          {isGithubPending ? <Loader2 className="size-4 animate-spin" /> : <GitHubIcon />}
-          {isGithubPending ? t("common.redirecting") : t("auth.continueWithGithub")}
-        </Button>
-      </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGoogleSignIn} disabled={isGooglePending || isGithubPending || isPending} type="button">
+              {isGooglePending ? <Loader2 className="size-4 animate-spin" /> : <GoogleIcon />}
+              {isGooglePending ? t("common.redirecting") : t("auth.continueWithGoogle")}
+            </Button>
+            <Button variant="outline" size="lg" className="w-full rounded-lg border-zinc-300 bg-white hover:bg-zinc-50 shadow-none" onClick={onGithubSignIn} disabled={isGithubPending || isGooglePending || isPending} type="button">
+              {isGithubPending ? <Loader2 className="size-4 animate-spin" /> : <GitHubIcon />}
+              {isGithubPending ? t("common.redirecting") : t("auth.continueWithGithub")}
+            </Button>
+          </div>
+        </>
+      )}
     </motion.div>
   );
 }

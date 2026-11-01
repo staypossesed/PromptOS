@@ -29,7 +29,13 @@ export default function PlanPage() {
   const [founderLoading, setFounderLoading] = useState(true);
   const [loading, setLoading] = useState<"monthly" | "lifetime" | null>(null);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [billingActionRequired, setBillingActionRequired] = useState(false);
+  const checkoutErrorRef = useRef<HTMLDivElement>(null);
   const autoAppliedRef = useRef(false);
+
+  useEffect(() => {
+    if (checkoutError) checkoutErrorRef.current?.focus();
+  }, [checkoutError]);
 
   useEffect(() => {
     track("plan_page_viewed");
@@ -71,6 +77,7 @@ export default function PlanPage() {
     let redirecting = false;
     setLoading(offerType);
     setCheckoutError(null);
+    setBillingActionRequired(false);
     track("upgrade_clicked", { offer_type: offerType, is_founder: founderPrice });
     try {
       const res = await fetch("/api/billing/checkout", {
@@ -100,6 +107,11 @@ export default function PlanPage() {
       track("checkout_failed", { reason: code ?? "UNKNOWN", offer_type: offerType });
       if (code === "MISSING_CONFIG") {
         setCheckoutError("Payments are temporarily unavailable. Your prompt is safe; you can return to it below.");
+      } else if (code === "BILLING_UNAVAILABLE") {
+        setCheckoutError("We couldn't verify your current plan. Please try again later; no new checkout has started.");
+      } else if (code === "BILLING_ACTION_REQUIRED") {
+        setBillingActionRequired(true);
+        setCheckoutError(t("billing.subscriptionNeedsAttention"));
       } else if (code === "OFFER_UNAVAILABLE") {
         setPromoApplied(false); setPromoAutoApplied(false);
         setFounderCount(FOUNDER_LIMIT);
@@ -281,9 +293,11 @@ export default function PlanPage() {
 
         {/* Checkout error */}
         {checkoutError && (
-          <div role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+          <div ref={checkoutErrorRef} tabIndex={-1} role="alert" className="mb-4 flex items-center gap-2 rounded-lg border border-destructive/20 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             <AlertCircle className="size-4 shrink-0" />
-            {checkoutError}
+            <span>{checkoutError}{billingActionRequired && (
+              <Link href="/account" className="ml-2 inline-flex min-h-11 items-center underline underline-offset-2">{t("billing.manageBilling")}</Link>
+            )}</span>
           </div>
         )}
         <div className="mb-6 text-center"><Link href={returnTo} className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"><ArrowLeft className="size-4" />Back to workspace</Link></div>

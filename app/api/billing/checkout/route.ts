@@ -16,8 +16,27 @@ export async function POST(request: NextRequest) {
   if (offerType !== "monthly" && offerType !== "lifetime") return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 422 });
   if (promoCode !== undefined && typeof promoCode !== "string") return NextResponse.json({ error: "INVALID_REQUEST" }, { status: 422 });
   const normalizedCode = typeof promoCode === "string" ? promoCode.trim().toUpperCase() : undefined;
-  const billing = await getBillingStatus(supabase, user.id);
+  let billing;
+  try {
+    billing = await getBillingStatus(supabase, user.id, { failOnError: true });
+  } catch {
+    return NextResponse.json({ error: "BILLING_UNAVAILABLE" }, { status: 503 });
+  }
   if (billing.isPaid) return NextResponse.json({ error: "ALREADY_PAID" }, { status: 409 });
+  try {
+    const { data: existingCustomer, error } = await supabase.from("billing_customers")
+      .select("stripe_customer_id").eq("user_id", user.id).maybeSingle();
+    if (error) throw new Error("Billing customer unavailable.");
+    if (existingCustomer) {
+      const subscriptions = await stripe.subscriptions.list({ customer: existingCustomer.stripe_customer_id, status: "all", limit: 100 });
+      if (subscriptions.data.some(subscription => !["canceled", "incomplete_expired"].includes(subscription.status))) {
+        return NextResponse.json({ error: "BILLING_ACTION_REQUIRED" }, { status: 409 });
+      }
+      if (subscriptions.has_more) throw new Error("Existing subscriptions could not be fully verified.");
+    }
+  } catch {
+    return NextResponse.json({ error: "BILLING_UNAVAILABLE" }, { status: 503 });
+  }
   let founder: boolean;
   try { founder = await isFounderEligible(supabase, normalizedCode); }
   catch { return NextResponse.json({ error: "OFFER_CHECK_FAILED" }, { status: 503 }); }

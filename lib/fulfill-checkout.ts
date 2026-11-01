@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { checkoutPlanMatches } from "@/lib/checkout";
+import { captureServerEvent } from "@/lib/server-analytics";
 
 export class CheckoutVerificationError extends Error {
   constructor(public code: string, public status: number) { super(code); }
@@ -39,5 +40,11 @@ export async function fulfillCheckout(sessionId: string, expectedUser?: string) 
     const redemption = await admin.from("promo_redemptions").upsert({ user_id: userId, code: session.metadata.promo_code, offer_type: session.mode === "subscription" ? "monthly" : "lifetime", stripe_checkout_session_id: session.id, status: "succeeded", updated_at: new Date().toISOString() }, { onConflict: "stripe_checkout_session_id" });
     if (redemption.error) throw new Error("Founder redemption could not be saved.");
   }
+  // A receipt reload must not move an old purchase into today's conversion cohort.
+  const checkoutTime = Number.isFinite(session.created) ? new Date(session.created * 1000).toISOString() : undefined;
+  await captureServerEvent("purchase_confirmed", userId, session.id, {
+    plan: plan!, is_founder: isFounder, offer_type: session.mode === "subscription" ? "monthly" : "lifetime",
+    amount_cents: session.amount_total ?? 0, currency: session.currency ?? "unknown", live_mode: session.livemode,
+  }, checkoutTime);
   return { plan, isFounder, returnTo: session.metadata?.return_to };
 }

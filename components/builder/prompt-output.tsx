@@ -6,6 +6,7 @@ import { ActionIcon } from "@/components/ui/action-icon";
 import { useEffect, useRef, useState } from "react";
 import type { ToolId } from "@/lib/mock-data";
 import { track } from "@/lib/analytics";
+import type { TaskMetric } from "@/lib/task-metrics";
 import { useTranslations } from "@/lib/i18n/use-translations";
 import { cn } from "@/lib/utils";
 import { composerCopy } from "@/lib/composer-copy";
@@ -203,6 +204,7 @@ function PromptRenderer({ text }: { text: string }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface PromptOutputProps {
+  taskMetric?: TaskMetric | null;
   prompt: string;
   targetTool: ToolId;
   isSaved?: boolean;
@@ -230,6 +232,7 @@ export function PromptOutput({
   onPromptChange,
   onPromptEditEnd,
   edited,
+  taskMetric,
 }: PromptOutputProps) {
   const [copied, setCopied] = useState(false);
   const { t, language } = useTranslations();
@@ -254,7 +257,7 @@ export function PromptOutput({
       setView("preview"); onPromptEditEnd?.();
       clearTimeout(copyTimeout.current);
       copyTimeout.current = setTimeout(() => setCopied(false), 1500);
-      track("prompt_copied", { target_tool: targetTool });
+      track("prompt_copied", { target_tool: targetTool, ...taskMetric });
       onCopied?.();
     } catch { setCopyError(true); }
   }

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { AUTH_NEXT_COOKIE, safeAuthNext } from "@/lib/auth-redirect";
+import { captureServerEvent } from "@/lib/server-analytics";
 
 // OAuth and email links both return a PKCE code to this same-origin callback.
 export async function GET(request: NextRequest) {
@@ -25,10 +26,18 @@ export async function GET(request: NextRequest) {
   if (code) {
     try {
       const supabase = await createClient();
-      const { error } = await supabase.auth.exchangeCodeForSession(code);
+      const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
       if (error) {
         return fail("Sign-in expired or was opened in a different browser. Please sign in again in this browser.");
+      }
+      if (data.user) {
+        // Timestamp account creation, never today's login. Existing users stay an older cohort.
+        await Promise.all([
+          captureServerEvent("login_success", data.user.id, `${data.user.id}:${data.user.last_sign_in_at}`),
+          data.user.created_at && Number.isFinite(Date.parse(data.user.created_at))
+            ? captureServerEvent("signup_completed", data.user.id, data.user.id, {}, data.user.created_at) : Promise.resolve(false),
+        ]);
       }
       return redirect(next);
     } catch {

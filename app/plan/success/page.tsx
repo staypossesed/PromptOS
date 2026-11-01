@@ -31,11 +31,14 @@ export default function PlanSuccessPage() {
       if (!sessionId) { setSyncState("failed"); return; }
       let finalState: SyncState = "failed";
       for (let index = 0; index < 4 && !cancelled; index++) {
-        const timeout = setTimeout(() => controller.abort(), 10000);
+        const attemptController = new AbortController();
+        const abortAttempt = () => attemptController.abort();
+        controller.signal.addEventListener("abort", abortAttempt, { once: true });
+        const timeout = setTimeout(abortAttempt, 10000);
         try {
           const res = await fetch("/api/billing/sync-checkout", {
             method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ sessionId }), signal: controller.signal,
+            body: JSON.stringify({ sessionId }), signal: attemptController.signal,
           });
           const json = await res.json();
           if (cancelled) return;
@@ -57,7 +60,7 @@ export default function PlanSuccessPage() {
           if (json.error === "PAYMENT_PENDING" || json.error === "ACTIVATION_PENDING") finalState = "pending";
           else if (res.status < 500) { finalState = "failed"; break; }
         } catch { finalState = "failed"; }
-        finally { clearTimeout(timeout); }
+        finally { clearTimeout(timeout); controller.signal.removeEventListener("abort", abortAttempt); }
         if (index < 3 && !cancelled) await new Promise((resolve) => setTimeout(resolve, 1500));
       }
       if (!cancelled) {
