@@ -4,6 +4,7 @@ import { Plus, History as HistoryIcon, Layers } from "lucide-react";
 import { AppShell } from "@/components/layout/app-shell";
 import { Topbar } from "@/components/layout/topbar";
 import { PromptCard } from "@/components/dashboard/prompt-card";
+import { PromptFilters } from "@/components/dashboard/prompt-filters";
 import { PromptPackCard } from "@/components/dashboard/prompt-pack-card";
 import { EmptyState } from "@/components/dashboard/empty-state";
 import { Button } from "@/components/ui/button";
@@ -14,15 +15,14 @@ import { getServerTranslations } from "@/lib/i18n/server";
 import type { PromptSummary } from "@/types/prompt";
 import type { PromptPackSummary } from "@/types/prompt-pack";
 import { PageViewTracker } from "@/components/analytics/page-view-tracker";
+import { deliveryFilter, filterSavedPrompts } from "@/lib/prompt-history";
 
 export const dynamic = "force-dynamic";
-
-const TOOLS = ["claude", "cursor", "chatgpt"] as const;
 
 export default async function HistoryPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; tool?: string; tab?: string }>;
+  searchParams: Promise<{ q?: string; delivery?: string; tab?: string }>;
 }) {
   const supabase = await createClient();
   const {
@@ -30,11 +30,10 @@ export default async function HistoryPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { q = "", tool: toolFilter = "", tab = "prompts" } = await searchParams;
+  const { q = "", delivery, tab = "prompts" } = await searchParams;
+  const selectedDelivery = deliveryFilter(delivery);
   const activeTab = tab === "packs" ? "packs" : "prompts";
   const { t } = await getServerTranslations();
-
-  const toolLabel: Record<string, string> = { claude: "Claude", cursor: "Cursor", chatgpt: "ChatGPT" };
 
   let prompts: PromptSummary[] = [];
   let promptsError: string | null = null;
@@ -42,20 +41,7 @@ export default async function HistoryPage({
   if (activeTab === "prompts") {
     const result = await listPrompts(200);
     promptsError = result.error;
-    prompts = result.data;
-
-    const lq = q.toLowerCase().trim();
-    if (lq) {
-      prompts = prompts.filter(
-        (p) =>
-          p.title.toLowerCase().includes(lq) ||
-          p.idea.toLowerCase().includes(lq) ||
-          p.generated_prompt.toLowerCase().includes(lq)
-      );
-    }
-    if (toolFilter && TOOLS.includes(toolFilter as (typeof TOOLS)[number])) {
-      prompts = prompts.filter((p) => p.target_tool === toolFilter);
-    }
+    prompts = filterSavedPrompts(result.data, q, selectedDelivery);
   }
 
   let packs: PromptPackSummary[] = [];
@@ -74,7 +60,7 @@ export default async function HistoryPage({
         breadcrumb={[{ label: t("nav.workspace") }, { label: t("nav.history") }]}
         actions={
           <Button asChild size="sm" className="hidden md:inline-flex">
-            <Link href="/builder">
+            <Link href="/builder?fresh=1">
               <Plus className="size-3.5" />
               {t("nav.newPrompt")}
             </Link>
@@ -130,23 +116,10 @@ export default async function HistoryPage({
                     </p>
                   )}
 
-                  <div className="flex items-center gap-1.5 sm:ml-auto">
-                    <FilterChip href={q ? `/history?q=${encodeURIComponent(q)}` : "/history"} active={!toolFilter}>
-                      {t("common.all")}
-                    </FilterChip>
-                    {TOOLS.map((toolId) => (
-                      <FilterChip
-                        key={toolId}
-                        href={q ? `/history?q=${encodeURIComponent(q)}&tool=${toolId}` : `/history?tool=${toolId}`}
-                        active={toolFilter === toolId}
-                      >
-                        {toolLabel[toolId]}
-                      </FilterChip>
-                    ))}
-                  </div>
+                  <PromptFilters path="/history" query={q} delivery={selectedDelivery} />
                 </div>
 
-                {prompts.length === 0 && !q && !toolFilter ? (
+                {prompts.length === 0 && !q && !selectedDelivery ? (
                   <EmptyState />
                 ) : prompts.length === 0 ? (
                   <div className="rounded-2xl border border-ink-100/70 bg-card card-soft p-10 text-center">
@@ -192,7 +165,7 @@ export default async function HistoryPage({
                         {t("history.noPacksSubtitle")}
                       </p>
                       <Button asChild size="lg">
-                        <Link href="/builder">
+                        <Link href="/builder?fresh=1">
                           <Plus className="size-4" />
                           {t("history.createFirstPack")}
                         </Link>
@@ -221,19 +194,6 @@ function TabButton({ children, href, active }: { children: React.ReactNode; href
       href={href}
       className={`flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-full transition-all ${
         active ? "bg-white text-ink-900 card-soft" : "text-ink-500 hover:text-ink-700"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function FilterChip({ children, href, active }: { children: React.ReactNode; href: string; active?: boolean }) {
-  return (
-    <Link
-      href={href}
-      className={`text-xs font-medium rounded-full px-3 py-1.5 transition-colors ${
-        active ? "bg-ink-900 text-cream-50" : "bg-white border border-ink-200/60 text-ink-600 hover:border-ink-300"
       }`}
     >
       {children}

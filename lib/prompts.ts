@@ -31,7 +31,7 @@ export async function listPrompts(limit = 50, client?: SupabaseClient): Promise<
 
   const { data, error } = await supabase
     .from("prompts")
-    .select("id, title, idea, target_tool, score, generated_prompt, created_at, updated_at")
+    .select("id, title, idea, target_tool, delivery:context->>delivery, score, generated_prompt, created_at, updated_at")
     .order("updated_at", { ascending: false })
     .limit(limit);
 

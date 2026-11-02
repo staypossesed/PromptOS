@@ -5,12 +5,8 @@ import { ArrowUpRight, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
 import type { PromptSummary } from "@/types/prompt";
-
-const TOOL_META: Record<string, { label: string; dot: string }> = {
-  claude:  { label: "Claude",  dot: "bg-clay-500" },
-  cursor:  { label: "Cursor",  dot: "bg-emerald-600" },
-  chatgpt: { label: "ChatGPT", dot: "bg-emerald-500" },
-};
+import { savedDelivery } from "@/lib/prompt-history";
+import { useTranslations } from "@/lib/i18n/use-translations";
 
 interface PromptCardProps {
   prompt: PromptSummary;
@@ -18,7 +14,8 @@ interface PromptCardProps {
 }
 
 export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
-  const tool = TOOL_META[prompt.target_tool] ?? { label: prompt.target_tool, dot: "bg-ink-300" };
+  const { t, language } = useTranslations();
+  const label = t(savedDelivery(prompt) === "answer" ? "history.finishedResult" : "history.aiPrompt");
   const score = prompt.score?.overall ?? null;
 
   return (
@@ -35,8 +32,8 @@ export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
         <div className="flex items-center justify-between gap-2 mb-3">
           <div className="flex items-center gap-2 min-w-0">
             <div className="flex items-center gap-1.5 rounded-full border border-ink-100/60 bg-cream-50 px-2 py-0.5 shrink-0">
-              <span className={cn("size-1.5 rounded-full shrink-0", tool.dot)} />
-              <span className="text-[10.5px] font-medium text-ink-600">{tool.label}</span>
+              <span className="size-1.5 rounded-full shrink-0 bg-clay-500" />
+              <span className="text-xs font-medium text-ink-600">{label}</span>
             </div>
             {score !== null && <ScoreChip score={score} />}
           </div>
@@ -56,7 +53,7 @@ export function PromptCard({ prompt, index = 0 }: PromptCardProps) {
         {/* Footer */}
         <div className="flex items-center gap-1.5 text-[11px] text-ink-300">
           <Clock className="size-3" />
-          <span>{formatRelativeTime(prompt.updated_at)}</span>
+          <span suppressHydrationWarning>{formatRelativeTime(prompt.updated_at, language)}</span>
         </div>
       </Link>
     </motion.div>
@@ -81,14 +78,15 @@ function ScoreChip({ score }: { score: number }) {
   );
 }
 
-function formatRelativeTime(iso: string): string {
+function formatRelativeTime(iso: string, language: string): string {
   const diff = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(diff / 60_000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
+  const relative = new Intl.RelativeTimeFormat(language, { numeric: "auto" });
+  if (mins < 1) return relative.format(0, "minute");
+  if (mins < 60) return relative.format(-mins, "minute");
   const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
+  if (hours < 24) return relative.format(-hours, "hour");
   const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  if (days < 7) return relative.format(-days, "day");
+  return new Date(iso).toLocaleDateString(language, { month: "short", day: "numeric" });
 }
