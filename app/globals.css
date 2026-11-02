@@ -340,3 +340,25 @@
     }
   }
 }
+
+/* Landing guidance stays below the examples and disappears when a task starts. */
+.beginner-header .beginner-brand { gap: 12px; }
+.beginner-header .beginner-brand > span { font-size: 29px; letter-spacing: -.04em; }
+.landing-guide { margin-top: 72px; }
+.landing-how { list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 28px; margin: 30px 0 64px; }
+.landing-how li { border-top: 1px solid #ccd6c6; padding-top: 22px; }
+.landing-how li > span { color: #70866b; font-size: 16px; letter-spacing: .08em; }
+.landing-how h3 { font-size: 21px; font-weight: 600; margin: 15px 0 10px; }
+.landing-how p,.landing-faq p,.landing-invitation p { color: var(--beginner-muted); line-height: 1.7; }
+.landing-faq { display: grid; grid-template-columns: minmax(0,.7fr) minmax(0,1.3fr); gap: 48px; padding: 42px 0; border-top: 1px solid #e0e4d8; }
+.landing-faq h2,.landing-invitation h2 { font-size: clamp(25px,3vw,34px); font-weight: 600; line-height: 1.2; letter-spacing: -.03em; }
+.landing-faq details { border-bottom: 1px solid #dce2d5; }
+.landing-faq summary { cursor: pointer; padding: 20px 8px; font-weight: 600; font-size: 18px; }
+.landing-faq details p { padding: 0 8px 22px; }
+.landing-faq summary:focus-visible { outline: 3px solid #9eb3a0; outline-offset: 2px; }
+.landing-invitation { background: #edf1e5; border: 1px solid #dce4d1; border-radius: 26px; padding: 38px; margin-top: 24px; text-align: center; }
+.landing-invitation p { margin: 16px 0 24px; }
+.landing-invitation .beginner-primary { width: auto; display: inline-flex; padding: 16px 28px; gap: 18px; }
+.beginner-footer { font-size: 14px; color: #5d7064; }
+@media(max-width:800px) { .landing-faq { grid-template-columns: 1fr; gap: 16px; } .landing-how { gap: 20px; } }
+@media(max-width:520px) { .beginner-header .beginner-brand > span { font-size: 24px; } .beginner-header .beginner-brand img { width: 38px; height: 38px; } .beginner-header .beginner-brand { gap: 8px; } .landing-guide { margin-top: 46px; } .landing-how { grid-template-columns: 1fr; gap: 24px; margin-bottom: 38px; } .landing-invitation { padding: 28px 20px; } .beginner-footer { font-size: 13px; } }
