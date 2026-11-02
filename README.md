@@ -1,8 +1,12 @@
 # Umprompt
 
-Turn rough ideas into clear, ready-to-use AI prompts.
+Everyday help, made easier with AI.
 
-Umprompt helps people describe what they want without learning prompt engineering. Start with a messy idea, add essential details when needed, and copy a structured request into your preferred AI assistant. The default workflow is organized around the task, not the AI provider.
+Umprompt helps people describe what they want without learning prompt engineering. Start with an everyday task, answer a few plain-language questions, then choose reusable instructions for an AI assistant or a useful first result inside Umprompt.
+
+The [beginner rebuild](docs/beginner-experience.md) documents the new guided flow, language selection, guest trial, and verification limits.
+
+The [daily-use experience](docs/daily-use.md) covers the task-focused home, reusable preferences, private study checkpoints, and follow-up actions.
 
 ## Product Experience
 
@@ -13,7 +17,7 @@ Umprompt helps people describe what they want without learning prompt engineerin
 - **Continuous checkout:** return to the same task after upgrading or cancelling. Paid access is confirmed from Stripe's current payment/subscription state; the return screen does not assume a successful charge. See [payment verification](docs/payment-verification.md) for completed sandbox purchases, lifecycle checks, and remaining verification limits.
 - **Outcome-based measurement:** a copy is separate from a user-confirmed useful answer. Metadata-only task/version IDs connect the website funnel through later-day new tasks and server-verified purchases. Autocapture and session recording are disabled; full URLs, email, prompt, profile, and answer content are excluded. See [funnel measurement and verification limits](docs/funnel-measurement.md).
 
-- **Idea-first workspace:** the home page opens directly into the composer. Guests can prepare a draft before signing in.
+- **Guided first task:** the home page and a new empty builder use a warm, task-led experience. Guests can generate one trial result before signing in; registered free accounts retain seven ideas per week. Existing saved items, profiles, playbooks, and prompt packs retain their workspace routes.
 - **Visible expansion example:** a rough idea and its structured prompt appear together before starting. The example disappears when optimization/clarification begins; it never competes with an existing result.
 - **Task categories:** Auto, Writing, Coding, Research, Everyday, Business, and Creative guide suggestions and generation.
 - **Relevant inspiration:** suggestions respond to the first words of an idea, match the selected category, and support English, Spanish, and Russian. Each sign-in gets a fresh selection; users can also refresh it manually.

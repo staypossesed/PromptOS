@@ -8,7 +8,7 @@ export const metadata = {
   description: "How Umprompt handles your data.",
 };
 
-const LAST_UPDATED = "October 15, 2026";
+const LAST_UPDATED = "November 1, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -56,7 +56,28 @@ export default function PrivacyPage() {
             </p>
           </Section>
 
+          <Section title="Trying a task before signing in">
+            <p>
+              You can try one task without an account. Your idea and selected details are
+              sent to our configured AI provider. We do not add this guest result to your
+              saved history. Your browser may keep a temporary draft in session storage for
+              up to one hour so you can finish signing in without losing your work.
+            </p>
+            <p>
+              To limit abuse, our Redis service temporarily keeps a keyed hash of your
+              network address and a trial-use marker for up to seven days. People sharing
+              a network may share this guest allowance. This limit record does not include
+              your idea or generated result. You can sign in for your account allowance.
+            </p>
+          </Section>
+
           <Section title="How we use your data">
+            <p>
+              Frequent tasks can store the preferences you choose to reuse and study notes you
+              write yourself. Session completion is recorded only when you mark it. We cannot
+              see conversations in another AI assistant. Saved personal preferences are included
+              in a new AI request only after you review and confirm the displayed details.
+            </p>
             <ul>
               <li>To authenticate you and display your saved prompts.</li>
               <li>
