@@ -9,6 +9,8 @@ import { Topbar } from "@/components/layout/topbar";
 import { IdeaInput } from "@/components/builder/idea-input";
 import { IdeaComposer } from "@/components/builder/idea-composer";
 import { ExpansionExample } from "@/components/builder/expansion-example";
+import { StartExperience } from "@/components/builder/start-experience";
+import { isClassicBuilderRoute } from "@/lib/builder-route";
 import { composerCopy } from "@/lib/composer-copy";
 import { ContextPanel } from "@/components/builder/context-panel";
 import { PromptOutput } from "@/components/builder/prompt-output";
@@ -300,6 +302,7 @@ function BuilderInner() {
     prompt: string,
     opts?: { idea?: string; tool?: ToolId; universal?: boolean; signal?: AbortSignal; publish?: boolean }
   ): Promise<import("@/types/prompt").PromptScore | null> => {
+    if (context.delivery === "answer") { setScore(null); setIsScoring(false); return null; }
     const effectiveIdea = opts?.idea ?? idea;
     const effectiveTool = opts?.tool ?? tool;
     setScoreError(null);
@@ -337,7 +340,7 @@ function BuilderInner() {
       opts?.signal?.removeEventListener("abort", abort);
       if (scoreController.current === controller) { scoreController.current = null; setIsScoring(false); }
     }
-  }, [idea, tool, context.universal]);
+  }, [idea, tool, context.universal, context.delivery]);
 
   const handleEditPrompt = useCallback((value: string) => {
     if (!hasCurrentResult || isLoading || isGenerating || isOptimizing || isSaving || saveLock.current || (generationLock.current && !isScoring)) return;
@@ -948,14 +951,14 @@ function BuilderInner() {
             taskMetric={taskMetric}
             outcomeValue={answerOutcome && answerOutcome.result_id === taskMetric?.result_id ? answerOutcome.value : null}
             onOutcomeChange={(value) => { if (taskMetric) setAnswerOutcome({ result_id: taskMetric.result_id, value }); }}
-            resultActions={hasCurrentResult && !isGenerating && <ResultActions busy={isOptimizing || isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
+            resultActions={context.delivery !== "answer" && hasCurrentResult && !isGenerating && <ResultActions busy={isOptimizing || isScoring || isSaving} canRefine={!!generatedPrompt.trim()} versions={context.versions} onRefine={(action) => void handleGenerate(undefined, action)} onRestore={restoreVersion} />}
             nextActions={hasCurrentResult && !!generatedPrompt && !isGenerating && <NextTaskActions busy={isOptimizing || isScoring || isSaving} category={context.category && context.category !== "auto" ? context.category : inferTaskCategory(idea, language)} onNext={(instruction, index) => {
               const { versions: _versions, clarifications: _answers, ...reusable } = context;
               if (startTask(nextStepIdea(idea, instruction), reusable)) track("next_step_selected", { category: context.category, option: String(index) });
             }} />}
             upgrade={shouldOfferUpgrade(isPaid, hasCopied || savedThisSession, remainingThisWeek) && !usageLoading && !isGenerating && !isScoring && <UpgradeCTA variant="low_remaining" remainingThisWeek={remainingThisWeek ?? 7} sourcePage="builder" returnTo="/builder?resume=checkout" onNavigate={preserveCheckoutDraft} />}
-            result={<PromptOutput prompt={generatedPrompt} targetTool={tool} taskMetric={taskMetric} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isOptimizing || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
-            quality={<ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeDisabled={isLoading || isGenerating || isSaving || !hasCurrentResult || !generatedPrompt.trim()} optimizeError={optimizeError} />}
+            result={<PromptOutput answer={context.delivery === "answer"} prompt={generatedPrompt} targetTool={tool} taskMetric={taskMetric} universal edited={promptEdited} isSaved={isSaved} isGenerating={isGenerating} isScoring={isScoring} busy={isLoading || isOptimizing || isSaving} onPromptChange={handleEditPrompt} onPromptEditEnd={() => { manualEdit.current = false; }} onCopied={() => setHasCopied(true)} onRegenerate={() => void handleGenerate()} />}
+            quality={context.delivery !== "answer" && <ScorePanel score={score} isScoring={isScoring} error={scoreError} onRetry={handleRetryScore} onOptimize={handleOptimize} isOptimizing={isOptimizing} optimizeDisabled={isLoading || isGenerating || isSaving || !hasCurrentResult || !generatedPrompt.trim()} optimizeError={optimizeError} />}
           />
           </>
         )}
@@ -987,9 +990,15 @@ function BuilderSkeleton() {
 export default function BuilderPage() {
   return (
     <Suspense fallback={<BuilderFallback />}>
-      <BuilderInner />
+      <BuilderRoute />
     </Suspense>
   );
+}
+
+function BuilderRoute() {
+  const params = useSearchParams();
+  const hasWorkspaceContext = isClassicBuilderRoute(params);
+  return hasWorkspaceContext ? <BuilderInner /> : <StartExperience />;
 }
 
 function BuilderFallback() {

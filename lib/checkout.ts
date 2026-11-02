@@ -1,7 +1,7 @@
 export type CheckoutOffer = "monthly" | "lifetime";
 export const CHECKOUT_RETURN = "/builder?resume=checkout";
 export function checkoutReturn(value: unknown): string {
-  return value === CHECKOUT_RETURN ? CHECKOUT_RETURN : "/dashboard";
+  return value === CHECKOUT_RETURN || value === "/?resume=checkout" ? value : "/dashboard";
 }
 export function checkoutPrice(offer: CheckoutOffer, founder: boolean): number {
   return offer === "monthly" ? (founder ? 499 : 999) : (founder ? 3499 : 9999);
