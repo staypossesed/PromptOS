@@ -21,14 +21,10 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
   const NAV = [
     { href: "/dashboard", labelKey: "nav.dashboard", icon: Home },
-    { href: "/builder", labelKey: "nav.newPrompt", icon: Wand2 },
     { href: "/history", labelKey: "nav.history", icon: History },
     { href: "/library", labelKey: "nav.library", icon: BookOpen },
-    { href: "/templates", labelKey: "nav.templates", icon: Sparkles },
     { href: "/account", labelKey: "nav.account", icon: User },
     { href: "/help", labelKey: "nav.help", icon: HelpCircle },
-    { href: "/privacy", labelKey: "nav.privacy", icon: Shield },
-    { href: "/terms", labelKey: "nav.terms", icon: FileText },
   ];
 
   return (
@@ -59,7 +55,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
 
             <div className="px-4 pt-4">
               <Button asChild className="w-full" onClick={onClose}>
-                <Link href="/builder">
+                <Link href="/builder?fresh=1">
                   <Plus className="size-4" />
                   {t("nav.newPrompt")}
                 </Link>
@@ -87,6 +83,7 @@ export function MobileNav({ open, onClose }: MobileNavProps) {
                   </Link>
                 );
               })}
+              <details className="daily-more"><summary>{t("nav.moreTools")}</summary><Link href="/templates" onClick={onClose}>{t("nav.templates")}</Link><Link href="/privacy" onClick={onClose}>{t("nav.privacy")}</Link><Link href="/terms" onClick={onClose}>{t("nav.terms")}</Link></details>
             </nav>
           </motion.aside>
         </>

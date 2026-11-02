@@ -89,7 +89,7 @@ export function Sidebar() {
       {/* New Prompt CTA */}
       <div className="px-4 pt-4">
         <Button asChild className="w-full" size="default">
-          <Link href="/builder">
+          <Link href="/builder?fresh=1">
             <Plus className="size-4" />
             {t("nav.newPrompt")}
           </Link>
@@ -108,15 +108,9 @@ export function Sidebar() {
               active={pathname === item.href.split("?")[0]}
             />
           ))}
-          <NavLink
-            label={t("nav.builder")}
-            href="/builder"
-            icon={Wand2}
-            active={pathname.startsWith("/builder")}
-          />
         </NavGroup>
 
-        <NavGroup label={t("nav.library")} className="mt-6">
+        <details className="daily-more"><summary>{t("nav.moreTools")}</summary><NavGroup className="mt-2">
           {SECONDARY_NAV.filter(
             (item) => item.href !== "/model-lab" || isAdmin
           ).map((item) => (
@@ -129,7 +123,7 @@ export function Sidebar() {
               badge={item.badge}
             />
           ))}
-        </NavGroup>
+        </NavGroup></details>
 
         {isAdmin && (
           <NavGroup label="Admin" className="mt-6">
