@@ -1,6 +1,7 @@
 import { parsePromptContext } from "@/lib/prompt-context";
 import { isTaskCategory, type TaskCategory } from "@/lib/task-categories";
 import type { PromptContext, PromptRecord } from "@/types/prompt";
+import { parseRoutineSettings, type RoutineSettings } from "@/lib/daily-tasks";
 
 export function promptFingerprint(prompt: Pick<PromptRecord, "idea" | "target_tool" | "context" | "generated_prompt" | "score">): string {
   return JSON.stringify([prompt.idea, prompt.target_tool, prompt.context, prompt.generated_prompt, prompt.score]);
@@ -15,6 +16,7 @@ export interface ContextProfile {
 export interface Playbook {
   idea: string;
   context: PromptContext;
+  routine?: RoutineSettings;
 }
 export type WorkspaceInput =
   | { kind: "profile"; name: string; payload: ContextProfile }
@@ -47,8 +49,10 @@ export function parseWorkspaceItem(value: unknown): { data?: WorkspaceInput; err
     const context = parsePromptContext(payload.context);
     if (!context.data) return { error: context.error };
     // A playbook is reusable task context, not a copy of a person's profile or old results.
-    const { profile: _profile, profileConsent: _consent, versions: _versions, clarifications: _answers, ...reusable } = context.data;
-    return boundedItem({ kind: "playbook", name, payload: { idea: payload.idea.trim(), context: reusable } });
+    const { profile: _profile, profileConsent: _consent, versions: _versions, preferences: _preferences, clarifications: _answers, ...reusable } = context.data;
+    const routine = payload.routine === undefined ? undefined : parseRoutineSettings(payload.routine);
+    if (routine === null) return { error: "Invalid saved task preferences." };
+    return boundedItem({ kind: "playbook", name, payload: { idea: payload.idea.trim(), context: reusable, ...(routine ? { routine } : {}) } });
   }
   return { error: "Invalid item kind." };
 }

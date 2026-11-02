@@ -26,6 +26,8 @@ export interface PromptContext {
   versions?: PromptVersion[];
   category?: TaskCategory;
   universal?: boolean;
+  delivery?: "prompt" | "answer";
+  preferences?: { answers: Record<string, string>; extra: string; language: import("@/types/language").AppLanguage };
   clarifications?: string;
   projectType?: string;
   audience?: string;
@@ -73,6 +75,7 @@ export interface PromptSummary {
   title: string;
   idea: string;
   target_tool: ToolId;
+  delivery?: PromptContext["delivery"] | null;
   score: PromptScore | null;
   generated_prompt: string;
   created_at: string;

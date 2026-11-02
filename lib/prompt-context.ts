@@ -1,11 +1,22 @@
 import type { PromptContext } from "@/types/prompt";
 import { isTaskCategory } from "@/lib/task-categories";
+import { parseRoutineSettings } from "@/lib/daily-tasks";
 
 export function parsePromptContext(value: unknown): { data: PromptContext; error?: never } | { error: string; data?: never } {
   if (value == null) return { data: {} };
   if (typeof value !== "object" || Array.isArray(value)) return { error: "Extra details must be an object." };
   const source = value as Record<string, unknown>;
   const context: PromptContext = {};
+  if (source.preferences !== undefined) {
+    if (!source.preferences || typeof source.preferences !== "object" || Array.isArray(source.preferences)) return { error: "Invalid task preferences." };
+    const parsed = parseRoutineSettings({ ...source.preferences, progress: "", completedSessions: 0 });
+    if (!parsed) return { error: "Invalid task preferences." };
+    context.preferences = { answers: parsed.answers, extra: parsed.extra, language: parsed.language };
+  }
+  if (source.delivery !== undefined) {
+    if (source.delivery !== "prompt" && source.delivery !== "answer") return { error: "Please choose instructions or a finished result." };
+    context.delivery = source.delivery;
+  }
   if (source.profileConsent !== undefined) {
     if (typeof source.profileConsent !== "boolean") return { error: "Invalid profile consent." };
     context.profileConsent = source.profileConsent;
@@ -51,6 +62,6 @@ export function parsePromptContext(value: unknown): { data: PromptContext; error
 
 // Only the explicitly applied snapshot goes to AI. Never transmit old versions.
 export function modelContext(context: PromptContext): PromptContext {
-  const { versions: _versions, profileConsent, profile, ...task } = context;
+  const { versions: _versions, preferences: _preferences, profileConsent, profile, ...task } = context;
   return profileConsent === true && profile ? { ...task, profile, profileConsent: true } : task;
 }
