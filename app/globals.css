@@ -362,3 +362,7 @@
 .beginner-footer { font-size: 14px; color: #5d7064; }
 @media(max-width:800px) { .landing-faq { grid-template-columns: 1fr; gap: 16px; } .landing-how { gap: 20px; } }
 @media(max-width:520px) { .beginner-header .beginner-brand > span { font-size: 24px; } .beginner-header .beginner-brand img { width: 38px; height: 38px; } .beginner-header .beginner-brand { gap: 8px; } .landing-guide { margin-top: 46px; } .landing-how { grid-template-columns: 1fr; gap: 24px; margin-bottom: 38px; } .landing-invitation { padding: 28px 20px; } .beginner-footer { font-size: 13px; } }
+.beginner-questions-status { margin: 24px 0; padding: 20px; border-radius: 16px; background: #f0f3e9; }
+.beginner-questions-status p { display: flex; align-items: center; gap: 10px; line-height: 1.6; }
+.beginner-questions-status .beginner-back { margin-top: 12px; margin-bottom: 0; }
+.beginner-clarify-disclosure { margin: 14px 0 0; max-width: 580px; }

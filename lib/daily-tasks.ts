@@ -1,3 +1,5 @@
+import { isDetailKey } from "@/lib/idea-questions";
+import { isStudyTask } from "@/lib/task-intent";
 import type { AppLanguage } from "@/types/language";
 import { isSupportedLanguage } from "@/types/language";
 import { dailyCopy } from "./daily-copy";
@@ -17,14 +19,14 @@ export function parseRoutineSettings(value: unknown): RoutineSettings | null {
   if (!v.answers || typeof v.answers !== "object" || Array.isArray(v.answers) || Object.keys(v.answers).length > 5) return null;
   const answers: Record<string, string> = {};
   for (const [key, answer] of Object.entries(v.answers)) {
-    if (!["exam", "timeframe", "studyTime", "level", "recipient", "tone", "planning", "explain"].includes(key) || typeof answer !== "string" || answer.length > 600) return null;
+    if ((!isDetailKey(key) && !["exam", "timeframe", "studyTime", "level", "recipient", "tone", "planning", "explain"].includes(key)) || typeof answer !== "string" || answer.length > 600) return null;
     answers[key] = answer.trim();
   }
   if (v.lastCompletedAt !== undefined && (typeof v.lastCompletedAt !== "string" || v.lastCompletedAt.length > 40 || !Number.isFinite(Date.parse(v.lastCompletedAt)))) return null;
   return { answers, extra: v.extra.trim(), language: v.language, progress: v.progress.trim(), completedSessions: v.completedSessions as number, ...(v.lastCompletedAt ? { lastCompletedAt: v.lastCompletedAt as string } : {}) };
 }
 export function dailyTaskKind(idea: string): "study" | "email" | "plan" | "explain" | "other" {
-  if (/nclex|\b(?:ege|sat|ielts|toefl|ged|gre|gmat)\b|егэ|огэ|exam|study|learn|экзамен|уч[иёе]|подготов.*экзам|estudi|examen|aprender/i.test(idea)) return "study";
+  if (isStudyTask(idea)) return "study";
   if (/email|message|letter|письм|сообщен|correo|mensaje|carta/i.test(idea)) return "email";
   if (/plan|week|trip|план|недел|поезд|viaje|semana/i.test(idea)) return "plan";
   return /explain|understand|объясн|разобра|понят|explic|entender|comprend/i.test(idea) ? "explain" : "other";

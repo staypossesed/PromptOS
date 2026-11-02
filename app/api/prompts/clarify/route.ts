@@ -8,6 +8,7 @@ import { parsePromptContext, modelContext } from "@/lib/prompt-context";
 import { canExpandIdea } from "@/lib/prompt-editing";
 
 export const runtime = "nodejs";
+export const maxDuration = 30;
 
 export async function POST(request: NextRequest) {
   const supabase = await createClient();
@@ -27,7 +28,7 @@ export async function POST(request: NextRequest) {
   if (!rate.allowed) return NextResponse.json({ error: "Too many follow-up requests. You can still generate directly." }, { status: 429 });
   try {
     const language = typeof body.outputLanguage === "string" && /^[a-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(body.outputLanguage) ? body.outputLanguage : "en";
-    return NextResponse.json({ data: await clarifyIdea(body.idea.trim(), body.category, language, modelContext(context.data)) });
+    return NextResponse.json({ data: await clarifyIdea(body.idea.trim(), body.category, language, modelContext(context.data), AbortSignal.any([request.signal, AbortSignal.timeout(18000)])) });
   } catch {
     return NextResponse.json({ error: "Follow-up questions are unavailable. You can still generate directly." }, { status: 503 });
   }

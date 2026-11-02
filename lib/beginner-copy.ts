@@ -1,3 +1,4 @@
+import { isStudyTask } from "@/lib/task-intent";
 import type { AppLanguage } from "@/types/language";
 
 const en = {
@@ -84,7 +85,7 @@ export function beginnerCopy(language: AppLanguage): Copy { return ({ en, ru, es
 export interface BeginnerQuestion { id: string; label: string; help?: string; options: string[] }
 export function beginnerQuestions(idea: string, language: AppLanguage): BeginnerQuestion[] {
   const c = beginnerCopy(language);
-  const study = /nclex|\b(?:ege|sat|ielts|toefl|ged|gre|gmat)\b|егэ|огэ|exam|study|learn|экзамен|уч[иёе]|подготов|estudi|examen|aprender/i.test(idea);
+  const study = isStudyTask(idea);
   if (study) {
     const questions: BeginnerQuestion[] = /nclex/i.test(idea)
       ? [{ id: "exam", label: c.exam, help: c.examHelp, options: ["NCLEX-RN", "NCLEX-PN", c.unknown] }]

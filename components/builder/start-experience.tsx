@@ -6,7 +6,9 @@ import { ArrowRight, ArrowLeft, BookOpen, Mail, CalendarDays, Lightbulb, Briefca
 import { LandingGuide } from "@/components/builder/landing-guide";
 import { Logo } from "@/components/brand/logo";
 import { useTranslations } from "@/lib/i18n/use-translations";
-import { beginnerCopy, beginnerQuestions } from "@/lib/beginner-copy";
+import { useIdeaQuestions } from "@/hooks/useIdeaQuestions";
+import { clarificationCopy, parseQuestionSnapshot } from "@/lib/idea-questions";
+import { beginnerCopy, beginnerQuestions, type BeginnerQuestion } from "@/lib/beginner-copy";
 import { BEGINNER_DRAFT_KEY, parseBeginnerDraft, type BeginnerResult } from "@/lib/beginner-draft";
 import { createClient } from "@/lib/supabase/client";
 import { canExpandIdea } from "@/lib/prompt-editing";
@@ -40,6 +42,7 @@ export function StartExperience() {
   const sourceLoaded=useRef(""); const restoreRoutineId=useRef<string|undefined>(undefined);
   const [step, setStep] = useState(0); const [idea, setIdea] = useState("");
   const [ideaEditing, setIdeaEditing] = useState(false);
+  const [questionSnapshot, setQuestionSnapshot] = useState<{idea: string; questions: BeginnerQuestion[]} | undefined>();
   const [answers, setAnswers] = useState<Record<string, string>>({}); const [custom, setCustom] = useState<Record<string, boolean>>({});
   const [extra, setExtra] = useState(""); const [delivery, setDelivery] = useState<"prompt" | "answer">("prompt");
   const [result, setResult] = useState<BeginnerResult | null>(null); const [userId, setUserId] = useState<string | null>(null);
@@ -50,7 +53,10 @@ export function StartExperience() {
   const [editing, setEditing] = useState(false); const [editText, setEditText] = useState(""); const [score, setScore] = useState<PromptScore | null>(null);
   const [qualityOpen, setQualityOpen] = useState(false); const [qualityError, setQualityError] = useState<string | null>(null); const [outcome, setOutcome] = useState<boolean | null>(null); const [metric, setMetric] = useState<TaskMetric | null>(null);
   const panel = useRef<HTMLDivElement>(null); const ideas = useRef<HTMLElement>(null); const controller = useRef<AbortController | null>(null); const inFlight = useRef(false);
-  const questions = beginnerQuestions(idea, language);
+  const tailored = useIdeaQuestions({ idea, language, userId, enabled: step === 1 && !ideaEditing && !busy && !sourceLoading && !sourceError, ready: authReady, answers, snapshot: questionSnapshot });
+  const questions = tailored.questions;
+  const qc = clarificationCopy[language];
+  const questionDraft = parseQuestionSnapshot(questions);
   const previousLanguage = useRef(language);
   useEffect(() => {
     if (previousLanguage.current === language) return;
@@ -64,13 +70,13 @@ export function StartExperience() {
   }, [language, idea]);
   useEffect(() => {
     let draft: ReturnType<typeof parseBeginnerDraft> = null;
-    const restore = (value: NonNullable<typeof draft>) => { setIdea(value.idea); setAnswers(value.answers); setExtra(value.extra); setDelivery(value.delivery); setResult(value.result); setStep(value.result ? 2 : value.idea ? 1 : 0); setMetric(value.metric); setOutcome(value.outcome);restoreRoutineId.current=value.routineId; };
+    const restore = (value: NonNullable<typeof draft>) => { setQuestionSnapshot(value.questions ? {idea:value.idea,questions:value.questions} : undefined); setIdea(value.idea); setAnswers(value.answers); setExtra(value.extra); setDelivery(value.delivery); setResult(value.result); setStep(value.result ? 2 : value.idea ? 1 : 0); setMetric(value.metric); setOutcome(value.outcome);restoreRoutineId.current=value.routineId; };
     try { draft = initialExplicitSource.current ? null : parseBeginnerDraft(sessionStorage.getItem(BEGINNER_DRAFT_KEY)); if (draft && !draft.owner) restore(draft); } catch {}
     const supabase = createClient(); let active = true; let changed = false; let account: string | null = null;
     const resolveUser = (id: string | null) => {
       if (!active) return;
       if ((draft?.owner && draft.owner !== id) || (account && account !== id)) {
-        setIdea(""); setIdeaEditing(false); setAnswers({}); setExtra(""); setResult(null); setStep(0); setScore(null); setMetric(null);setProfile(null);setRoutine(null);setAppliedProgress("");sourceLoaded.current="";
+        setQuestionSnapshot(undefined); setIdea(""); setIdeaEditing(false); setAnswers({}); setExtra(""); setResult(null); setStep(0); setScore(null); setMetric(null);setProfile(null);setRoutine(null);setAppliedProgress("");sourceLoaded.current="";
         try { sessionStorage.removeItem(BEGINNER_DRAFT_KEY); } catch {}
       } else if (draft?.owner === id && draft) restore(draft);
       draft = null; account = id; setUserId(id); setAuthReady(true); setDraftReady(true);
@@ -101,19 +107,20 @@ export function StartExperience() {
   useEffect(() => { if (!step) return; panel.current?.focus({ preventScroll: true }); panel.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }, [step]);
   useEffect(()=>{if(!authReady||!userId||!restoreRoutineId.current)return;const id=restoreRoutineId.current;restoreRoutineId.current=undefined;const abort=new AbortController();void fetch("/api/workspace",{signal:abort.signal}).then(r=>r.ok?r.json():null).then(json=>{if(!abort.signal.aborted){const item=json?.data?.find((item:WorkspaceItem)=>item.id===id&&item.kind==="playbook");if(item)setRoutine(item);}}).catch(()=>{});return()=>abort.abort();},[authReady,userId]);
   function preserve(nextResult = result) {
-    try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result: nextResult, metric, outcome, createdAt: Date.now() })); return true; } catch { setError(c.storageError); return false; }
+    try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(questionDraft?.length ? {questions:questionDraft}:{}), ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result: nextResult, metric, outcome, createdAt: Date.now() })); return true; } catch { setError(c.storageError); return false; }
   }
   function signIn() { if (preserve()) router.push("/login?next=" + encodeURIComponent(explicitSource ? "/builder?" + params.toString() : "/")); }
   useEffect(() => {
     if (!draftReady) return;
     if (!idea && !result) { try { sessionStorage.removeItem(BEGINNER_DRAFT_KEY); } catch {} return; }
-    const timer = setTimeout(() => { try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result, metric, outcome, createdAt: Date.now() })); } catch {} }, 250);
+    const timer = setTimeout(() => { try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(questionDraft?.length ? {questions:questionDraft}:{}), ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result, metric, outcome, createdAt: Date.now() })); } catch {} }, 250);
     return () => clearTimeout(timer);
-  }, [draftReady, userId, idea, answers, extra, delivery, result, metric, outcome, routine]);
+  }, [draftReady, userId, idea, answers, extra, delivery, result, metric, outcome, routine, questions]);
   function begin(value = idea) { if (!canExpandIdea(value)) { setError(c.invalid); return; } setIdea(value); setStep(1); setError(""); setLimited(false); setWeeklyLimited(false); }
-  function pick(value: string) { setIdea(value); setAnswers({}); setCustom({}); setExtra(""); setDelivery("prompt"); setError(""); if (value) setStep(1); else document.getElementById("beginner-idea")?.focus(); }
+  function pick(value: string) { setQuestionSnapshot(undefined); setIdea(value); setAnswers({}); setCustom({}); setExtra(""); setDelivery("prompt"); setError(""); if (value) setStep(1); else document.getElementById("beginner-idea")?.focus(); }
   function updateReviewedIdea(value: string) {
     if (value === idea) return;
+    setQuestionSnapshot(undefined);
     const relevant = new Set(beginnerQuestions(value, language).map(question => question.id));
     setAnswers(values => Object.fromEntries(Object.entries(values).filter(([id]) => relevant.has(id))));
     setCustom(values => Object.fromEntries(Object.entries(values).filter(([id]) => relevant.has(id))));
@@ -121,14 +128,14 @@ export function StartExperience() {
     setIdea(value); setResult(null); setScore(null); setMetric(null); setOutcome(null); setCopied(false); setError("");
   }
   function taskContext(): PromptContext {
-    const details = questions.map((q) => answers[q.id]?.trim() ? q.label + ": " + answers[q.id].trim() : "").filter(Boolean);
+    const details = Object.entries(answers).filter(([id, value]) => value.trim() && (id.startsWith("detail:") || beginnerQuestions(idea, language).some(q => q.id === id))).map(([id, value]) => (id.startsWith("detail:") ? id.slice(7) : beginnerQuestions(idea, language).find(q => q.id === id)?.label ?? id) + ": " + value.trim());
     if (extra.trim()) details.push(c.extra + ": " + extra.trim());
     if(routine?.kind==="playbook"&&dailyTaskKind(routine.payload.idea)==="study")details.unshift(d.nextSession+". "+d.needsTopic);
     if(appliedProgress)details.push(d.sourceProgress+": "+appliedProgress);
     return { universal: true, category: "auto", delivery, preferences: {answers,extra,language}, clarifications: details.join("\n"), ...(profile ? {profile,profileConsent:true} : {}) };
   }
   async function generate() {
-    if (inFlight.current || ideaEditing || !authReady || !canExpandIdea(idea)) return;
+    if (inFlight.current || ideaEditing || tailored.loading || !authReady || !canExpandIdea(idea)) return;
     inFlight.current = true; setBusy(true); setError(""); setLimited(false); setWeeklyLimited(false);
     const abort = new AbortController(); controller.current = abort; const timer = setTimeout(() => abort.abort(), 60000);
     try {
@@ -201,16 +208,16 @@ export function StartExperience() {
       {!sourceLoading&&!sourceError&&(!(sourceId||routineId)||!!userId)&&<>
       {step === 0 && <><section className="beginner-hero"><div className="beginner-intro"><p className="beginner-eyebrow"><Sparkles size={16} />{c.eyebrow}</p><h1>{c.title}</h1><p className="beginner-subtitle">{c.subtitle}</p>
         <form className="beginner-composer" onSubmit={(e) => { e.preventDefault(); begin(); }}><label htmlFor="beginner-idea">{c.ideaLabel}</label><div className="beginner-idea-field" data-active={!idea && !inputFocused}><textarea onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)} id="beginner-idea" maxLength={4000} value={idea} onChange={(e) => { setIdea(e.target.value); setAnswers({}); setCustom({}); setError(""); }} placeholder={c.placeholder} rows={3} /><IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} /></div><p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p><button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button></form>
-        <div className="beginner-below"><p><ShieldCheck size={15} />{c.free}</p><button type="button" onClick={() => ideas.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>{c.browse}<ArrowRight size={15} /></button></div>
+        <p className="beginner-provider beginner-clarify-disclosure">{qc.notice}</p><div className="beginner-below"><p><ShieldCheck size={15} />{c.free}</p><button type="button" onClick={() => ideas.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>{c.browse}<ArrowRight size={15} /></button></div>
       </div><aside className="beginner-preview" aria-label={c.previewLabel}><p className="beginner-preview-label">{c.previewLabel}</p><StudyIllustration /><p className="beginner-preview-from">{c.previewFrom}</p><div className="beginner-preview-line"><ArrowRight size={20} /></div><div className="beginner-preview-to"><span className="beginner-check"><Check size={18} /></span><h2>{c.previewTo}</h2><p>{c.previewDetails}</p></div><button type="button" onClick={() => pick(c.tasks[0].idea)}>{c.useIdea}<ArrowRight size={17} /></button><small>{c.previewNote}</small></aside></section>
         <section ref={ideas} className="beginner-ideas"><div className="beginner-section-heading"><div><h2>{c.ideasTitle}</h2><p>{c.ideasSubtitle}</p></div><Sparkles size={23} aria-hidden="true" /></div><div className="beginner-task-grid">{c.tasks.map((task, i) => { const Icon = icons[i]; return <button type="button" className={"beginner-task beginner-task-" + i} key={task.id} onClick={() => pick(task.idea)}><span className="beginner-task-icon"><Icon size={23} /></span><h3>{task.title}</h3><p>{task.description}</p><span className="beginner-task-arrow"><ArrowRight size={18} /></span></button>; })}</div></section>
         <LandingGuide language={language} onStart={() => { document.getElementById("beginner-idea")?.focus(); document.getElementById("beginner-idea")?.scrollIntoView({ behavior: "auto", block: "center" }); }} />
       </>}
       {step === 1 && <section className="beginner-panel"><button className="beginner-back" disabled={busy} onClick={() => { setIdeaEditing(false); setStep(0); }}><ArrowLeft size={17} />{c.back}</button><h1>{c.detailsTitle}</h1><p className="beginner-panel-subtitle">{c.detailsSubtitle}</p><IdeaReview value={idea} language={language} disabled={busy} editing={ideaEditing} onEditingChange={setIdeaEditing} onCommit={updateReviewedIdea} />
         {routine && <SavedTaskDetails key={routine.id+language} item={routine} applied={detailsApplied} onApply={applySavedDetails} onSaved={item=>{setRoutine(item);setDetailsApplied(false);setAppliedProgress("");}} />}
-        <form onSubmit={(e) => { e.preventDefault(); void generate(); }}><div className="beginner-question-grid">{questions.map((q) => <fieldset key={q.id} disabled={busy}><legend>{q.label}</legend>{q.help && <p className="beginner-question-help">{q.help}</p>}<select aria-label={q.label} value={custom[q.id] || (answers[q.id] && !q.options.includes(answers[q.id])) ? "__custom" : answers[q.id] ?? ""} onChange={(e) => { const own = e.target.value === "__custom"; setCustom({ ...custom, [q.id]: own }); setAnswers({ ...answers, [q.id]: own ? "" : e.target.value }); }}><option value="">{c.chooseOption}</option>{q.options.map((option) => <option key={option} value={option}>{option}</option>)}<option value="__custom">{c.custom}</option></select>{(custom[q.id] || (answers[q.id] && !q.options.includes(answers[q.id]))) && <input aria-label={c.customLabel + ": " + q.label} maxLength={600} value={answers[q.id] ?? ""} onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })} autoFocus />}</fieldset>)}</div>
+        <form onSubmit={(e) => { e.preventDefault(); void generate(); }}>{tailored.loading && <div className="beginner-questions-status"><p role="status"><Loader2 className="animate-spin" size={18} />{qc.loading}</p><button type="button" className="beginner-back" onClick={tailored.skip}>{qc.skip}</button></div>}{tailored.failed && <div className="beginner-questions-status"><p role="status">{qc.failed}</p><button type="button" className="beginner-back" onClick={tailored.retry}>{qc.retry}</button></div>}<div className="beginner-question-grid">{questions.map((q) => <fieldset key={q.id} disabled={busy}><legend>{q.label}</legend>{q.help && <p className="beginner-question-help">{q.help}</p>}<select aria-label={q.label} value={custom[q.id] || (answers[q.id] && !q.options.includes(answers[q.id])) ? "__custom" : answers[q.id] ?? ""} onChange={(e) => { const own = e.target.value === "__custom"; setCustom({ ...custom, [q.id]: own }); setAnswers({ ...answers, [q.id]: own ? "" : e.target.value }); }}><option value="">{c.chooseOption}</option>{q.options.map((option) => <option key={option} value={option}>{option}</option>)}<option value="__custom">{c.custom}</option></select>{(custom[q.id] || (answers[q.id] && !q.options.includes(answers[q.id]))) && <input aria-label={c.customLabel + ": " + q.label} maxLength={600} value={answers[q.id] ?? ""} onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })} autoFocus />}</fieldset>)}</div>
           <label className="beginner-extra">{c.extra}<textarea disabled={busy} value={extra} maxLength={1200} onChange={(e) => setExtra(e.target.value)} placeholder={c.extraPlaceholder} rows={3} /></label>{userId && <ProfileChooser initialId={profileChoiceId} applied={profile} onApply={setProfile}/>}<fieldset className="beginner-delivery" disabled={busy}><legend>{c.choose}</legend><div>{(["prompt", "answer"] as const).map((mode) => <label key={mode} data-selected={delivery === mode}><input type="radio" name="delivery" checked={delivery === mode} onChange={() => setDelivery(mode)} /><span><strong>{mode === "prompt" ? c.prompt : c.answer}</strong><small>{mode === "prompt" ? c.promptHelp : c.answerHelp}</small></span></label>)}</div></fieldset>
-          <button type="submit" className="beginner-primary" disabled={busy || ideaEditing || !authReady}>{busy ? <Loader2 className="animate-spin" size={19} /> : <Sparkles size={19} />}{busy ? c.generating : delivery === "answer" ? c.answer : c.generate}{!busy && <ArrowRight size={18} />}</button>{busy && <p role="status" className="beginner-loading">{c.generatingHelp}</p>}<p className="beginner-provider">{c.providerNote}</p></form>
+          <button type="submit" className="beginner-primary" disabled={busy || ideaEditing || tailored.loading || !authReady}>{busy ? <Loader2 className="animate-spin" size={19} /> : <Sparkles size={19} />}{busy ? c.generating : delivery === "answer" ? c.answer : c.generate}{!busy && <ArrowRight size={18} />}</button>{busy && <p role="status" className="beginner-loading">{c.generatingHelp}</p>}<p className="beginner-provider">{c.providerNote}</p></form>
       </section>}
       {step === 2 && result && <section className="beginner-panel beginner-result"><div className="beginner-original"><span>{c.yourIdea}</span><button disabled={busy} onClick={() => { setEditing(false); setStep(0); setError(""); }}><PenLine size={15} />{c.editIdea}</button><p>{result.idea}</p></div><div className="beginner-result-heading"><span className="beginner-check"><Check size={20} /></span><div><h1>{result.context.delivery === "answer" ? c.answerTitle : c.resultTitle}</h1><p>{result.context.delivery === "answer" ? c.answerResultHelp : c.resultHelp}</p></div></div>
         {result.context.delivery !== "answer" && <button className="beginner-improve" disabled={busy} onClick={() => void improve()}>{busy ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}{c.improve}</button>}<div className="beginner-output-top"><span>{result.context.delivery === "answer" ? c.steps[2] : c.prompt}</span><button disabled={busy} onClick={() => { setEditText(result.text); setEditing(true); setError(""); }}><PenLine size={15} />{c.edit}</button></div>{editing ? <div className="beginner-editing"><textarea aria-label={c.edit} value={editText} maxLength={16000} rows={15} onChange={(e) => setEditText(e.target.value)} /><div><button className="beginner-secondary" onClick={() => { setEditing(false); setError(""); }}>{c.cancel}</button><button className="beginner-primary" disabled={!editText.trim()} onClick={finishEdit}>{c.done}<Check size={16} /></button></div></div> : <div className="beginner-output" tabIndex={0}><PromptRenderer text={result.text} /></div>}

@@ -33,3 +33,11 @@ The full automated suite passed all 154 tests. The production build completed su
 At a 390-pixel mobile viewport, the English and Russian homepages and Spanish study details had no horizontal overflow. Language switching preserved the selected NCLEX-RN and daily-study answers. A custom study-time answer survived reload, while clearing the idea removed its stale draft. The final preview tab reported no browser errors during these checks. These checks establish the observed local behavior, not a guarantee that every production configuration or user journey is error-free.
 
 The earlier PostHog report describes the signup-first funnel. Guest-first conversion needs a separate cohort analysis before comparing those conversion rates. Analytics ingestion, independent translation review, and remote Redis behavior are not established by local UI tests. Run the production configuration checks and verify deployment callbacks before publishing this rebuild.
+
+## Adaptive clarification fix — November 2, 2026
+
+The guided details step now calls the existing AI clarification service instead of selecting a hard-coded learning/writing template. It asks at most two relevant questions with selectable options, a custom answer, and optional skipping. A separate same-origin guest route has a six-per-day hashed-network limit, bounded input, a provider timeout, and no model/profile overrides. Clarification does not consume the guest's free completed result.
+
+Question labels travel with their answers, so saved preferences cannot reinterpret an answer under a new question. Session drafts also preserve the original selectable options. Editing the idea cancels obsolete requests and invalidates the previous dynamic answers. Loading can be skipped; unavailable clarification is disclosed and never replaced with unrelated questions. Existing legacy study preferences remain readable.
+
+The false study match inside Russian words such as «получил» is removed. Regression cases include the founder's investor-review request and chatbot setup. Real local provider calls returned investor questions about the product and demand, and chatbot questions about merchandise and deployment channel. These observations do not guarantee every future AI-generated question will be optimal.
