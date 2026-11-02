@@ -12,8 +12,6 @@ import {
 } from "./config";
 import { getDictionary } from "./dictionaries";
 import type { Dictionary } from "./dictionaries";
-import { detectPreferredLanguage } from "./detect-language";
-import { createClient } from "@/lib/supabase/client";
 import { track } from "@/lib/analytics";
 
 // ---------------------------------------------------------------------------
@@ -43,9 +41,10 @@ function devLog(msg: string, data: Record<string, unknown>) {
 // Provider
 // ---------------------------------------------------------------------------
 
-export function LanguageProvider({ children }: { children: React.ReactNode }) {
+export function LanguageProvider({ children, initialLanguage = DEFAULT_LANGUAGE }: { children: React.ReactNode; initialLanguage?: AppLanguage }) {
   // Default to English during SSR to match server HTML and avoid hydration mismatch.
-  const [language, setLanguageState] = useState<AppLanguage>(DEFAULT_LANGUAGE);
+  const [language, setLanguageState] = useState<AppLanguage>(initialLanguage);
+  useEffect(() => { document.documentElement.lang = language; }, [language]);
 
   useEffect(() => {
     // ── Step 1: Read localStorage synchronously ────────────────────────────
@@ -74,43 +73,12 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     }
 
     // ── Step 4: First visit — run full detection cascade ───────────────────
-    // No localStorage value → fetch metadata + read browser/timezone.
-    const supabase = createClient();
-    supabase.auth.getUser().then(({ data }) => {
-      const meta = data.user?.user_metadata ?? null;
-
-      const browserLanguages: string[] =
-        typeof navigator !== "undefined"
-          ? Array.from(navigator.languages ?? [navigator.language])
-          : [];
-
-      let timezone: string | undefined;
-      try {
-        timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-      } catch { /* not available */ }
-
-      const { language: detected, source } = detectPreferredLanguage({
-        userMetadata: meta,
-        browserLanguages,
-        timezone,
-      });
-
-      setLanguageState(detected);
-
-      // Cache the detected language so subsequent page loads skip re-detection.
-      try {
-        localStorage.setItem(LANGUAGE_STORAGE_KEY, detected);
-      } catch { /* storage blocked */ }
-
-      persistLanguageCookie(detected);
-
-      devLog("language detected", { language: detected, source, browserLanguages, timezone });
-
-      // Only track when there was an actual signal (not just the English default)
-      if (source !== "default" || detected !== DEFAULT_LANGUAGE) {
-        track("language_detected", { language: detected as string, source } as never);
-      }
-    });
+    // No saved value: use the language already negotiated by the server.
+    // The server already negotiated Accept-Language (or a saved cookie).
+    // Resolve immediately: a delayed account lookup must not overwrite a switch.
+    setLanguageState(initialLanguage);
+    try { localStorage.setItem(LANGUAGE_STORAGE_KEY, initialLanguage); } catch {}
+    persistLanguageCookie(initialLanguage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

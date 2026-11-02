@@ -3,19 +3,16 @@
  * Import ONLY in Server Components or Route Handlers.
  */
 
-import { cookies } from "next/headers";
+import { cookies, headers } from "next/headers";
+import { requestLanguage } from "./request-language";
 import { isSupportedLanguage, type AppLanguage } from "@/types/language";
 import { LANGUAGE_COOKIE_KEY, DEFAULT_LANGUAGE } from "./config";
 import { getDictionary } from "./dictionaries";
 import type { Dictionary } from "./dictionaries";
 
 export async function getServerLanguage(): Promise<AppLanguage> {
-  try {
-    const cookieStore = await cookies();
-    const saved = cookieStore.get(LANGUAGE_COOKIE_KEY)?.value;
-    if (saved && isSupportedLanguage(saved)) return saved;
-  } catch {}
-  return DEFAULT_LANGUAGE;
+  const cookieStore = await cookies();
+  return requestLanguage(cookieStore.get(LANGUAGE_COOKIE_KEY)?.value, (await headers()).get("accept-language") ?? "");
 }
 
 export async function getServerTranslations(): Promise<{
