@@ -44,7 +44,7 @@ export function LibraryManager() {
   }
   async function submit(event: React.FormEvent) {
     event.preventDefault(); if (pending) return;
-    const input = tab === "profile" ? { kind: tab, name, payload: profile } : { kind: tab, name, payload: { idea, context: editing && editing !== "new" && editing.kind === "playbook" ? editing.payload.context : { universal: true, category: "auto" } } };
+    const input = tab === "profile" ? { kind: tab, name, payload: profile } : { kind: tab, name, payload: { idea, context: editing && editing !== "new" && editing.kind === "playbook" ? editing.payload.context : { universal: true, category: "auto" }, ...(editing && editing !== "new" && editing.kind === "playbook" && editing.payload.routine ? { routine: editing.payload.routine } : {}) } };
     const parsed = parseWorkspaceItem(input);
     if (!parsed.data) { setNotice(parsed.error ?? copy.savingError); return; }
     setPending(true);
@@ -62,11 +62,11 @@ export function LibraryManager() {
     finally { setPending(false); }
   }
   function handleUseItem(item: WorkspaceItem) {
-    const query = new URLSearchParams({ [item.kind]: item.id });
+    const query = new URLSearchParams({ [item.kind === "playbook" ? "routine" : "profile"]: item.id });
     try { if (parseCheckoutDraft(sessionStorage.getItem(CHECKOUT_DRAFT_KEY))) query.set("resume", "checkout"); } catch {}
     router.push(`/builder?${query}`);
   }
-  return <div className="mx-auto max-w-4xl">
+  return <div className="mx-auto max-w-4xl daily-library">
     <div className="flex flex-wrap items-center justify-between gap-4 border-b border-zinc-200 pb-5">
       <h1 className="text-2xl font-semibold">{copy.library}</h1>
       <Button onClick={() => edit()} disabled={pending || !!error || loading}><Plus className="size-4" />{tab === "profile" ? copy.newProfile : copy.newPlaybook}</Button>
