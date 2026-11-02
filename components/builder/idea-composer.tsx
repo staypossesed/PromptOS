@@ -289,7 +289,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
           </div><p data-rough-idea className="whitespace-pre-wrap break-words text-base text-zinc-700">{idea}</p></div>
           {onNewIdea && <button type="button" onClick={onNewIdea} disabled={locked || saving} className="motion-press inline-flex min-h-11 shrink-0 items-center gap-2 rounded-md px-2 text-sm font-medium text-emerald-700 hover:bg-emerald-50 disabled:opacity-40"><Plus className="size-4" aria-hidden="true" />{copy.newIdea}</button>}
         </div>
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{copy.result}</h2>
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-3"><h2 className="text-lg font-semibold">{context.delivery === "answer" ? ({ en: "Your result", ru: "Ваш результат", es: "Tu resultado" })[language] : copy.result}</h2>
           {onSave && <button type="button" disabled={saving || busy || !canSave} onClick={onSave} className={cn("motion-press flex min-h-11 items-center gap-2 rounded-md px-3 text-base hover:bg-zinc-100 disabled:opacity-40", saved ? "text-emerald-700" : "text-zinc-600")}>
             <ActionIcon pending={saving} success={saved} icon={Save} />
             <span className="grid">

@@ -118,7 +118,7 @@ function renderInline(text: string): React.ReactNode[] {
   });
 }
 
-function PromptRenderer({ text }: { text: string }) {
+export function PromptRenderer({ text }: { text: string }) {
   const blocks = parsePrompt(text);
 
   return (
@@ -204,6 +204,7 @@ function PromptRenderer({ text }: { text: string }) {
 // ── Component ─────────────────────────────────────────────────────────────────
 
 interface PromptOutputProps {
+  answer?: boolean;
   taskMetric?: TaskMetric | null;
   prompt: string;
   targetTool: ToolId;
@@ -220,6 +221,7 @@ interface PromptOutputProps {
 }
 
 export function PromptOutput({
+  answer = false,
   prompt,
   targetTool,
   isSaved,
@@ -239,7 +241,7 @@ export function PromptOutput({
   const copy = composerCopy(language);
   const [copyError, setCopyError] = useState(false);
   const copyTimeout = useRef<ReturnType<typeof setTimeout>>();
-  const copyLabel = universal ? copy.copy : t("promptOutput.copy");
+  const copyLabel = answer ? ({ en: "Copy my result", ru: "Скопировать результат", es: "Copiar mi resultado" })[language] : universal ? copy.copy : t("promptOutput.copy");
   const [view, setView] = useState<"edit" | "preview">("preview");
   useEffect(() => { if (isGenerating || isSaved) setView("preview"); }, [isGenerating, isSaved]);
   useEffect(() => () => clearTimeout(copyTimeout.current), []);
@@ -303,7 +305,7 @@ export function PromptOutput({
         <div className="flex flex-wrap items-center gap-2.5 min-w-0">
           <div className="flex min-w-0 items-center gap-1.5 rounded-md border border-ink-100/60 bg-white px-2.5 py-1">
             <span className={cn("size-1.5 shrink-0 rounded-full", toolMeta.dot)} />
-            <span className="text-sm font-medium text-ink-600">{universal ? copy.portable : toolMeta.label}</span>
+            <span className="text-sm font-medium text-ink-600">{answer ? ({ en: "Your result", ru: "Ваш результат", es: "Tu resultado" })[language] : universal ? copy.portable : toolMeta.label}</span>
           </div>
           {wordCount > 0 && !isGenerating && (
             <span className="text-sm text-ink-500 tabular-nums">
