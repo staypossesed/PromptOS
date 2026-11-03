@@ -1,8 +1,10 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowRight, ArrowLeft, BookOpen, Mail, CalendarDays, Lightbulb, BriefcaseBusiness, Sparkles, Check, Copy, PenLine, Save, Globe, Loader2, ShieldCheck } from "lucide-react";
+import { Examples, FounderNote } from "@/components/public/examples";
+import { publicExamples } from "@/lib/public-examples";
 import { LandingGuide } from "@/components/builder/landing-guide";
 import { Logo } from "@/components/brand/logo";
 import { useTranslations } from "@/lib/i18n/use-translations";
@@ -30,9 +32,9 @@ import { track } from "@/lib/analytics";
 import { nextTaskMetric, type TaskMetric } from "@/lib/task-metrics";
 
 const icons = [BookOpen, Mail, CalendarDays, Lightbulb, BriefcaseBusiness, Sparkles];
-export function StartExperience() {
+export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
   const { language, setLanguage } = useTranslations(); const c = beginnerCopy(language); const router = useRouter();
-  const d = dailyCopy(language); const params = useSearchParams();
+  const d = dailyCopy(language); const params = useSearchParams(); const pathname = usePathname();
   const sourceId=params.get("id"); const routineId=params.get("routine") ?? params.get("playbook"); const taskId=params.get("task"); const profileId=params.get("profile"); const fresh=params.has("fresh");
   const explicitSource=!!(sourceId||routineId||taskId||profileId||fresh); const initialExplicitSource=useRef(explicitSource);
   const [routine,setRoutine]=useState<WorkspaceItem|null>(null); const [appliedProgress,setAppliedProgress]=useState(""); const [detailsApplied,setDetailsApplied]=useState(false);
@@ -56,6 +58,8 @@ export function StartExperience() {
   const tailored = useIdeaQuestions({ idea, language, userId, enabled: step === 1 && !ideaEditing && !busy && !sourceLoading && !sourceError, ready: authReady, answers, snapshot: questionSnapshot });
   const questions = tailored.questions;
   const qc = clarificationCopy[language];
+  const ec = publicExamples[language];
+  const preview = campaign === "email" ? ec.cases[0] : null;
   const questionDraft = parseQuestionSnapshot(questions);
   const previousLanguage = useRef(language);
   useEffect(() => {
@@ -90,7 +94,7 @@ export function StartExperience() {
     const key=[userId,sourceId,routineId,taskId,profileId,fresh,sourceRetry,language].join("|"); if(sourceLoaded.current===key)return; sourceLoaded.current=key;
     if(!explicitSource)return;
     const abort=new AbortController(); setSourceError(false);setIdeaEditing(false);setRoutine(null);setDetailsApplied(false);setProfile(null);setAppliedProgress("");setError("");
-    if(fresh){setIdea("");setAnswers({});setExtra("");setResult(null);setStep(0);router.replace("/builder");return;}
+    if(fresh){setIdea("");setAnswers({});setExtra("");setResult(null);setStep(0);router.replace(pathname === "/" ? "/" : "/builder");return;}
     if(taskId){const task=beginnerCopy(language).tasks.find(t=>t.id===taskId);if(task){setIdea(task.idea);setAnswers({});setExtra("");setResult(null);setStep(1);router.replace("/builder");}else setSourceError(true);return;}
     if(profileId&&!routineId&&!sourceId){setProfileChoiceId(profileId);router.replace("/builder");return;}
     if(!userId)return;
@@ -103,7 +107,7 @@ export function StartExperience() {
       }else{const item=(json.data as WorkspaceItem[]).find(item=>item.id===id&&item.kind==="playbook");if(!item||item.kind!=="playbook")throw new Error();setRoutine(item);setIdea(item.payload.idea);setAnswers({});setExtra("");setDelivery(item.payload.context.delivery??"prompt");setResult(null);setStep(1);router.replace("/builder");}
     }catch{if(!abort.signal.aborted)setSourceError(true);}finally{if(!abort.signal.aborted)setSourceLoading(false);}})();
     return()=>abort.abort();
-  },[authReady,userId,sourceId,routineId,taskId,profileId,fresh,sourceRetry,explicitSource,language,router]);
+  },[authReady,userId,sourceId,routineId,taskId,profileId,fresh,sourceRetry,explicitSource,language,router,pathname]);
   useEffect(() => { if (!step) return; panel.current?.focus({ preventScroll: true }); panel.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" }); }, [step]);
   useEffect(()=>{if(!authReady||!userId||!restoreRoutineId.current)return;const id=restoreRoutineId.current;restoreRoutineId.current=undefined;const abort=new AbortController();void fetch("/api/workspace",{signal:abort.signal}).then(r=>r.ok?r.json():null).then(json=>{if(!abort.signal.aborted){const item=json?.data?.find((item:WorkspaceItem)=>item.id===id&&item.kind==="playbook");if(item)setRoutine(item);}}).catch(()=>{});return()=>abort.abort();},[authReady,userId]);
   function preserve(nextResult = result) {
@@ -113,11 +117,12 @@ export function StartExperience() {
   useEffect(() => {
     if (!draftReady) return;
     if (!idea && !result) { try { sessionStorage.removeItem(BEGINNER_DRAFT_KEY); } catch {} return; }
-    const timer = setTimeout(() => { try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(questionDraft?.length ? {questions:questionDraft}:{}), ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result, metric, outcome, createdAt: Date.now() })); } catch {} }, 250);
+    const draftQuestions = parseQuestionSnapshot(questions);
+    const timer = setTimeout(() => { try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(draftQuestions?.length ? {questions:draftQuestions}:{}), ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result, metric, outcome, createdAt: Date.now() })); } catch {} }, 250);
     return () => clearTimeout(timer);
   }, [draftReady, userId, idea, answers, extra, delivery, result, metric, outcome, routine, questions]);
-  function begin(value = idea) { if (!canExpandIdea(value)) { setError(c.invalid); return; } setIdea(value); setStep(1); setError(""); setLimited(false); setWeeklyLimited(false); }
-  function pick(value: string) { setQuestionSnapshot(undefined); setIdea(value); setAnswers({}); setCustom({}); setExtra(""); setDelivery("prompt"); setError(""); if (value) setStep(1); else document.getElementById("beginner-idea")?.focus(); }
+  function begin(value = idea) { if (!canExpandIdea(value)) { setError(c.invalid); return; } setIdea(value); setStep(1); track("task_started", {language, user_segment:userId ? "account" : "guest", source:campaign ?? "general"}); setError(""); setLimited(false); setWeeklyLimited(false); }
+  function pick(value: string) { setQuestionSnapshot(undefined); setIdea(value); setAnswers({}); setCustom({}); setExtra(""); setDelivery("prompt"); setError(""); if (value) {setStep(1);track("task_started", {language, user_segment:userId ? "account" : "guest", source:campaign ?? "example"});} else document.getElementById("beginner-idea")?.focus(); }
   function updateReviewedIdea(value: string) {
     if (value === idea) return;
     setQuestionSnapshot(undefined);
@@ -152,7 +157,7 @@ export function StartExperience() {
       const text = userId ? await response.text() : (await response.json()).data;
       if (typeof text !== "string" || !text.trim() || text.length > 16000) throw new Error();
       const next = { idea, text, context }; setResult(next); setScore(null); setQualityOpen(false); setCopied(false); setOutcome(null); setEditing(false); setStep(2);
-      const nextMetric = nextTaskMetric(null, true); setMetric(nextMetric); track("prompt_generated", { ...nextMetric, new_task: true }); preserve(next);
+      const isNewTask = !metric; const nextMetric = nextTaskMetric(metric, isNewTask); setMetric(nextMetric); track("prompt_generated", { ...nextMetric, new_task: isNewTask, action_type:delivery, source:campaign ?? "general", user_segment:userId ? "account" : "guest" }); preserve(next);
     } catch { setError(c.unavailable); } finally { clearTimeout(timer); inFlight.current = false; controller.current = null; setBusy(false); }
   }
   async function copy() {
@@ -189,15 +194,20 @@ export function StartExperience() {
     if (!result || !editText.trim()) { setError(c.empty); return; }
     const next = { ...result, text: editText, saved: false }; setResult(next); preserve(next); setEditing(false); setScore(null); setCopied(false); setOutcome(null); setError(""); setMetric(nextTaskMetric(metric, false));
   }
-  function reset() {
-    if (!userId) { signIn(); return; }
-    setIdea(""); setAnswers({}); setCustom({}); setExtra(""); setResult(null); setStep(0); setScore(null); setError(""); setCopied(false); setEditing(false);setRoutine(null);setProfile(null);setDetailsApplied(false);setAppliedProgress("");router.replace("/builder");
+  function prepareNewTask() {
+    if (result && !result.saved && !window.confirm(d.replace)) return false;
     try { sessionStorage.removeItem(BEGINNER_DRAFT_KEY); } catch {}
+    return true;
+  }
+  function reset() {
+    if (!prepareNewTask()) return;
+    // A new document also cancels old async UI work and bypasses draft restoration.
+    window.location.assign("/?fresh=1");
   }
   function applySavedDetails(){if(routine?.kind!=="playbook")return;const settings=routine.payload.routine;const previous=beginnerQuestions(routine.payload.idea,settings?.language??language);const current=beginnerQuestions(idea,language);setAnswers(Object.fromEntries(Object.entries(settings?.answers??{}).map(([id,value])=>{const index=previous.find(q=>q.id===id)?.options.indexOf(value)??-1;return[id,index>=0?current.find(q=>q.id===id)?.options[index]??value:value];})));setExtra(settings?.extra??"");setAppliedProgress(settings?.progress??"");setDetailsApplied(true);}
   function nextTask(value:string){if(!result)return;if(!result.saved&&!window.confirm(d.replace))return;setIdea(value);setAnswers({});setCustom({});setExtra("");setResult(null);setStep(1);setScore(null);setProfile(null);setRoutine(null);setDetailsApplied(false);setAppliedProgress("");setCopied(false);setEditing(false);setError("");router.replace("/builder");}
   return <div className="beginner-shell">
-    <header className="beginner-header"><Link href="/" aria-label="Umprompt"><Logo size={46} className="beginner-brand" /></Link><nav className="beginner-nav" aria-label={c.language}>
+    <header className="beginner-header"><Link href="/?fresh=1" prefetch={false} aria-label="Umprompt" title={c.next} onClick={event => { if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return; event.preventDefault(); reset(); }}><Logo size={46} className="beginner-brand" /></Link><nav className="beginner-nav" aria-label={c.language}>
       <label className="beginner-language"><Globe size={17} aria-hidden="true" /><span className="sr-only">{c.language}</span><select aria-label={c.language} value={language} onChange={(e) => setLanguage(e.target.value as AppLanguage)}>{(["en", "ru", "es"] as const).map((lang) => <option key={lang} value={lang}>{languageLabels[lang]}</option>)}</select></label>
       <Link className="beginner-nav-plans" href="/plan?returnTo=%2F%3Fresume%3Dcheckout" onClick={(e) => { if (!preserve()) e.preventDefault(); }}>{c.plans}</Link>{userId ? <Link className="beginner-signin" href="/dashboard">{c.workspace}<ArrowRight size={16} /></Link> : <button className="beginner-signin" onClick={signIn}>{c.signIn}<ArrowRight size={16} /></button>}
     </nav></header>
@@ -206,11 +216,12 @@ export function StartExperience() {
       {sourceLoading && <p role="status">{d.loading}</p>}{sourceError && <div role="alert" className="beginner-error"><p>{d.loadError}</p><button className="beginner-secondary" onClick={()=>{sourceLoaded.current="";setSourceRetry(n=>n+1);}}>{d.retry}</button><Link href="/dashboard">{d.back}</Link></div>}
       {!sourceLoading&&!sourceError&&(sourceId||routineId)&&authReady&&!userId&&<div className="daily-memory"><p>{d.signin}</p><button className="beginner-primary" onClick={signIn}>{c.signIn}</button></div>}
       {!sourceLoading&&!sourceError&&(!(sourceId||routineId)||!!userId)&&<>
-      {step === 0 && <><section className="beginner-hero"><div className="beginner-intro"><p className="beginner-eyebrow"><Sparkles size={16} />{c.eyebrow}</p><h1>{c.title}</h1><p className="beginner-subtitle">{c.subtitle}</p>
-        <form className="beginner-composer" onSubmit={(e) => { e.preventDefault(); begin(); }}><label htmlFor="beginner-idea">{c.ideaLabel}</label><div className="beginner-idea-field" data-active={!idea && !inputFocused}><textarea onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)} id="beginner-idea" maxLength={4000} value={idea} onChange={(e) => { setIdea(e.target.value); setAnswers({}); setCustom({}); setError(""); }} placeholder={c.placeholder} rows={3} /><IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} /></div><p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p><button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button></form>
+      {step === 0 && <><section className="beginner-hero"><div className="beginner-intro"><p className="beginner-eyebrow"><Sparkles size={16} />{c.eyebrow}</p><h1>{campaign ? ec.emailTitle : c.title}</h1><p className="beginner-subtitle">{campaign ? ec.emailSubtitle : c.subtitle}</p>
+        <form className="beginner-composer" onSubmit={(e) => { e.preventDefault(); begin(); }}><label htmlFor="beginner-idea">{c.ideaLabel}</label><div className="beginner-idea-field" data-active={!idea && !inputFocused}><textarea onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)} id="beginner-idea" maxLength={4000} value={idea} onChange={(e) => { setIdea(e.target.value); setAnswers({}); setCustom({}); setError(""); }} placeholder={c.placeholder} rows={3} /><IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={campaign ? [c.tasks[1].idea] : c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} /></div><p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p><button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button><p className="beginner-next-step">{ec.next}</p></form>
         <p className="beginner-provider beginner-clarify-disclosure">{qc.notice}</p><div className="beginner-below"><p><ShieldCheck size={15} />{c.free}</p><button type="button" onClick={() => ideas.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>{c.browse}<ArrowRight size={15} /></button></div>
-      </div><aside className="beginner-preview" aria-label={c.previewLabel}><p className="beginner-preview-label">{c.previewLabel}</p><StudyIllustration /><p className="beginner-preview-from">{c.previewFrom}</p><div className="beginner-preview-line"><ArrowRight size={20} /></div><div className="beginner-preview-to"><span className="beginner-check"><Check size={18} /></span><h2>{c.previewTo}</h2><p>{c.previewDetails}</p></div><button type="button" onClick={() => pick(c.tasks[0].idea)}>{c.useIdea}<ArrowRight size={17} /></button><small>{c.previewNote}</small></aside></section>
+      </div><aside className="beginner-preview" aria-label={c.previewLabel}><p className="beginner-preview-label">{c.previewLabel}</p><StudyIllustration /><p className="beginner-preview-from">{preview ? preview.idea : c.previewFrom}</p><div className="beginner-preview-line"><ArrowRight size={20} /></div><div className="beginner-preview-to"><span className="beginner-check"><Check size={18} /></span><h2>{preview ? ec.prompt : c.previewTo}</h2><p>{preview ? preview.prompt : c.previewDetails}</p></div><button type="button" onClick={() => pick(c.tasks[campaign ? 1 : 0].idea)}>{c.useIdea}<ArrowRight size={17} /></button><small>{preview ? ec.sampleNote : c.previewNote}</small></aside></section>
         <section ref={ideas} className="beginner-ideas"><div className="beginner-section-heading"><div><h2>{c.ideasTitle}</h2><p>{c.ideasSubtitle}</p></div><Sparkles size={23} aria-hidden="true" /></div><div className="beginner-task-grid">{c.tasks.map((task, i) => { const Icon = icons[i]; return <button type="button" className={"beginner-task beginner-task-" + i} key={task.id} onClick={() => pick(task.idea)}><span className="beginner-task-icon"><Icon size={23} /></span><h3>{task.title}</h3><p>{task.description}</p><span className="beginner-task-arrow"><ArrowRight size={18} /></span></button>; })}</div></section>
+        <Examples language={language} onTry={pick}/><FounderNote language={language}/>
         <LandingGuide language={language} onStart={() => { document.getElementById("beginner-idea")?.focus(); document.getElementById("beginner-idea")?.scrollIntoView({ behavior: "auto", block: "center" }); }} />
       </>}
       {step === 1 && <section className="beginner-panel"><button className="beginner-back" disabled={busy} onClick={() => { setIdeaEditing(false); setStep(0); }}><ArrowLeft size={17} />{c.back}</button><h1>{c.detailsTitle}</h1><p className="beginner-panel-subtitle">{c.detailsSubtitle}</p><IdeaReview value={idea} language={language} disabled={busy} editing={ideaEditing} onEditingChange={setIdeaEditing} onCommit={updateReviewedIdea} />
@@ -224,7 +235,7 @@ export function StartExperience() {
         {!editing && <><div className="beginner-result-actions"><button className="beginner-primary" onClick={() => void copy()}>{copied ? <Check size={19} /> : <Copy size={19} />}{copied ? c.copied : result.context.delivery === "answer" ? c.copyAnswer : c.copy}</button><button className="beginner-secondary" disabled={busy || result.saved} onClick={() => void save()}>{busy ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}{result.saved ? c.saved : userId ? c.save : c.signInSave}</button></div>
           {result.context.delivery !== "answer" && <><div className="beginner-handoff"><h2>{c.handoffTitle}</h2><ol>{c.handoff.map((line, i) => <li key={line}><span>{i + 1}</span>{line}</li>)}</ol></div>{qualityOpen && <ScorePanel score={score} isScoring={busy} error={qualityError} onRetry={async () => { if (inFlight.current) return; inFlight.current = true; setBusy(true); try { setScore(await readScore(result.text)); setQualityError(null); } catch { setQualityError(composerCopy(language).optimizeScoreError); } finally { inFlight.current = false; setBusy(false); } }} onOptimize={() => void improve()} isOptimizing={busy} />}</>}
           {userId && <DailyResultTools key={result.savedId??result.idea} idea={result.idea} answers={result.context.preferences?.answers??answers} extra={result.context.preferences?.extra??extra} context={result.context} routine={routine} onSaved={setRoutine} onNext={nextTask} disabled={busy} />}
-          {copied && metric && <OutcomeFeedback key={metric.result_id} value={outcome} question={result.context.delivery === "answer" ? ({ en: "Was this result useful?", ru: "Результат оказался полезным?", es: "¿Te resultó útil?" })[language] : undefined} onFeedback={(value) => { track("answer_outcome_feedback", { ...metric, outcome: value }); if (value !== "not_tried") { setOutcome(value === "useful"); if (value === "useful") track("prompt_result_confirmed", { ...metric, outcome: value }); } }} />}{!userId && <aside className="beginner-signup"><h2>{c.signupTitle}</h2><p>{c.signup}</p><button className="beginner-secondary" onClick={signIn}>{c.signIn}<ArrowRight size={17} /></button></aside>}<button className="beginner-back beginner-new" disabled={busy} onClick={reset}>{c.next}<ArrowRight size={17} /></button></>}
+          {(copied || result.context.delivery === "answer") && metric && <OutcomeFeedback key={metric.result_id} value={outcome} question={result.context.delivery === "answer" ? ({ en: "Was this result useful?", ru: "Результат оказался полезным?", es: "¿Te resultó útil?" })[language] : undefined} onFeedback={(value) => { track("answer_outcome_feedback", { ...metric, outcome: value }); if (value !== "not_tried") { setOutcome(value === "useful"); if (value === "useful") track("prompt_result_confirmed", { ...metric, outcome: value }); } }} />}{!userId && <aside className="beginner-signup"><h2>{c.signupTitle}</h2><p>{c.signup}</p><button className="beginner-secondary" onClick={signIn}>{c.signIn}<ArrowRight size={17} /></button></aside>}<button className="beginner-back beginner-new" disabled={busy} onClick={reset}>{c.next}<ArrowRight size={17} /></button></>}
       </section>}
       {error && <div role="alert" className="beginner-error"><p>{error}</p>{limited && <button className="beginner-secondary" onClick={signIn}>{c.signIn}<ArrowRight size={17} /></button>}{weeklyLimited && <Link className="beginner-secondary" href="/plan?returnTo=%2F%3Fresume%3Dcheckout" onClick={(e) => { if (!preserve()) e.preventDefault(); }}>{c.plans}<ArrowRight size={17} /></Link>}</div>}
       </>}

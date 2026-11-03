@@ -3,10 +3,10 @@ import type { AppLanguage } from "@/types/language";
 
 const en = {
   tagline: "A little help with everyday life", eyebrow: "An easier way to use AI",
-  title: "What would you like to do?", subtitle: "Use your own words. We’ll help you explain what you need to AI—or get a useful first result right here.",
+  title: "Get more from AI, in your own words", subtitle: "Tell us what you want to do. We’ll ask the useful questions and prepare clear instructions for your AI assistant.",
   ideaLabel: "Tell us what you need help with", placeholder: "For example: help me prepare for the NCLEX",
   reassurance: "You don’t need to know the right words. A few words are enough to start.",
-  continue: "Let’s work it out", browse: "I’m not sure where to start", free: "Try one task free. No account needed.",
+  continue: "Continue", browse: "I’m not sure where to start", free: "Try one task free. No account needed.",
   steps: ["Your idea", "A few details", "Your result"], back: "Back", detailsTitle: "Let’s make this useful for you", detailsSubtitle: "A few details help us understand what you need. You can leave anything you’re not sure about blank.",
   yourIdea: "What you asked for", editIdea: "Edit your idea", extra: "Anything else we should know?", extraPlaceholder: "A deadline, something you find difficult, or anything you want included. Optional.",
   choose: "How would you like your help?", prompt: "Give me instructions for my AI", promptHelp: "A ready-to-copy request for the AI assistant you choose.", answer: "Help me here", answerHelp: "Get a first draft, plan, or explanation in Umprompt.",
@@ -30,10 +30,10 @@ const en = {
 type Copy = typeof en;
 const ru: Copy = {
   tagline: "Поможем с повседневными задачами", eyebrow: "Пользоваться ИИ проще, чем кажется",
-  title: "Что вы хотите сделать?", subtitle: "Напишите своими словами. Мы поможем объяснить задачу ИИ или подготовим первый результат прямо здесь.",
+  title: "Больше пользы от ИИ — своими словами", subtitle: "Расскажите, что хотите сделать. Мы зададим нужные вопросы и подготовим понятные инструкции для вашего ИИ-помощника.",
   ideaLabel: "С чем вам нужна помощь?", placeholder: "Например: помоги подготовиться к NCLEX",
   reassurance: "Не нужно подбирать правильные слова. Для начала хватит пары фраз.",
-  continue: "Давайте разберёмся", browse: "Пока не знаю, с чего начать", free: "Попробуйте одну задачу бесплатно, без регистрации.",
+  continue: "Продолжить", browse: "Пока не знаю, с чего начать", free: "Попробуйте одну задачу бесплатно, без регистрации.",
   steps: ["Ваша идея", "Несколько деталей", "Результат"], back: "Назад", detailsTitle: "Уточним, что вам нужно", detailsSubtitle: "Ответьте на несколько вопросов. Если пока не знаете ответ, просто пропустите его.",
   yourIdea: "Ваша задача", editIdea: "Изменить задачу", extra: "Что ещё стоит учесть?", extraPlaceholder: "Сроки, трудности или пожелания. Это необязательно.",
   choose: "Как вам удобнее получить помощь?", prompt: "Подготовить запрос для моего ИИ", promptHelp: "Готовые инструкции, которые можно скопировать в любой ИИ-помощник.", answer: "Помочь мне прямо здесь", answerHelp: "Получить черновик, план или объяснение в Umprompt.",
@@ -56,10 +56,10 @@ const ru: Copy = {
 };
 const es: Copy = {
   tagline: "Una ayuda para las tareas de cada día", eyebrow: "Usar la IA puede ser más fácil",
-  title: "¿Qué te gustaría hacer?", subtitle: "Cuéntalo con tus propias palabras. Te ayudamos a explicárselo a la IA o a obtener un primer resultado aquí mismo.",
+  title: "Saca más partido a la IA con tus palabras", subtitle: "Cuéntanos qué quieres hacer. Te haremos las preguntas útiles y prepararemos instrucciones claras para tu asistente de IA.",
   ideaLabel: "¿Con qué necesitas ayuda?", placeholder: "Por ejemplo: ayúdame a prepararme para el NCLEX",
   reassurance: "No necesitas encontrar las palabras perfectas. Unas pocas palabras bastan para empezar.",
-  continue: "Vamos paso a paso", browse: "Todavía no sé por dónde empezar", free: "Prueba una tarea gratis, sin crear una cuenta.",
+  continue: "Continuar", browse: "Todavía no sé por dónde empezar", free: "Prueba una tarea gratis, sin crear una cuenta.",
   steps: ["Tu idea", "Algunos detalles", "Tu resultado"], back: "Atrás", detailsTitle: "Vamos a adaptarlo a lo que necesitas", detailsSubtitle: "Responde unas preguntas para que podamos ayudarte mejor. Si no sabes alguna respuesta, puedes saltarla.",
   yourIdea: "Lo que necesitas", editIdea: "Cambiar mi idea", extra: "¿Hay algo más que debamos tener en cuenta?", extraPlaceholder: "Una fecha, algo que te cuesta o algo que quieras incluir. Es opcional.",
   choose: "¿Cómo prefieres recibir ayuda?", prompt: "Preparar instrucciones para mi IA", promptHelp: "Una solicitud lista para copiar en el asistente de IA que elijas.", answer: "Ayúdame aquí", answerHelp: "Obtén un borrador, un plan o una explicación en Umprompt.",

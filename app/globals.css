@@ -366,3 +366,24 @@
 .beginner-questions-status p { display: flex; align-items: center; gap: 10px; line-height: 1.6; }
 .beginner-questions-status .beginner-back { margin-top: 12px; margin-bottom: 0; }
 .beginner-clarify-disclosure { margin: 14px 0 0; max-width: 580px; }
+.public-content { max-width: 960px; }
+.public-content h1 { font-size: clamp(32px,4vw,48px); line-height: 1.15; font-weight: 600; margin-bottom: 20px; }
+.public-content h2,.purchase-policy h2 { font-size: 24px; font-weight: 600; margin-bottom: 14px; }
+.public-content section,.purchase-policy { margin-top: 32px; }
+.public-content p,.purchase-policy p { line-height: 1.75; margin: 12px 0; }
+.public-content a,.purchase-policy a { text-decoration: underline; text-underline-offset: 4px; }
+.purchase-policy { padding: 24px; border: 1px solid #dce3d5; border-radius: 18px; background: #f7f8f2; font-size: 15px; }
+.public-examples { margin-top: 64px; }
+.public-examples details { border: 1px solid #dce3d5; border-radius: 18px; margin-top: 14px; padding: 20px; background: #fffef9; }
+.public-examples summary { cursor: pointer; font-size: 21px; font-weight: 600; padding: 8px 0; }
+.example-journey { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; padding: 20px 0; }
+.example-journey > div { border-left: 3px solid #bacbb3; padding-left: 18px; min-width: 0; }
+.example-journey h3 { font-weight: 600; margin-bottom: 10px; }
+.example-journey p { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.7; }
+.public-founder { margin-top: 48px; border-top: 1px solid #dce3d5; padding: 30px 0; max-width: 780px; }
+.public-founder h2 { font-size: 26px; font-weight: 600; }
+.public-founder p { line-height: 1.7; margin: 14px 0; }
+.public-founder a { text-decoration: underline; }
+.beginner-next-step { font-size: 14px; line-height: 1.6; color: var(--beginner-muted); margin-top: 12px; }
+@media(max-width:600px){ .example-journey {grid-template-columns:1fr;} }
+@media(max-width:600px){ .public-header {flex-wrap:wrap;} .public-header .beginner-nav {width:100%;justify-content:space-between;} .public-header .beginner-nav > a {font-size:14px;} }
