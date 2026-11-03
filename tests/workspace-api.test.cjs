@@ -53,13 +53,13 @@ test("missing migration, malformed input and invisible records have honest error
   assert.equal(calls.length, 0);
   assert.equal((await route.DELETE(request("DELETE", null, `?id=${id}`))).status, 404);
 });
-function generation({ user = { id: "owner" }, allowed = true, rateAllowed = true, paid = false } = {}) {
+function generation({ user = { id: "owner" }, allowed = true, rateAllowed = true, paid = false, completion } = {}) {
   const calls = [];
   class ProviderConfigError extends Error {}
   const service = loadWithImports("lib/api/generate.ts", {
     "next/server": { NextResponse },
     "@/lib/supabase/server": { createClient: async () => ({ auth: { getUser: async () => ({ data: { user } }) } }) },
-    "@/lib/ai/generate-prompt": { streamGeneratedPrompt: (input) => { calls.push(["generate", input]); return { stream: { toTextStreamResponse: ({ headers }) => new Response("Synthetic prompt", { headers }) }, choice: { config: { shortName: "synthetic" }, provider: "anthropic" } }; } },
+    "@/lib/ai/generate-prompt": { streamGeneratedPrompt: (input) => { calls.push(["generate", input]); return { stream: { text: completion ?? Promise.resolve("Synthetic prompt"), toTextStreamResponse: ({ headers }) => new Response("Synthetic prompt", { headers }) }, choice: { config: { shortName: "synthetic" }, provider: "anthropic" } }; } },
     "@/types/prompt": types, "@/lib/ai/providers": { ProviderConfigError }, "@/lib/prompt-context": context, "@/lib/workspace": workspace, "@/lib/prompt-editing": editing,
     "@/lib/billing": { getBillingStatus: async () => ({ isPaid: paid, remainingThisWeek: allowed ? 3 : 0 }), checkUsageLimits: () => allowed ? { allowed: true } : { allowed: false, status: 402, errorCode: "FREE_LIMIT_REACHED", message: "Limit reached" }, recordUsageEvent: async (...args) => { calls.push(["usage", ...args.slice(1)]); } },
     "@/lib/rate-limit": { rateLimit: async (userId, action) => { assert.equal(userId, "owner"); assert.equal(action, paid ? "generate_paid" : "generate"); return { allowed: rateAllowed, remaining: paid ? 199 : 19, limit: paid ? 200 : 20, resetAt: Date.now() + 60000 }; }, retryAfterMessage: () => "1m" },
@@ -127,4 +127,17 @@ test("AI route excludes unconfirmed profiles and all history", async () => {
     assert.equal(!!input.context.profile, consent);
     assert.ok(input.signal instanceof AbortSignal);
   }
+});
+
+
+test("usage is recorded only after a completed nonempty generation, not a failed stream", async () => {
+ for(const success of [true,false]){
+  let resolve,reject;const completion=new Promise((a,b)=>{resolve=a;reject=b});const {route,calls}=generation({completion});
+  assert.equal((await route.POST(request("POST",generationBody))).status,200);
+  assert.equal(calls.filter(c=>c[0]==="usage").length,0);
+  if(success)resolve("Completed output");else reject(Error("Synthetic interrupted stream"));
+  await new Promise(resolve=>setImmediate(resolve));
+  assert.equal(calls.filter(c=>c[0]==="usage").length,success?1:0);
+ }
+ const t=generation({completion:Promise.resolve(" ")});await t.route.POST(request("POST",generationBody));await new Promise(resolve=>setImmediate(resolve));assert.equal(t.calls.filter(c=>c[0]==="usage").length,0);
 });

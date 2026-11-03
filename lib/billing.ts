@@ -1,3 +1,4 @@
+import { BILLING_LIMITS } from "@/lib/purchase-policy";
 /**
  * lib/billing.ts — Server-side billing helpers.
  *
@@ -36,9 +37,9 @@ export interface UsageCheckResult {
   status: number;
 }
 
-const FREE_WEEKLY_LIMIT = 7;
-const PAID_DAILY_ABUSE_LIMIT = 200;
-export const FOUNDER_LIMIT = 100;
+const FREE_WEEKLY_LIMIT = BILLING_LIMITS.freeGenerations;
+const PAID_DAILY_ABUSE_LIMIT = BILLING_LIMITS.paidDailyGenerations;
+export const FOUNDER_LIMIT = BILLING_LIMITS.founderPurchases;
 export const PROMO_CODE = "UMPROMPT";
 
 // ── Billing status ──────────────────────────────────────────────────────────

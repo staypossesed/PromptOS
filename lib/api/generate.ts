@@ -163,24 +163,16 @@ export async function generateForClient(request: NextRequest, supabase: Supabase
   try {
     const { stream, choice } = streamGeneratedPrompt({ ...validation.data, signal: request.signal });
 
-    // Record usage event after successfully starting the stream
-    void recordUsageEvent(supabase, user.id, "generate", "prompt");
-
-    // Non-blocking: update run on completion
-    if (runId) {
-      stream.text.then(async (text) => {
-        await markGenerationSuccess(runId, {
-          generated_output: text,
-          latency_ms: Date.now() - startTime,
-          output_chars: text.length,
-        });
-      }).catch(async () => {
-        await markGenerationFailed(runId, {
-          error_code: "STREAM_ERROR",
-          latency_ms: Date.now() - startTime,
-        });
+    // Only a completed, nonempty result consumes the account allowance.
+    stream.text.then(async text => {
+      if (!text.trim() || request.signal.aborted) return;
+      await recordUsageEvent(supabase, user.id, "generate", "prompt");
+      if (runId) await markGenerationSuccess(runId, {
+        generated_output: text, latency_ms: Date.now() - startTime, output_chars: text.length,
       });
-    }
+    }).catch(async () => {
+      if (runId) await markGenerationFailed(runId, { error_code: "STREAM_ERROR", latency_ms: Date.now() - startTime });
+    });
 
     return stream.toTextStreamResponse({
       headers: {

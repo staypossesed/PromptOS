@@ -80,7 +80,7 @@ test("paid access queries exclude expired or missing monthly periods while allow
   let condition;
   const query = { select: () => query, eq: () => query, in: () => query, order: () => query, limit: () => query, gte: () => Promise.resolve({ count: 0 }),
     or: value => { condition = value; return query; }, maybeSingle: async () => ({ data: null }) };
-  const helper = load("lib/billing.ts", { "@/lib/stripe": { stripe: {} }, "@/lib/supabase/admin": {} });
+  const helper = load("lib/billing.ts", { "@/lib/purchase-policy": require("../scripts/load-ts.cjs").loadTS("lib/purchase-policy.ts"), "@/lib/stripe": { stripe: {} }, "@/lib/supabase/admin": {} });
   const result = await helper.getBillingStatus({ from: () => query }, "synthetic-owner");
   assert.equal(result.isPaid, false);
   assert.match(condition, /^is_lifetime\.eq\.true,current_period_end\.gt\.\d{4}-/);
@@ -89,7 +89,7 @@ test("paid access queries exclude expired or missing monthly periods while allow
 });
 
 test("strict billing lookup rejects subscription and usage read failures without changing legacy callers", async () => {
-  const helper = load("lib/billing.ts", { "@/lib/stripe": { stripe: {} }, "@/lib/supabase/admin": {} });
+  const helper = load("lib/billing.ts", { "@/lib/purchase-policy": require("../scripts/load-ts.cjs").loadTS("lib/purchase-policy.ts"), "@/lib/stripe": { stripe: {} }, "@/lib/supabase/admin": {} });
   for (const failure of ["subscription", "week", "day", "throw"]) {
     let reads = 0;
     const query = {

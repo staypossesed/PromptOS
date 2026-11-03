@@ -1,4 +1,8 @@
 "use client";
+import { PurchasePolicy } from "@/components/public/public-page";
+import { billingMessages } from "@/lib/billing-copy";
+import { purchaseCopy } from "@/lib/purchase-policy";
+
 
 import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
@@ -13,7 +17,9 @@ import { usePromptUsage } from "@/hooks/usePromptUsage";
 const FOUNDER_LIMIT = 100;
 
 export default function PlanPage() {
-  const { t } = useTranslations();
+  const { t, language } = useTranslations();
+  const pc = purchaseCopy[language];
+  const messages = billingMessages[language];
   const router = useRouter();
   const searchParams = useSearchParams();
   const cancelled = searchParams.get("checkout") === "cancelled";
@@ -106,31 +112,31 @@ export default function PlanPage() {
       }
       track("checkout_failed", { reason: code ?? "UNKNOWN", offer_type: offerType });
       if (code === "MISSING_CONFIG") {
-        setCheckoutError("Payments are temporarily unavailable. Your prompt is safe; you can return to it below.");
+        setCheckoutError(messages.unavailable);
       } else if (code === "BILLING_UNAVAILABLE") {
-        setCheckoutError("We couldn't verify your current plan. Please try again later; no new checkout has started.");
+        setCheckoutError(messages.verify);
       } else if (code === "BILLING_ACTION_REQUIRED") {
         setBillingActionRequired(true);
         setCheckoutError(t("billing.subscriptionNeedsAttention"));
       } else if (code === "OFFER_UNAVAILABLE") {
         setPromoApplied(false); setPromoAutoApplied(false);
         setFounderCount(FOUNDER_LIMIT);
-        setCheckoutError("The founder offer has ended. Please review the regular prices before continuing.");
+        setCheckoutError(messages.ended);
       } else if (code === "ALREADY_PAID") {
         router.push("/account");
       } else if (code === "PRICE_MISMATCH") {
-        setCheckoutError("This price is being updated. Checkout is paused so you are not charged an unexpected amount.");
+        setCheckoutError(messages.mismatch);
       } else if (code === "OFFER_CHECK_FAILED") {
-        setCheckoutError("We couldn't confirm this offer. Please retry; no checkout has started.");
+        setCheckoutError(messages.offer);
       } else if (code === "STRIPE_ERROR") {
-        setCheckoutError("Stripe checkout could not start. Please try again.");
+        setCheckoutError(messages.retry);
       } else {
-        setCheckoutError(json.message ?? "Checkout could not start. Please try again.");
+        setCheckoutError(messages.retry);
       }
       setLoading(null);
     } catch (err) {
       if (process.env.NODE_ENV === "development") console.error("[checkout] fetch error:", err);
-      setCheckoutError("Checkout could not start. Please try again.");
+      setCheckoutError(messages.retry);
       setLoading(null);
       track("checkout_failed", { reason: "NETWORK", offer_type: offerType });
     } finally {
@@ -152,31 +158,31 @@ export default function PlanPage() {
           className="inline-flex items-center gap-1.5 text-sm text-ink-400 hover:text-ink-700 transition-colors mb-8"
         >
           <ArrowLeft className="size-3.5" />
-          Back to workspace
+          {pc.back}
         </Link>
 
         {/* Header */}
         <div className="mb-10 text-center">
           <h1 className="font-serif text-3xl md:text-4xl font-semibold text-ink-900 mb-3">
-            {t("billing.planTitle")}
+            {pc.title}
           </h1>
-          <p className="text-ink-500 text-[15px]">{t("billing.planSubtitle")}</p>
+          <p className="text-ink-500 text-[15px]">{pc.subtitle}</p>
         </div>
 
         {/* Auto-applied founder unlock notice */}
         {promoAutoApplied && founderAvailable && (
           <div className="mb-6 flex items-start gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
             <Crown className="size-4 shrink-0 mt-0.5 text-emerald-700" />
-            <p><span className="font-semibold">Founder prices unlocked.</span>{" "}You&apos;re seeing the founder rate — $4.99/mo or $34.99 lifetime.</p>
+            <p>{messages.unlocked}</p>
           </div>
         )}
-        {promoApplied && !founderLoading && founderCount === null && <p role="status" className="mb-6 text-center text-sm text-ink-500">Founder availability could not be confirmed. Regular prices are shown.</p>}
+        {promoApplied && !founderLoading && founderCount === null && <p role="status" className="mb-6 text-center text-sm text-ink-500">{messages.availability}</p>}
 
         {/* Cancelled notice */}
         {cancelled && (
           <div className="mb-6 flex items-center gap-2 rounded-xl border border-ink-100 bg-cream-100/60 px-4 py-3 text-sm text-ink-600">
             <AlertCircle className="size-4 shrink-0 text-ink-400" />
-            Checkout was cancelled. Your plan has not changed.
+            {messages.cancelled}
           </div>
         )}
 
@@ -227,7 +233,7 @@ export default function PlanPage() {
             <p className="mt-2 text-xs text-destructive">{t("billing.codeInvalid")}</p>
           )}
         </div>}
-        {isPaid && <p role="status" className="mb-6 text-center text-sm text-emerald-800">You already have a paid plan. <Link href="/account" className="underline">Manage billing</Link></p>}
+        {isPaid && <p role="status" className="mb-6 text-center text-sm text-emerald-800">{messages.paid} <Link href="/account" className="underline">{t("billing.manageBilling")}</Link></p>}
 
         {/* Pricing grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -236,9 +242,10 @@ export default function PlanPage() {
             name={t("billing.freePlanName")}
             price="$0"
             period=""
-            description="Get started with the basics."
+            description={pc.free}
             features={[
               t("billing.featureFreePrompts"),
+              t("billing.featureHistory"),
               t("billing.featureBuilder"),
               t("billing.featureTemplates"),
             ]}
@@ -251,9 +258,9 @@ export default function PlanPage() {
           <PricingCard
             name={founderPrice ? t("billing.founderMonthlyName") : t("billing.proMonthlyName")}
             price={`$${(checkoutPrice("monthly", founderPrice) / 100).toFixed(2)}`}
-            period="/mo"
-            originalPrice={founderPrice ? "$9.99/mo" : undefined}
-            description="Billed monthly. Cancel future renewals anytime."
+            period={messages.period}
+            originalPrice={founderPrice ? `$9.99${messages.period}` : undefined}
+            description={pc.monthly}
             features={[
               t("billing.featureUnlimited"),
               t("billing.featurePacks"),
@@ -274,7 +281,7 @@ export default function PlanPage() {
             price={`$${(checkoutPrice("lifetime", founderPrice) / 100).toFixed(2)}`}
             period=""
             originalPrice={founderPrice ? "$99.99" : undefined}
-            description="One payment. No recurring subscription."
+            description={pc.lifetime}
             features={[
               t("billing.featureUnlimited"),
               t("billing.featureLifetime"),
@@ -286,7 +293,6 @@ export default function PlanPage() {
             loading={loading === "lifetime"}
             disabled={isAnyLoading}
             variant="accent"
-            bestValueBadge
             founderBadge={founderPrice}
           />
         </div>
@@ -300,11 +306,12 @@ export default function PlanPage() {
             )}</span>
           </div>
         )}
-        <div className="mb-6 text-center"><Link href={returnTo} className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"><ArrowLeft className="size-4" />Back to workspace</Link></div>
+        <div className="mb-6 text-center"><Link href={returnTo} className="inline-flex min-h-11 items-center gap-2 text-sm text-emerald-800"><ArrowLeft className="size-4" />{pc.back}</Link></div>
 
+        <PurchasePolicy compact />
         {/* Fine print */}
         <p className="text-center text-xs text-ink-400">
-          Payments secured by Stripe. Cancel anytime for monthly plans. No refunds on lifetime purchases.
+          {pc.checkout}
         </p>
       </div>
     </div>
