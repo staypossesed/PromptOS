@@ -60,3 +60,29 @@ export function summarizeFunnel(rows: FunnelRow[], since: string, windowDays = 3
   }
   return { cohort_since: new Date(start).toISOString(), window_ends_at: new Date(end).toISOString(), day_boundary: "UTC", counts, purchases_after_useful_before_return: earlyPurchasers, ignored_rows: ignored };
 }
+
+// Guest-first acquisition: signup may happen after a useful result, and buying
+// does not require a later-day visit. Keep the legacy signup-first report above.
+export function summarizeGuestFunnel(rows: (FunnelRow & {action_type?:string; is_internal?:boolean})[], since: string, windowDays=30) {
+ const start=Date.parse(since); if(!Number.isFinite(start)||!Number.isInteger(windowDays)||windowDays<1||windowDays>365)throw Error("Invalid cohort window");
+ const end=start+windowDays*86400000;
+ const counts={visit:0,task_started:0,generated:0,copied:0,useful:0,signup:0,returned_later_day:0,purchased:0,purchased_after_useful:0};
+ const actors=new Map<string,((typeof rows)[number]&{time:number})[]>();
+ const excluded=new Set(rows.filter(r=>r?.is_internal===true).map(r=>r.actor_id));
+ for(const row of rows){if(!row||typeof row.actor_id!=="string"||!row.actor_id||excluded.has(row.actor_id))continue;const time=Date.parse(row.timestamp);if(!Number.isFinite(time)||time>=end)continue;const events=actors.get(row.actor_id)??[];events.push({...row,time});actors.set(row.actor_id,events);}
+ for(const events of actors.values()){
+  events.sort((a,b)=>a.time-b.time);const visit=events.find(e=>e.event==="site_visited"&&e.time>=start);if(!visit)continue;counts.visit++;
+  const active=events.filter(e=>e.time>=visit.time);
+  const results=active.filter(e=>e.event==="prompt_generated"&&e.task_id&&e.result_id);
+  const generated=results.filter(e=>e.new_task===true);
+  if(active.some(e=>e.event==="task_started"))counts.task_started++;
+  if(generated.length)counts.generated++;
+  const copies=active.filter(e=>e.event==="prompt_copied"&&e.result_id&&generated.some(g=>g.task_id===e.task_id&&g.time<=e.time));if(copies.length)counts.copied++;
+  const useful=active.find(e=>e.event==="prompt_result_confirmed"&&e.outcome==="useful"&&results.some(g=>g.task_id===e.task_id&&g.time<=e.time&&(g.action_type==="answer"&&g.result_id===e.result_id||copies.some(c=>c.task_id===e.task_id&&c.result_id===e.result_id&&c.time<=e.time))));if(useful)counts.useful++;
+  const signup=events.find(e=>e.event==="signup_completed");if(signup&&signup.time>=visit.time)counts.signup++;
+  if(useful&&generated.some(g=>g.task_id!==useful.task_id&&g.time>useful.time&&new Date(g.time).toISOString().slice(0,10)>new Date(useful.time).toISOString().slice(0,10)))counts.returned_later_day++;
+  const receipts=new Map<string,number>();for(const event of events)if(event.event==="purchase_confirmed"&&event.live_mode===true&&event.event_key&&!receipts.has(event.event_key))receipts.set(event.event_key,event.time);
+  const purchases=[...receipts.values()].filter(time=>time>=visit.time);if(purchases.length)counts.purchased++;if(useful&&purchases.some(time=>time>=useful.time))counts.purchased_after_useful++;
+ }
+ return {cohort_since:new Date(start).toISOString(),window_ends_at:new Date(end).toISOString(),counts,excluded_internal_actors:excluded.size,signup_order:"optional; may follow result",revenue_source:"Verified live receipts only; reconcile monetary totals with Stripe"};
+}

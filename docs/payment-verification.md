@@ -6,7 +6,7 @@ Automated route/helper checks use synthetic Stripe/Supabase responses. Initial d
 
 Monthly and founder-lifetime test-mode purchases have been verified against Stripe, signed webhook deliveries, and the isolated database. Renewal failure/recovery and cancellation subsequently passed in that sandbox. The October 31 production cutover below connected live billing and reconciled one obsolete test record. No real-money purchase or charge was made.
 
-**Full journey verification: NOT COMPLETE.** Core sandbox billing checks and production configuration checks have passed; the website has been deployed with the founder's approval. Original-task return continuity, delayed delivery, remaining price variants, real-email delivery, and the first live payment still need their own evidence. Configuration validation and mocked tests do not establish those outcomes.
+**Full journey verification: NOT COMPLETE.** Core sandbox billing checks and production configuration checks have passed; the website has been deployed with the founder's approval. Original-task return continuity and the remaining price variants were subsequently checked on November 2 below. Delayed delivery, real-email delivery, portal payment-method replacement, and the first live payment still need their own evidence. Configuration validation and mocked tests do not establish those outcomes.
 
 ### Verified Setup: October 16, 2026
 
@@ -169,6 +169,30 @@ Only the founder or developer completing those checks should replace `Not run` w
 
 ## Remaining Limits
 
-The existing founder limit counts completed redemptions; it is not an atomic reservation of the final slot across concurrent checkouts. Client-side conversion events can be blocked or missed and must not replace Stripe/database financial reporting. This work does not introduce tax calculation, refund processing, or new pricing terms.
+The existing founder limit counts completed redemptions; it is not an atomic reservation of the final slot across concurrent checkouts. Client-side conversion events can be blocked or missed and must not replace Stripe/database financial reporting. This work does not introduce tax calculation or automatic refund processing. The November 2 release documents purchase terms without changing price amounts.
 
 Monthly access requires an unexpired stored `current_period_end`; lifetime access does not. The October 31 cutover reconciled the one obsolete production test record, and the release audit found no active monthly records with missing/expired dates. Continue monitoring signed renewal delivery: a missed webhook must not be treated as proof that a customer should buy a second subscription. The account page keeps billing management available for existing Stripe customers even when paid access is inactive.
+
+## Fresh pre-ad verification: November 2, 2026 (Arizona)
+
+A fresh disposable-account run used only Umprompt Billing Test and the separate Stripe sandbox. No real-money purchase, live entitlement change, production account creation or customer email was involved. The loopback helper used normal Supabase session verification; it was not deployed.
+
+| Check | Fresh evidence |
+| --- | --- |
+| Founder Monthly USD 4.99 | Hosted Checkout paid; signed completion and invoice events HTTP 200; one founder-monthly entitlement; authenticated paid access |
+| Regular Lifetime USD 99.99 | Hosted Checkout paid; signed completion HTTP 200; one lifetime entitlement; authenticated lifetime access |
+| Generic card decline | Actual hosted Checkout displayed the decline; later success used a different documented test card |
+| Original-task continuity | A labelled synthetic saved task returned with the exact original idea/output after both cancellation and successful purchase |
+| Failed renewal | A Stripe test clock advanced the original checkout subscription; actual USD 4.99 renewal invoice failed; signed failure HTTP 200; past-due state removed paid access |
+| Recovery | The same failed invoice was paid with a documented sandbox method; signed invoice-paid HTTP 200; active subscription and paid access returned |
+| Out-of-order failure | Actual old failed-event payload replayed with a local test signature; current active state won and access remained paid |
+| Scheduled cancellation / expiry | Active access remained before the paid end; advancing the clock beyond it produced a cancelled subscription, signed deletion HTTP 200 and free access |
+| Old paid receipt | Cancelled monthly receipt could not reactivate access: HTTP 409 PLAN_INACTIVE |
+| Receipt ownership | The other disposable account could not claim a paid Lifetime receipt: HTTP 403 |
+| Unpaid receipt | Actual abandoned checkout remained unpaid and returned HTTP 409 PAYMENT_PENDING |
+| Duplicate / invalid notifications | Replaying the actual Lifetime completion twice left exactly one entitlement; invalid signature HTTP 400 |
+| Account isolation | The separate Lifetime account stayed paid through all monthly lifecycle changes |
+
+The USD 9.99 monthly and USD 34.99 founder-Lifetime variants have the separate October evidence above; together the runs cover all four price variants. Do not relabel those older checks as a new November purchase. Private test identifiers, provider records and screenshots remain outside Git. The fresh cancellation transition was driven through the sandbox API/test clock; the portal cancellation UI was checked in the prior run. Pending 3DS remains a prior-run check, not a fresh completed authentication purchase.
+
+**Still unverified:** intentionally delayed webhook delivery/return-before-webhook race, real email deliverability, portal payment-method replacement and a live-money transaction. Code checks cover fulfillment retries/storage errors, but are not evidence of those external operations. Monitor the first real customer payment rather than fabricating a live conversion.

@@ -302,3 +302,7 @@ Reload the updated app and interact with the relevant controls. Suggestions anim
 ### Search Results Still Show the Old Icon
 
 The emerald brand asset is shared by the app logo, a 192px app icon, a multi-size favicon, and a 180px Apple touch icon. Deploy the updated files to production first. Search engines cache icons and update them after recrawling; a local or protected preview cannot update the live site's search result. For Google, request indexing of the production home page in Search Console and allow time for processing. See [Google's favicon guidelines](https://developers.google.com/search/docs/appearance/favicon-in-search).
+
+## Before paid acquisition
+
+See [ad-readiness report](docs/ad-readiness-report.md) for pricing consistency, real sandbox payment evidence and remaining measurement gates. Public [examples](https://www.umprompt.com/examples), [message-focused landing](https://www.umprompt.com/write-a-message), [help](https://www.umprompt.com/help) and [purchase terms](https://www.umprompt.com/terms) explain the beginner journey. The guest-first funnel report supports signup after a useful trial result; production ingestion must still be verified before treating it as a conversion baseline.

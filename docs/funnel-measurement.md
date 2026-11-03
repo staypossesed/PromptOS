@@ -44,11 +44,12 @@ SELECT
     properties.new_task AS new_task,
     properties.outcome AS outcome,
     properties.live_mode AS live_mode,
-    properties.event_key AS event_key
+    properties.event_key AS event_key,
+    properties.action_type AS action_type
 FROM events
 WHERE properties.funnel_version = 1
   AND event IN (
-    'site_visited', 'signup_completed', 'prompt_generated', 'prompt_copied',
+    'site_visited', 'task_started', 'signup_completed', 'prompt_generated', 'prompt_copied',
     'prompt_result_confirmed', 'purchase_confirmed'
   )
 ORDER BY timestamp
@@ -84,3 +85,15 @@ Automated tests cover identity queue ordering, optional analytics, metadata filt
 - [PostHog SQL insights](https://posthog.com/docs/data-warehouse/sql/overview)
 - [Stripe fulfillment](https://docs.stripe.com/checkout/fulfillment)
 - [Stripe webhook ordering and delivery](https://docs.stripe.com/webhooks)
+
+## Guest-first advertising report (November 2, 2026)
+
+The current homepage permits a result before signup. Keep the original signup-first report for its historical cohorts; use `npm run funnel:report -- --guest-first --events <private metadata export> --since <ISO UTC start>` for new campaigns. Do not compare their denominators directly.
+
+New metadata event `task_started` measures pressing Continue or selecting an example. `prompt_generated` includes `action_type` (`prompt` or `answer`) and controlled `source` (`email` or `general`). The dedicated `/write-a-message` page uses source `email`. No ad-click IDs, arbitrary URL parameters, prompt text or email addresses are added to analytics. The first campaign can be isolated using these controlled page/task sources, rather than collecting full UTM URLs.
+
+The guest report counts visits, starts, completed first results, copies, usefulness, signup, later-day tasks and verified live purchases independently with the documented ordering checks. Signup can follow the result. A direct answer can receive usefulness feedback without copying. Instructions still need an exact-version copy before their usefulness counts. Purchases need neither a return visit nor feedback to count in the purchased total. Optional input `is_internal=true` excludes an entire staff/test actor; apply a verified internal cohort in the export. Never mark real customers internal based on a guess.
+
+Production PostHog project provided by the founder: https://us.posthog.com/project/421262/home. Schema inspection on November 2 confirmed existing visit, generation, copying, checkout-start and library events. Confirmed-usefulness, signup-completed and verified-purchase events were absent from the visible schema at that inspection. Absence is not proof of a broken capture call: there may be no qualifying user action. A controlled post-release sequence must establish delivery of those stages before the funnel is labelled verified. Sandbox payments are isolated from production analytics.
+
+For the guest-first report, include `task_started` and `action_type` from the query above. A refined direct answer can be confirmed without copying; refinement does not become another first task. Set `is_internal` only from a reviewed staff/test cohort, or exclude that cohort in the source query. String `true` and numeric `1` are normalized by the CLI.

@@ -12,6 +12,7 @@
 import posthog from "posthog-js";
 
 export type AnalyticsEvent =
+  | "task_started"
   | "workspace_create_opened"
   | "checkout_completed"
   | "checkout_failed"
