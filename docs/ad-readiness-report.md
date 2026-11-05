@@ -45,3 +45,15 @@ Added /write-a-message as a focused page for everyday adults who need help writi
 - Human usability sessions and authentic customer evidence cannot be produced by automated tests.
 
 The release improves clarity, policy consistency and payment evidence. It supports a measured pilot after the remaining launch gates are checked; it does not justify scaling acquisition solely because the build passes.
+
+## Production follow-up: November 4, 2026 (Arizona)
+
+The November 2 release was committed and pushed as 960dd3d, 89d3ed4 and 9804003. Vercel deployment DwfRuSZFu31YeEKQWmscgLbEHsfL reached READY and was aliased to https://www.umprompt.com. Public campaign and Terms content were observed after publication.
+
+A fresh live internal QA task on November 4 produced relevant email clarification questions and a real direct-answer draft. The draft retained placeholders and the supplied privacy constraints. Usefulness feedback was available before copying; the feedback and copy confirmations both worked. The task was not saved into the founder’s history. These are QA observations, not a customer testimonial or a measured commercial conversion.
+
+PostHog project 421262 then exposed task_started, answer_outcome_feedback and prompt_result_confirmed as recently received events. This closes the earlier event-name delivery gap for these client events. Matching every task/result transition, server signup/purchase ingestion and the complete production funnel still require their own evidence. Do not call the whole funnel certified. No remote dashboard was created.
+
+A code review also corrected the suggested-next-task transition to clear the previous task metric and usefulness state. A new task must receive a new identifier; ordinary refinements keep their task identity.
+
+The final live logo-reset interaction was not certified: the in-app browser automation stopped responding during the browser confirmation, and its dialog API returned no dialog. This is a concrete automation limitation, not evidence that Chrome users encounter the same failure. No browser-native confirmation was bypassed and the report does not count this transition as a completed live check.
