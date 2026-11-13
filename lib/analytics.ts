@@ -113,6 +113,7 @@ export interface EventProperties {
   result_id?: string;
   new_task?: boolean;
   outcome?: "useful" | "not_useful" | "not_tried";
+  acquisition_id?: "reddit_first_task_alpha";
   funnel_version?: number;
 }
 
@@ -121,11 +122,11 @@ let ready = false;
 const pending: PendingEvent[] = [];
 
 const allowed = new Set([
-  "category", "suggestion_id", "improved", "target_tool", "score_overall", "action_type", "option", "template_id", "pack_type", "models_compared", "model_count", "selected_model", "winner_model", "reason", "latencyMs", "estimatedCostUSD", "language", "source", "inputLanguage", "outputLanguage", "plan", "offer_type", "is_founder", "cta_variant", "user_segment", "remaining_this_week", "source_page", "task_id", "result_id", "new_task", "outcome",
+  "category", "suggestion_id", "improved", "target_tool", "score_overall", "action_type", "option", "template_id", "pack_type", "models_compared", "model_count", "selected_model", "winner_model", "reason", "latencyMs", "estimatedCostUSD", "language", "source", "inputLanguage", "outputLanguage", "plan", "offer_type", "is_founder", "cta_variant", "user_segment", "remaining_this_week", "source_page", "task_id", "result_id", "new_task", "outcome", "acquisition_id",
 ]);
 
 export function analyticsProperties(properties: EventProperties = {}): EventProperties {
-  return Object.fromEntries(Object.entries(properties).filter(([key, value]) => allowed.has(key) &&
+  return Object.fromEntries(Object.entries(properties).filter(([key, value]) => allowed.has(key) && (key !== "acquisition_id" || value === "reddit_first_task_alpha") &&
     (typeof value === "boolean" || (typeof value === "number" && Number.isFinite(value)) || (typeof value === "string" && value.length <= 120))));
 }
 
@@ -138,6 +139,39 @@ export function stripPrivateAnalytics(properties: Record<string, unknown>): Reco
   return safe;
 }
 
+// One reviewed public invitation only. Never forward arbitrary UTM values or URLs.
+const ACQUISITION_KEY = "umprompt:acquisition:v1";
+const ACQUISITION_TTL = 24 * 60 * 60 * 1000;
+type Acquisition = { id: "reddit_first_task_alpha"; capturedAt: number };
+
+export function resolveAcquisition(search: string, stored: unknown, at = Date.now()): Acquisition | null {
+  if (stored && typeof stored === "object") {
+    const value = stored as Record<string, unknown>;
+    if (value.id === "reddit_first_task_alpha" && typeof value.capturedAt === "number" &&
+      Number.isFinite(value.capturedAt) && value.capturedAt <= at && at - value.capturedAt < ACQUISITION_TTL) {
+      return { id: "reddit_first_task_alpha", capturedAt: value.capturedAt };
+    }
+  }
+  const params = new URLSearchParams(search);
+  return params.get("utm_source") === "reddit" && params.get("utm_medium") === "community" &&
+    params.get("utm_campaign") === "first_useful_result" && params.get("utm_content") === "alphaandbetausers"
+    ? { id: "reddit_first_task_alpha", capturedAt: at } : null;
+}
+
+function acquisitionProperties(): Pick<EventProperties, "acquisition_id"> {
+  if (typeof window === "undefined") return {};
+  try {
+    let stored: unknown = null;
+    try { stored = JSON.parse(window.sessionStorage.getItem(ACQUISITION_KEY) ?? "null"); } catch {}
+    const value = resolveAcquisition(window.location?.search ?? "", stored);
+    try {
+      if (value) window.sessionStorage.setItem(ACQUISITION_KEY, JSON.stringify(value));
+      else window.sessionStorage.removeItem(ACQUISITION_KEY);
+    } catch {}
+    return value ? { acquisition_id: value.id } : {};
+  } catch { return {}; }
+}
+
 export function analyticsReady(): void {
   ready = true;
   for (const item of pending.splice(0)) track(item.event, item.properties, item.occurredAt);
@@ -146,6 +180,7 @@ export function analyticsReady(): void {
 export function track(event: AnalyticsEvent, properties?: EventProperties, occurredAt = new Date()): void {
   if (typeof window === "undefined") return;
   if (!process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  properties = { ...acquisitionProperties(), ...analyticsProperties(properties) };
   if (!ready) {
     if (pending.length < 50) pending.push({ event, properties: analyticsProperties(properties), occurredAt });
     return;
@@ -168,5 +203,6 @@ export function identify(userId: string): void {
 export function resetAnalytics(clearPending = true): void {
   if (clearPending) pending.length = 0;
   if (typeof window === "undefined" || !process.env.NEXT_PUBLIC_POSTHOG_KEY) return;
+  if (clearPending) { try { window.sessionStorage.removeItem(ACQUISITION_KEY); } catch {} }
   try { posthog.reset(); } catch {}
 }

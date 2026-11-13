@@ -1,0 +1,14 @@
+{
+  "local_only": true,
+  "deployed": false,
+  "targeted_tests_passed": 23,
+  "targeted_tests_failed": 0,
+  "typescript": "passed",
+  "acquisition_value": "reddit_first_task_alpha",
+  "arbitrary_utm_forwarded": false,
+  "real_customer_conversion_verified": false,
+  "recruitment_reader_comments": 0,
+  "demo_html_visual_verification": "blocked by local browser connection timeout",
+  "historicalLocalSnapshot": true,
+  "supersededBy": "acquisition-release-verification.json"
+}

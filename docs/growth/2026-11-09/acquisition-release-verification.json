@@ -1,0 +1,45 @@
+{
+  "verifiedOnArizona": "2026-11-12",
+  "baselineDeployment": "dpl_DYPCTqaXJxANPRVuTyL19CUi64PB",
+  "baselineSourceFilesVerified": 328,
+  "productionDeployment": "dpl_3fPf2YNzcZYuAJWERpLrFzd2po23",
+  "productionUrl": "https://www.umprompt.com",
+  "demoUrl": "https://www.umprompt.com/first-task-demo.html",
+  "localRegression": {
+    "passed": 283,
+    "failed": 0,
+    "typescript": "passed",
+    "extensionBuild": "passed"
+  },
+  "demo": {
+    "desktop": "visually verified",
+    "mobileWidth": 390,
+    "imagesLoaded": 2,
+    "cta": "verified"
+  },
+  "acquisition": {
+    "id": "reddit_first_task_alpha",
+    "posthogProject": 421262,
+    "diagnosticIncludesTestAccounts": true,
+    "qaEvents": [
+      {
+        "minuteUtc": "2026-11-12T20:26:00Z",
+        "site_visited": 1,
+        "task_started": 1
+      },
+      {
+        "minuteUtc": "2026-11-12T20:28:00Z",
+        "site_visited": 1,
+        "task_started": 0
+      }
+    ],
+    "independentUsersVerified": 0,
+    "completeProductionUsefulnessJourneyVerified": false
+  },
+  "limitations": [
+    "Internal QA is not recruitment, customers or revenue.",
+    "task_started has no task_id; earliest funnel steps remain person-level.",
+    "Generated/copied/usefulness propagation was verified locally, not in this live smoke check.",
+    "Store publication and native installed-extension acceptance were not checked in this commit task."
+  ]
+}
