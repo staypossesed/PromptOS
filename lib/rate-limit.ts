@@ -19,7 +19,7 @@
 import { Ratelimit } from "@upstash/ratelimit";
 import { Redis } from "@upstash/redis";
 
-export type RateLimitAction = "generate" | "generate_paid" | "score" | "optimize" | "pack" | "model_lab" | "clarify" | "guest_clarify";
+export type RateLimitAction = "generate" | "generate_paid" | "score" | "optimize" | "pack" | "model_lab" | "clarify" | "guest_clarify" | "writing_burst" | "writing_daily";
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -29,6 +29,8 @@ export interface RateLimitResult {
 }
 
 const LIMITS: Record<RateLimitAction, { max: number; windowMs: number; window: string }> = {
+  writing_burst: { max: 60, windowMs: 60 * 1000, window: "1 m" },
+  writing_daily: { max: 600, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   guest_clarify: { max: 6, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   clarify:   { max: 30, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
   generate:  { max: 20, windowMs: 24 * 60 * 60 * 1000, window: "1 d" },
@@ -50,6 +52,8 @@ function getUpstashLimiters(): Map<RateLimitAction, Ratelimit> | null {
   try {
     const redis = Redis.fromEnv();
     _upstashLimiters = new Map([
+      ["writing_burst", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(60, "1 m"), prefix: "umprompt:rl:writing-burst", analytics: false })],
+      ["writing_daily", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(600, "1 d"), prefix: "umprompt:rl:writing-daily", analytics: false })],
       ["guest_clarify", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(6, "1 d"), prefix: "umprompt:rl:guest-clarify", analytics: false })],
       ["clarify", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(30, "1 d"), prefix: "umprompt:rl:clarify", analytics: false })],
       ["generate", new Ratelimit({ redis, limiter: Ratelimit.slidingWindow(LIMITS.generate.max, LIMITS.generate.window as `${number} ${"ms" | "s" | "m" | "h" | "d"}`), prefix: "umprompt:rl:generate", analytics: false })],

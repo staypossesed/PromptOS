@@ -14,6 +14,8 @@ A bounded one-hour session draft preserves work through sign-in and checkout. Ac
 
 ## Language and accessibility
 
+The main idea field also has optional [writing suggestions](writing-suggestions.md). Local phrase matching stays in the browser; cloud continuations require explicit tab-scoped consent and never insert themselves. The separate completion quota does not spend a free completed task.
+
 The first server render selects English, Russian, or Spanish from a saved cookie or the browser's weighted Accept-Language header. English is the fallback. A visible switcher remembers an explicit choice. Switching languages preserves task details and maps selected answers to their translated equivalents. No geolocation permission or location lookup is used. New interface copy is authored separately in the three languages; this is not a certification of independent native-speaker review of every legacy page.
 
 The design uses warm neutrals, muted greens, large labeled controls, keyboard focus, reduced-motion support, and a small illustrative example. Rotating starting ideas pause on focus and have an explicit pause control.

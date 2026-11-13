@@ -1,0 +1,173 @@
+{
+  "verifiedAt": "2026-11-07T02:24:49.860Z",
+  "url": "https://www.umprompt.com/",
+  "cases": [
+    {
+      "language": "en",
+      "prefix": "look for my paper and explain the meaning of logory",
+      "suffix": " as used in your paper.",
+      "word": "as",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "Explain why a quasicrystalline struc",
+      "suffix": "ture",
+      "word": "structure",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "I need to ask my teacher for an extens",
+      "suffix": "ion",
+      "word": "extension",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "Help me understand the word serendip",
+      "suffix": "ity",
+      "word": "serendipity",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "I want to organise a neighbourhood seed exchange and",
+      "suffix": " need help planning the event.",
+      "word": "need",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "Please help me compare two secondhand sewing machines based on",
+      "suffix": " their condition, price, and features.",
+      "word": "their",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "Help me prepare questions for a conversation with a physiother",
+      "suffix": "apist",
+      "word": "physiotherapist",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "en",
+      "prefix": "Make this request more empathetic without changing",
+      "suffix": " the core message.",
+      "word": "the",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Помоги понять, что означает слово «эмерджентность»",
+      "suffix": " в системном мышлении.",
+      "word": "в",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Объясни различие между корреляцией и каузаль",
+      "suffix": "ностью",
+      "word": "каузальностью",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Помоги организовать обмен семенами между соседями с учётом",
+      "suffix": " предпочтений и наличия у каждого.",
+      "word": "предпочтений",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Мне нужно написать в библиотеку о восстановлении старой рукоп",
+      "suffix": "иси",
+      "word": "рукописи",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Предложи, как бережно обсудить разногласия с коллегой, не",
+      "suffix": " обострив конфликт.",
+      "word": "обострив",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "ru",
+      "prefix": "Подскажи вопросы для встречи с архитектором по поводу переплан",
+      "suffix": "ировки",
+      "word": "перепланировки",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Ayúdame a entender el significado de serendip",
+      "suffix": "ia",
+      "word": "serendipia",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Necesito pedir a mi profesora una prór",
+      "suffix": "roga",
+      "word": "prórroga",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Quiero organizar un intercambio de semillas entre vecinos y",
+      "suffix": " necesito ideas para empezar.",
+      "word": "necesito",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Explica la diferencia entre correlación y causal",
+      "suffix": "idad",
+      "word": "causalidad",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Ayúdame a escribir a la biblioteca sobre un manus",
+      "suffix": "crito",
+      "word": "manuscrito",
+      "source": "ai",
+      "unchanged": true
+    },
+    {
+      "language": "es",
+      "prefix": "Quiero hablar de un desacuerdo con respeto, sin",
+      "suffix": " atacar a la otra persona.",
+      "word": "atacar",
+      "source": "ai",
+      "unchanged": true
+    }
+  ],
+  "acceptance": {
+    "before": "I need to ask my teacher for an extens",
+    "accepted": "I need to ask my teacher for an extension ",
+    "nativeUndo": "I need to ask my teacher for an extens"
+  },
+  "consent": "Explicit allow for this tab; AI disabled before acceptance",
+  "userOriginalTabUntouched": true
+}

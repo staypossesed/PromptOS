@@ -1,0 +1,109 @@
+{
+  "url": "https://www.umprompt.com/",
+  "date": "2026-11-06",
+  "cases": [
+    {
+      "input": "help me to write a",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "help me write a",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "HELP ME TO WRITE A",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "  help  me to write a ",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "please help me to write a",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "can you help me to write a",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "I want to write a",
+      "suffix": "polite email asking for an update.",
+      "source": "local"
+    },
+    {
+      "input": "I need to write an email",
+      "suffix": "asking for more time.",
+      "source": "local"
+    },
+    {
+      "input": "help me prepare for the NCLEX",
+      "suffix": "with practice questions.",
+      "source": "local"
+    },
+    {
+      "input": "help me plan my week",
+      "suffix": "with room for rest.",
+      "source": "local"
+    },
+    {
+      "input": "Помоги мне написать",
+      "suffix": "короткое вежливое письмо.",
+      "source": "local"
+    },
+    {
+      "input": "Помоги написать пись",
+      "suffix": "мо с просьбой дать больше времени.",
+      "source": "local"
+    },
+    {
+      "input": "Напиши пост",
+      "suffix": "в дружелюбном тоне.",
+      "source": "local"
+    },
+    {
+      "input": "Составь план",
+      "suffix": "недели с учётом моих дел.",
+      "source": "local"
+    },
+    {
+      "input": "Ayudame a escribir un",
+      "suffix": "correo breve y educado.",
+      "source": "local"
+    },
+    {
+      "input": "Necesito escribir un",
+      "suffix": "correo breve y educado.",
+      "source": "local"
+    },
+    {
+      "input": "Quiero organizar la semana",
+      "suffix": "dejando tiempo para descansar.",
+      "source": "local"
+    },
+    {
+      "input": "Planifica un viaje",
+      "suffix": "según mi presupuesto e intereses.",
+      "source": "local"
+    },
+    {
+      "input": "Create a chatbot",
+      "suffix": "that answers questions using information I provide.",
+      "source": "local"
+    },
+    {
+      "input": "Write a short post",
+      "suffix": "in a friendly tone.",
+      "source": "local"
+    }
+  ],
+  "tabAcceptance": true,
+  "nativeUndo": true,
+  "cloudEnabled": false
+}

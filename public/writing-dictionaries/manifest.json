@@ -1,0 +1,32 @@
+{
+  "version": "2026-11-06-1",
+  "source": "https://github.com/hermitdave/FrequencyWords",
+  "revision": "525f9b560de45753a5ea01069454e72e9aa541c6",
+  "sourceDataset": "OpenSubtitles 2018 frequency lists (top 50,000 per language)",
+  "license": "CC-BY-SA-4.0",
+  "licenseUrl": "https://creativecommons.org/licenses/by-sa/4.0/",
+  "modifications": "Letters-only, NFC/lowercase, 2–40 characters, language script, deduplication and explicit/slur stem exclusions; frequency order retained.",
+  "languages": {
+    "en": {
+      "filename": "en-2026-11-06-1.json",
+      "words": 48580,
+      "bytes": 488765,
+      "sha256": "9d36a2db4dde377d2ed8bc795f03c4a510c67f1e276edb76034214c16df9e4e3",
+      "sourceSha256": "5351ff405b1126ef555791dd4d9798a48e3e9a501a9fc481a9da957752cfb458"
+    },
+    "ru": {
+      "filename": "ru-2026-11-06-1.json",
+      "words": 48649,
+      "bytes": 875313,
+      "sha256": "ee25a5972dd11870d8b50fe50cc4b2b4b80419b2aaabfa04700b2e3124d7b06c",
+      "sourceSha256": "6095f507cc167488ec66ada5a85ac50433503a08ad24a07c6eabdf54352c4e7f"
+    },
+    "es": {
+      "filename": "es-2026-11-06-1.json",
+      "words": 49634,
+      "bytes": 534532,
+      "sha256": "9a0f54b1d94ab1541e3f7f09b916becf9b9c3a573165342ccb8d597161c734b2",
+      "sourceSha256": "dcff3ad4316192f4dc4ff7d26e637c6ff314ef1ca0f3f720c5649018a71056c0"
+    }
+  }
+}

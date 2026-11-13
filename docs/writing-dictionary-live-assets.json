@@ -1,0 +1,28 @@
+{
+  "verifiedAt": "2026-11-09T01:39:06.994Z",
+  "base": "https://www.umprompt.com",
+  "version": "2026-11-06-1",
+  "passed": true,
+  "checks": [
+    {
+      "language": "en",
+      "wordForms": 48580,
+      "status": 200,
+      "sha256": "9d36a2db4dde377d2ed8bc795f03c4a510c67f1e276edb76034214c16df9e4e3"
+    },
+    {
+      "language": "ru",
+      "wordForms": 48649,
+      "status": 200,
+      "sha256": "ee25a5972dd11870d8b50fe50cc4b2b4b80419b2aaabfa04700b2e3124d7b06c"
+    },
+    {
+      "language": "es",
+      "wordForms": 49634,
+      "status": 200,
+      "sha256": "9a0f54b1d94ab1541e3f7f09b916becf9b9c3a573165342ccb8d597161c734b2"
+    }
+  ],
+  "attributionPublished": true,
+  "note": "Live public assets exactly match the audited bytes. Actual UI behavior is recorded separately."
+}

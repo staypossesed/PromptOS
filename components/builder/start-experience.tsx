@@ -20,6 +20,7 @@ import { ScorePanel } from "@/components/builder/score-panel";
 import { OutcomeFeedback } from "@/components/builder/outcome-feedback";
 import { PromptRenderer } from "@/components/builder/prompt-output";
 import { IdeaPlaceholder } from "@/components/builder/idea-placeholder";
+import { WritingAssistant } from "@/components/builder/writing-assistant";
 import { IdeaReview } from "@/components/builder/idea-review";
 import { composerCopy } from "@/lib/composer-copy";
 import { rememberVersion, type WorkspaceItem, type ContextProfile } from "@/lib/workspace";
@@ -217,7 +218,16 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
       {!sourceLoading&&!sourceError&&(sourceId||routineId)&&authReady&&!userId&&<div className="daily-memory"><p>{d.signin}</p><button className="beginner-primary" onClick={signIn}>{c.signIn}</button></div>}
       {!sourceLoading&&!sourceError&&(!(sourceId||routineId)||!!userId)&&<>
       {step === 0 && <><section className="beginner-hero"><div className="beginner-intro"><p className="beginner-eyebrow"><Sparkles size={16} />{c.eyebrow}</p><h1>{campaign ? ec.emailTitle : c.title}</h1><p className="beginner-subtitle">{campaign ? ec.emailSubtitle : c.subtitle}</p>
-        <form className="beginner-composer" onSubmit={(e) => { e.preventDefault(); begin(); }}><label htmlFor="beginner-idea">{c.ideaLabel}</label><div className="beginner-idea-field" data-active={!idea && !inputFocused}><textarea onFocus={() => setInputFocused(true)} onBlur={() => setInputFocused(false)} id="beginner-idea" maxLength={4000} value={idea} onChange={(e) => { setIdea(e.target.value); setAnswers({}); setCustom({}); setError(""); }} placeholder={c.placeholder} rows={3} /><IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={campaign ? [c.tasks[1].idea] : c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} /></div><p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p><button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button><p className="beginner-next-step">{ec.next}</p></form>
+        <form className="beginner-composer" onSubmit={(e) => { e.preventDefault(); begin(); }}>
+          <label htmlFor="beginner-idea">{c.ideaLabel}</label>
+          <WritingAssistant id="beginner-idea" value={idea} language={language} owner={userId ?? "guest"}
+            onChange={value => { setIdea(value); setAnswers({}); setCustom({}); setError(""); }}
+            onFocusChange={setInputFocused} placeholder={c.placeholder}>
+            <IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={campaign ? [c.tasks[1].idea] : c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} />
+          </WritingAssistant>
+          <p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p>
+          <button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button><p className="beginner-next-step">{ec.next}</p>
+        </form>
         <p className="beginner-provider beginner-clarify-disclosure">{qc.notice}</p><div className="beginner-below"><p><ShieldCheck size={15} />{c.free}</p><button type="button" onClick={() => ideas.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>{c.browse}<ArrowRight size={15} /></button></div>
       </div><aside className="beginner-preview" aria-label={c.previewLabel}><p className="beginner-preview-label">{c.previewLabel}</p><StudyIllustration /><p className="beginner-preview-from">{preview ? preview.idea : c.previewFrom}</p><div className="beginner-preview-line"><ArrowRight size={20} /></div><div className="beginner-preview-to"><span className="beginner-check"><Check size={18} /></span><h2>{preview ? ec.prompt : c.previewTo}</h2><p>{preview ? preview.prompt : c.previewDetails}</p></div><button type="button" onClick={() => pick(c.tasks[campaign ? 1 : 0].idea)}>{c.useIdea}<ArrowRight size={17} /></button><small>{preview ? ec.sampleNote : c.previewNote}</small></aside></section>
         <section ref={ideas} className="beginner-ideas"><div className="beginner-section-heading"><div><h2>{c.ideasTitle}</h2><p>{c.ideasSubtitle}</p></div><Sparkles size={23} aria-hidden="true" /></div><div className="beginner-task-grid">{c.tasks.map((task, i) => { const Icon = icons[i]; return <button type="button" className={"beginner-task beginner-task-" + i} key={task.id} onClick={() => pick(task.idea)}><span className="beginner-task-icon"><Icon size={23} /></span><h3>{task.title}</h3><p>{task.description}</p><span className="beginner-task-arrow"><ArrowRight size={18} /></span></button>; })}</div></section>

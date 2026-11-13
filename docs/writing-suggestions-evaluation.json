@@ -1,0 +1,402 @@
+{
+  "evaluatedAt": "2026-11-06T00:03:21.932Z",
+  "endpoint": "https://www.umprompt.com/api/writing/complete",
+  "cases": 20,
+  "structurallyValid": 20,
+  "medianLatencyMs": 1734,
+  "p95LatencyMs": 2174,
+  "reviewNote": "These are 20 synthetic real-provider HTTP requests. Structural checks are automated; read every continuation against its criterion before reporting semantic success. Latency includes HTTP and rate limiting, not the UI pause. This is not a guarantee for every future request.",
+  "rows": [
+    {
+      "id": 1,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Help me prepare for the NCLEX in three months, with",
+      "criterion": "Continue a study request; no invented daily study time or passing guarantee.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " a clear study plan I can adjust as I go.",
+      "combined": "Help me prepare for the NCLEX in three months, with a clear study plan I can adjust as I go.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 2336,
+      "manualReview": {
+        "note": "Flexible study-plan continuation preserves the stated three-month period.",
+        "passed": true
+      }
+    },
+    {
+      "id": 2,
+      "language": "en",
+      "ui": "ru",
+      "prefix": "Write an email asking my manager for two more days, without sharing my private reason, and",
+      "criterion": "Polite deadline request, preserving the privacy boundary.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " keeping the tone professional and concise.",
+      "combined": "Write an email asking my manager for two more days, without sharing my private reason, and keeping the tone professional and concise.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1517,
+      "manualReview": {
+        "note": "Keeps the private reason private and asks for a professional tone.",
+        "passed": true
+      }
+    },
+    {
+      "id": 3,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Plan my week around work from 9 to 6, keep Sunday free, and",
+      "criterion": "Practical weekly planning that does not overwrite work or Sunday constraints.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " suggest categories for the remaining time.",
+      "combined": "Plan my week around work from 9 to 6, keep Sunday free, and suggest categories for the remaining time.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1577,
+      "manualReview": {
+        "note": "Preserves work hours and the free Sunday.",
+        "passed": true
+      }
+    },
+    {
+      "id": 4,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Plan vegetarian dinners for two people with 20 minutes of cooking time, using",
+      "criterion": "Continue a practical meal request without changing people, diet or time.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " simple, easy-to-find ingredients.",
+      "combined": "Plan vegetarian dinners for two people with 20 minutes of cooking time, using simple, easy-to-find ingredients.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1509,
+      "manualReview": {
+        "note": "Keeps the vegetarian diet, people count and cooking-time limit.",
+        "passed": true
+      }
+    },
+    {
+      "id": 5,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Explain photosynthesis to a child in simple words, with",
+      "criterion": "Ask for an accessible explanation, not answer the science question.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " a short, clear example.",
+      "combined": "Explain photosynthesis to a child in simple words, with a short, clear example.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1609,
+      "manualReview": {
+        "note": "Asks for an accessible example without answering the task.",
+        "passed": true
+      }
+    },
+    {
+      "id": 6,
+      "language": "en",
+      "ui": "es",
+      "prefix": "Help me practise for a retail job interview by",
+      "criterion": "Suggest an interview-practice method without inventing experience.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " asking me one question at a time.",
+      "combined": "Help me practise for a retail job interview by asking me one question at a time.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 2166,
+      "manualReview": {
+        "note": "Provides an interview practice method in the user voice.",
+        "passed": true
+      }
+    },
+    {
+      "id": 7,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Help me follow up with a supplier about a late order, without inventing a delivery date, and",
+      "criterion": "Continue an honest supplier update request.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " keeping the tone professional.",
+      "combined": "Help me follow up with a supplier about a late order, without inventing a delivery date, and keeping the tone professional.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1745,
+      "manualReview": {
+        "note": "Preserves honesty about unknown delivery dates.",
+        "passed": true
+      }
+    },
+    {
+      "id": 8,
+      "language": "en",
+      "ui": "en",
+      "prefix": "Help me plan a chatbot that answers questions about my products, without",
+      "criterion": "Continue the chatbot task, not a study template or an assistant answer.",
+      "detectedLanguage": "en",
+      "status": 200,
+      "source": "ai",
+      "suffix": " inventing details about those products.",
+      "combined": "Help me plan a chatbot that answers questions about my products, without inventing details about those products.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1701,
+      "manualReview": {
+        "note": "Stays on product-chatbot instructions and avoids invented product facts.",
+        "passed": true
+      }
+    },
+    {
+      "id": 9,
+      "language": "ru",
+      "ui": "en",
+      "prefix": "Помоги подготовиться к NCLEX за три месяца, добавь",
+      "criterion": "Russian continuation about exam practice, no invented schedule or guarantee.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " категории тем для повторения.",
+      "combined": "Помоги подготовиться к NCLEX за три месяца, добавь категории тем для повторения.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1778,
+      "manualReview": {
+        "note": "Russian study-topic continuation retains NCLEX and three months.",
+        "passed": true
+      }
+    },
+    {
+      "id": 10,
+      "language": "ru",
+      "ui": "ru",
+      "prefix": "Помоги ответить недовольному клиенту спокойно, не обещая возврат денег, и",
+      "criterion": "Russian customer reply that respects the no-refund-promise boundary.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " не придумывая фактов о ситуации.",
+      "combined": "Помоги ответить недовольному клиенту спокойно, не обещая возврат денег, и не придумывая фактов о ситуации.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1887,
+      "manualReview": {
+        "note": "Preserves the no-refund promise boundary and factual reply.",
+        "passed": true
+      }
+    },
+    {
+      "id": 11,
+      "language": "ru",
+      "ui": "ru",
+      "prefix": "Составь план недели, оставь воскресенье свободным и",
+      "criterion": "Russian weekly-planning continuation with room for rest.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " предложи категории для остальных дней.",
+      "combined": "Составь план недели, оставь воскресенье свободным и предложи категории для остальных дней.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1690,
+      "manualReview": {
+        "note": "Keeps Sunday free and plans the remaining days.",
+        "passed": true
+      }
+    },
+    {
+      "id": 12,
+      "language": "ru",
+      "ui": "es",
+      "prefix": "Объясни, что такое сложный процент, простыми словами и",
+      "criterion": "Russian explanation request; no invented financial recommendation or figures.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " с коротким примером.",
+      "combined": "Объясни, что такое сложный процент, простыми словами и с коротким примером.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1734,
+      "manualReview": {
+        "note": "Russian request for a short explanatory example, no financial claim.",
+        "passed": true
+      }
+    },
+    {
+      "id": 13,
+      "language": "ru",
+      "ui": "ru",
+      "prefix": "Помоги спланировать поездку с бюджетом 300 долларов, учитывая",
+      "criterion": "Continue travel planning without inventing the destination or travel dates.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " возможные категории расходов.",
+      "combined": "Помоги спланировать поездку с бюджетом 300 долларов, учитывая возможные категории расходов.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 2174,
+      "manualReview": {
+        "note": "Retains the supplied budget and considers expense categories.",
+        "passed": true
+      }
+    },
+    {
+      "id": 14,
+      "language": "ru",
+      "ui": "ru",
+      "prefix": "Предложи идеи подарка для друга, опираясь на",
+      "criterion": "Russian gift request; no invented age or personal interests.",
+      "detectedLanguage": "ru",
+      "status": 200,
+      "source": "ai",
+      "suffix": " то, что я о нём расскажу.",
+      "combined": "Предложи идеи подарка для друга, опираясь на то, что я о нём расскажу.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1864,
+      "manualReview": {
+        "note": "Explicitly waits for the friend details instead of inventing interests.",
+        "passed": true
+      }
+    },
+    {
+      "id": 15,
+      "language": "es",
+      "ui": "en",
+      "prefix": "Ayúdame a preparar un examen en tres meses con",
+      "criterion": "Natural Spanish study-request continuation.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " un plan de estudio claro y flexible.",
+      "combined": "Ayúdame a preparar un examen en tres meses con un plan de estudio claro y flexible.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1746,
+      "manualReview": {
+        "note": "Natural Spanish flexible study-plan continuation.",
+        "passed": true
+      }
+    },
+    {
+      "id": 16,
+      "language": "es",
+      "ui": "es",
+      "prefix": "Necesito escribir un correo para pedir más tiempo, sin explicar mi motivo personal, y",
+      "criterion": "Spanish email request retaining privacy and avoiding an invented excuse.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " manteniendo un tono profesional y respetuoso.",
+      "combined": "Necesito escribir un correo para pedir más tiempo, sin explicar mi motivo personal, y manteniendo un tono profesional y respetuoso.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1560,
+      "manualReview": {
+        "note": "Spanish professional email preserves the private reason.",
+        "passed": true
+      }
+    },
+    {
+      "id": 17,
+      "language": "es",
+      "ui": "ru",
+      "prefix": "Planifica mi semana y deja el domingo libre para",
+      "criterion": "Spanish weekly plan; keep Sunday for rest or personal time, not work.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " lo que surja.",
+      "combined": "Planifica mi semana y deja el domingo libre para lo que surja.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1633,
+      "manualReview": {
+        "note": "Spanish personal-time continuation keeps Sunday free.",
+        "passed": true
+      }
+    },
+    {
+      "id": 18,
+      "language": "es",
+      "ui": "es",
+      "prefix": "Planifica comidas vegetarianas para dos personas usando",
+      "criterion": "Spanish vegetarian meal planning without invented dietary requirements.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " ingredientes de temporada disponibles.",
+      "combined": "Planifica comidas vegetarianas para dos personas usando ingredientes de temporada disponibles.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1556,
+      "manualReview": {
+        "note": "Retains Spanish vegetarian planning for two people.",
+        "passed": true
+      }
+    },
+    {
+      "id": 19,
+      "language": "es",
+      "ui": "es",
+      "prefix": "Ayudame a preparar una entrevista de trabajo con",
+      "criterion": "Spanish without accents in the prefix; continue interview practice.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " preguntas claras de una en una.",
+      "combined": "Ayudame a preparar una entrevista de trabajo con preguntas claras de una en una.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 2163,
+      "manualReview": {
+        "note": "Recognizes unaccented Spanish and asks one interview question at a time.",
+        "passed": true
+      }
+    },
+    {
+      "id": 20,
+      "language": "es",
+      "ui": "es",
+      "prefix": "Explica este tema con palabras sencillas y",
+      "criterion": "Spanish accessible explanation request, not a full answer.",
+      "detectedLanguage": "es",
+      "status": 200,
+      "source": "ai",
+      "suffix": " ejemplos claros.",
+      "combined": "Explica este tema con palabras sencillas y ejemplos claros.",
+      "structurallyValid": true,
+      "error": null,
+      "latencyMs": 1545,
+      "manualReview": {
+        "note": "Spanish clear examples continue the explanation request.",
+        "passed": true
+      }
+    }
+  ],
+  "manualReviewSummary": {
+    "method": "Manual reading of every combined request against the stated criterion; not an independent human usability test or a guarantee of future model behavior.",
+    "passed": 20,
+    "reviewed": 20
+  },
+  "deployment": {
+    "id": "dpl_2hd96B4dnrRjpC4auVTYecmcEeL2",
+    "url": "https://prompt-gekrwo51l-do4-u.vercel.app",
+    "alias": "https://www.umprompt.com",
+    "status": "READY"
+  }
+}

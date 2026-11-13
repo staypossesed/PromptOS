@@ -19,6 +19,9 @@ export async function middleware(request: NextRequest) {
 
   // Extension requests verify their bearer session in the route, never web cookies.
   if (pathname.startsWith("/api/extension/")) return NextResponse.next({ request });
+  // Public opt-in completions enforce their own origin, consent and distributed IP limits.
+  // They neither need an auth lookup on every pause nor receive account/profile context.
+  if (pathname === "/api/writing/complete") return NextResponse.next({ request });
 
   // Create the Supabase middleware client.
   // IMPORTANT: we must await getUser() before returning supabaseResponse

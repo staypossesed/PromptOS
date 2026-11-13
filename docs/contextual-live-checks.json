@@ -1,0 +1,43 @@
+{
+  "verifiedAt": "2026-11-07T02:20:24.410Z",
+  "base": "https://www.umprompt.com",
+  "passed": 8,
+  "checks": [
+    {
+      "check": "localized homepage; visible activation; AI initially off",
+      "language": "en",
+      "status": 200
+    },
+    {
+      "check": "localized homepage; visible activation; AI initially off",
+      "language": "ru",
+      "status": 200
+    },
+    {
+      "check": "localized homepage; visible activation; AI initially off",
+      "language": "es",
+      "status": 200
+    },
+    {
+      "check": "published privacy disclosure",
+      "status": 200
+    },
+    {
+      "check": "missing consent rejected",
+      "status": 403
+    },
+    {
+      "check": "foreign origin rejected",
+      "status": 403
+    },
+    {
+      "check": "private context override rejected",
+      "status": 422
+    },
+    {
+      "check": "apparent private identifier suppressed",
+      "status": 200
+    }
+  ],
+  "limitation": "HTTP checks only; not a visual browser or native undo test."
+}

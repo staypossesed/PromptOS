@@ -1,0 +1,10 @@
+Offline autocomplete vocabulary
+
+Adapted from FrequencyWords, Hermit Dave, OpenSubtitles 2018.
+Source: https://github.com/hermitdave/FrequencyWords/tree/525f9b560de45753a5ea01069454e72e9aa541c6/content/2018
+Content license: Creative Commons Attribution-ShareAlike 4.0 International
+License: https://creativecommons.org/licenses/by-sa/4.0/
+Derived word lists are distributed under the same CC-BY-SA-4.0 license.
+Modifications: Letters-only, NFC/lowercase, 2–40 characters, language script, deduplication and explicit/slur stem exclusions; frequency order retained.
+These are corpus word forms, not an authoritative dictionary of every word.
+No user writing is included.

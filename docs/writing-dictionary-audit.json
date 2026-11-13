@@ -1,0 +1,52 @@
+{
+  "version": "2026-11-06-1",
+  "sourceRevision": "525f9b560de45753a5ea01069454e72e9aa541c6",
+  "generatedAt": "2026-11-09T01:34:57.307Z",
+  "scope": "Every deployed corpus word form and authored word; every distinct proper character prefix. Completion may be any valid matching word, not a claim of intended wording. Whole grammatical connector boundaries are checked separately.",
+  "languages": [
+    {
+      "language": "en",
+      "corpusWordForms": 48580,
+      "indexEntries": 48580,
+      "authoredWords": 355,
+      "totalDistinctWords": 48589,
+      "prefixOccurrences": 294481,
+      "distinctProperPrefixes": 80440,
+      "intentionalConnectorBoundaries": 86,
+      "indexLookupP95Ms": 0.011199999999917054,
+      "localPathP95Ms": 0.060099999999692955,
+      "elapsedMs": 4536.3077
+    },
+    {
+      "language": "ru",
+      "corpusWordForms": 48649,
+      "indexEntries": 47706,
+      "authoredWords": 316,
+      "totalDistinctWords": 48683,
+      "prefixOccurrences": 316541,
+      "distinctProperPrefixes": 60674,
+      "intentionalConnectorBoundaries": 35,
+      "indexLookupP95Ms": 0.02289999999993597,
+      "localPathP95Ms": 0.0787000000000262,
+      "elapsedMs": 4771.6358
+    },
+    {
+      "language": "es",
+      "corpusWordForms": 49634,
+      "indexEntries": 47216,
+      "authoredWords": 282,
+      "totalDistinctWords": 49651,
+      "prefixOccurrences": 326687,
+      "distinctProperPrefixes": 73903,
+      "intentionalConnectorBoundaries": 128,
+      "indexLookupP95Ms": 0.012499999998908606,
+      "localPathP95Ms": 0.05279999999947904,
+      "elapsedMs": 3840.425299999999
+    }
+  ],
+  "failures": [],
+  "totalWords": 146923,
+  "totalDistinctPrefixes": 215017,
+  "totalPrefixOccurrences": 937709,
+  "passed": true
+}

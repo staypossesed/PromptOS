@@ -1,0 +1,317 @@
+{
+  "verifiedAt": "2026-11-09T01:38:12.901Z",
+  "deployment": "dpl_DYPCTqaXJxANPRVuTyL19CUi64PB",
+  "url": "https://www.umprompt.com/",
+  "localCases": [
+    {
+      "prefix": "i want to prepare for an exam for my math cla",
+      "suffix": "ss.",
+      "word": "class.",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Help me understand photosynt",
+      "suffix": "hesis",
+      "word": "photosynthesis",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Please explain mitochond",
+      "suffix": "rial",
+      "word": "mitochondrial",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "I need notes about electroencephal",
+      "suffix": "ogram",
+      "word": "electroencephalogram",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Can you explain archaeol",
+      "suffix": "ogists",
+      "word": "archaeologists",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Please explain the meaning of serendip",
+      "suffix": "ity",
+      "word": "serendipity",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Help me understand PHOTOSYNTH",
+      "suffix": "ESIS",
+      "word": "PHOTOSYNTHESIS",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги разобраться в термине фотосинт",
+      "suffix": "ез",
+      "word": "фотосинтез",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Объясни слово митохонд",
+      "suffix": "рия",
+      "word": "митохондрия",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги понять слово электроэнцефал",
+      "suffix": "ограмма",
+      "word": "электроэнцефалограмма",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Мне нужно распис",
+      "suffix": "ание",
+      "word": "расписание",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги обсудить переплан",
+      "suffix": "ировка",
+      "word": "перепланировка",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Объясни слово каузаль",
+      "suffix": "ность",
+      "word": "каузальность",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Ayúdame a entender fotosínt",
+      "suffix": "esis",
+      "word": "fotosíntesis",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Necesito información sobre mitocond",
+      "suffix": "ria",
+      "word": "mitocondria",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Explica electroencefal",
+      "suffix": "ograma",
+      "word": "electroencefalograma",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Necesito una prór",
+      "suffix": "roga",
+      "word": "prórroga",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Ayúdame a escribir sobre un manus",
+      "suffix": "crito",
+      "word": "manuscrito",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Explica la causal",
+      "suffix": "idad",
+      "word": "causalidad",
+      "mode": "local",
+      "unchanged": true
+    },
+    {
+      "prefix": "Quiero preparar mi currí",
+      "suffix": "culum",
+      "word": "currículum",
+      "mode": "local",
+      "unchanged": true
+    }
+  ],
+  "productionCases": [
+    {
+      "prefix": "i want to prepare for an exam for my math cla",
+      "suffix": "ss.",
+      "word": "class.",
+      "mode": "local",
+      "dictionary": "0",
+      "unchanged": true
+    },
+    {
+      "prefix": "Help me understand photosynt",
+      "suffix": "hesis",
+      "word": "photosynthesis",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "Please explain mitochond",
+      "suffix": "rial",
+      "word": "mitochondrial",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "I need notes about electroencephal",
+      "suffix": "ogram",
+      "word": "electroencephalogram",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "Can you explain archaeol",
+      "suffix": "ogists",
+      "word": "archaeologists",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "Please explain the meaning of serendip",
+      "suffix": "ity",
+      "word": "serendipity",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "Help me understand PHOTOSYNTH",
+      "suffix": "ESIS",
+      "word": "PHOTOSYNTHESIS",
+      "mode": "local",
+      "dictionary": "48580",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги разобраться в термине фотосинт",
+      "suffix": "ез",
+      "word": "фотосинтез",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Объясни слово митохонд",
+      "suffix": "рия",
+      "word": "митохондрия",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги понять слово электроэнцефал",
+      "suffix": "ограмма",
+      "word": "электроэнцефалограмма",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Мне нужно распис",
+      "suffix": "ание",
+      "word": "расписание",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Помоги обсудить переплан",
+      "suffix": "ировка",
+      "word": "перепланировка",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Объясни слово каузаль",
+      "suffix": "ность",
+      "word": "каузальность",
+      "mode": "local",
+      "dictionary": "47706",
+      "unchanged": true
+    },
+    {
+      "prefix": "Ayúdame a entender fotosínt",
+      "suffix": "esis",
+      "word": "fotosíntesis",
+      "mode": "local",
+      "dictionary": "0",
+      "unchanged": true
+    },
+    {
+      "prefix": "Necesito información sobre mitocond",
+      "suffix": "ria",
+      "word": "mitocondria",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    },
+    {
+      "prefix": "Explica electroencefal",
+      "suffix": "ograma",
+      "word": "electroencefalograma",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    },
+    {
+      "prefix": "Necesito una prór",
+      "suffix": "roga",
+      "word": "prórroga",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    },
+    {
+      "prefix": "Ayúdame a escribir sobre un manus",
+      "suffix": "crito",
+      "word": "manuscrito",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    },
+    {
+      "prefix": "Explica la causal",
+      "suffix": "idad",
+      "word": "causalidad",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    },
+    {
+      "prefix": "Quiero preparar mi currí",
+      "suffix": "culum",
+      "word": "currículum",
+      "mode": "local",
+      "dictionary": "47216",
+      "unchanged": true
+    }
+  ],
+  "aiEnabled": false,
+  "acceptance": {
+    "before": "i want to prepare for an exam for my math cla",
+    "after": "i want to prepare for an exam for my math class.",
+    "nativeUndo": "i want to prepare for an exam for my math cla"
+  },
+  "idleUserPageRefreshed": true,
+  "note": "All cases displayed a local-source inline suggestion and preserved the typed value. Seed vocabulary remains immediately available while a language dictionary downloads."
+}

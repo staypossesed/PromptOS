@@ -8,7 +8,7 @@ export const metadata = {
   description: "How Umprompt handles your data.",
 };
 
-const LAST_UPDATED = "November 2, 2026";
+const LAST_UPDATED = "November 8, 2026";
 
 export default function PrivacyPage() {
   return (
@@ -70,6 +70,17 @@ export default function PrivacyPage() {
               your idea or generated result. Follow-up questions have a separate daily request limit and do not consume the free result. You can sign in for your account allowance.
             </p>
           </Section>
+
+          <section id="writing-suggestions" className="scroll-mt-24">
+            <h2 className="font-serif text-xl font-medium text-ink-900 mb-3">Optional writing suggestions</h2>
+            <div className="space-y-3 text-[15px] text-ink-600 leading-relaxed">
+              <p>Instant word and phrase suggestions use public frequency vocabularies, authored words, reviewed examples and short word sequences inside your browser. The browser downloads a versioned word list from Umprompt using only a language code, without including your draft or account credentials in that request. Suggestions do not send your draft to an AI provider or learn from stored personal writing. Optional AI suggestions are off by default until you explicitly allow them.</p>
+              <p>Public vocabularies are adapted from Hermit Dave&apos;s FrequencyWords / OpenSubtitles 2018 under CC BY-SA 4.0. <a href="/writing-dictionaries/NOTICE.txt" className="underline">Dictionary attribution, source and license</a>.</p>
+              <p>If you enable AI autocomplete, the current idea field (up to 4,000 characters) is sent to Umprompt&apos;s server and existing configured provider, Anthropic or OpenRouter, after short pauses while you type, before you press Continue. Contextual completion runs even when a basic local suggestion exists. Other fields, saved personal preferences, clipboard contents and browsing activity are not included. Providers process the text under their own policies.</p>
+              <p>This update requires consent version 2; earlier permissions are not silently reused. Consent is remembered in session storage for this tab and cleared when the account changes. You can turn AI autocomplete off at any time using its visible control; this stops new requests and cancels the current browser request, but cannot retract text already sent. Suggestions are not inserted until you choose Add word, Add all, or press Tab while a preview is visible. Tab accepts the next word only.</p>
+              <p>This completion endpoint does not save drafts or suggestions to account history, the database, application logs or analytics. Independent request limits use a keyed network-address hash; they do not use the completed-task allowance. The website can record that a suggestion was accepted, its local/AI source and language, without the text. We block some apparent credentials and identifiers before an AI request, but cannot identify every sensitive detail. Avoid passwords and private identifiers.</p>
+            </div>
+          </section>
 
           <Section title="How we use your data">
             <p>

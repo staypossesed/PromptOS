@@ -29,6 +29,42 @@
 .beginner-idea-field { position: relative; }
 .beginner-idea-field[data-active=true] textarea::placeholder { color: transparent; }
 .beginner-idea-field > .pointer-events-none { padding: 5px 0; }
+.writing-input { position: relative; }
+.beginner-composer .writing-input textarea { position: relative; z-index: 1; background: transparent; font-family: inherit; }
+.writing-ghost { position: absolute; top: 0; bottom: 0; left: 0; overflow: hidden; pointer-events: none; z-index: 2; white-space: pre-wrap; overflow-wrap: break-word; font-family: inherit; font-size: 18px; line-height: 1.6; padding: 5px 0; color: transparent; }
+.writing-ghost-suffix { color: #738b7c; }
+.writing-controls { margin-top: 10px; padding-top: 8px; border-top: 1px solid #edf0e8; }
+.writing-cloud-options summary { display: flex; align-items: center; gap: 6px; min-height: 36px; font-size: 12px; color: #5d7064; cursor: pointer; list-style: none; }
+.writing-cloud-options summary::-webkit-details-marker { display: none; }
+.writing-cloud-options summary::after { content: '+'; margin-left: auto; font-size: 17px; }
+.writing-cloud-options[open] summary::after { content: '−'; }
+.writing-accept kbd { font-family: inherit; font-size: 11px; padding: 2px 5px; border: 1px solid #c9d7ca; border-radius: 4px; color: #365c46; background: #fff; }
+@media (hover: none) { .writing-accept kbd { display: none; } }
+.writing-controls label { display: flex; align-items: center; gap: 7px; width: fit-content; min-height: 44px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.writing-controls input { accent-color: #245746; width: 17px; height: 17px; flex-shrink: 0; }
+.writing-controls p { font-size: 12px; color: #5d7064; line-height: 1.5; margin-bottom: 2px; }
+.writing-controls .writing-enable-hint { font-size: 13px; margin: 6px 0; color: #365c46; }
+.writing-enable { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; margin-top: 5px; padding: 8px 12px; border: 1px solid #a8c2af; border-radius: 9px; background: #edf5eb; color: #245746; font-size: 13px; font-weight: 600; }
+.writing-enable:hover { background: #e2eedf; }
+.writing-suggestion { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; padding-top: 4px; min-height: 44px; }
+.writing-suggestion strong { font-weight: 600; }
+.writing-accept,.writing-allow { display: inline-flex; align-items: center; justify-content: center; gap: 7px; border-radius: 9px; min-height: 44px; padding: 8px 10px; font-size: 13px; font-weight: 500; }
+.writing-accept { color: #365c46; background: #f0f5ee; max-width: 100%; text-align: left; overflow-wrap: anywhere; }
+.writing-accept:hover { background: #e4edde; }
+.writing-allow { background: #245746; color: #fff; }
+.writing-allow:hover { background: #1b4537; }
+.writing-accept-all { font-size: 12px; color: #5d7064; min-height: 44px; padding: 8px; }
+.writing-dismiss { display: flex; align-items: center; justify-content: center; flex: 0 0 44px; min-height: 44px; border-radius: 8px; color: #4c6858; }
+.writing-dismiss:hover { background: #e2eadc; }
+.writing-consent { background: #f6f7ef; border: 1px solid #d8e0cf; border-radius: 13px; padding: 16px; margin-top: 10px; }
+.writing-consent h2 { font-size: 16px; font-weight: 600; line-height: 1.4; margin-bottom: 8px; }
+.writing-consent p { font-size: 14px; line-height: 1.6; }
+.writing-consent > a { display: inline-block; font-size: 13px; text-decoration: underline; text-underline-offset: 3px; padding: 9px 0; }
+.writing-consent > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.writing-consent > div > button:not(.writing-allow) { min-height: 44px; font-size: 13px; padding: 8px; text-decoration: underline; text-underline-offset: 3px; }
+.writing-status { font-size: 13px; color: #5d7064; line-height: 1.5; padding-top: 8px; }
+.writing-added { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; font-size: 13px; color: #3d6550; padding-top: 8px; }
+.writing-added button { display: flex; align-items: center; gap: 5px; min-height: 44px; text-decoration: underline; text-underline-offset: 3px; }
 .beginner-intro,.beginner-preview { animation: beginner-arrive .45s ease-out both; }
 @keyframes beginner-arrive { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 .beginner-reassurance { display: flex; align-items: flex-start; gap: 8px; color: #6c7a68; font-size: 12px; line-height: 1.5; margin: 12px 0 18px; }
