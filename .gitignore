@@ -48,3 +48,7 @@ next-env.d.ts
 .claude/
 
 .vercel
+
+# Private outreach evidence stays local; reviewed reusable docs are explicitly tracked.
+/docs/growth/2026-11-09/
+/docs/chrome-store-0.2.0-submission.jpg
