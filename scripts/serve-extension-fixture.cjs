@@ -20,10 +20,10 @@ async function main() {
   });
   const js = result.outputFiles.find((file) => file.path.endsWith(".js")).contents;
   const css = result.outputFiles.find((file) => file.path.endsWith(".css")).contents;
-  const mock = `const fixtureUser=${JSON.stringify(user)};
+  const mock = `const fixtureUser=${JSON.stringify(user)}; let fixtureSignedIn=!new URLSearchParams(location.search).has('guest');
     window.chrome={
       runtime:{getManifest:()=>({host_permissions:[location.origin+'/*'],content_security_policy:{extension_pages:'connect-src '+location.origin}}),
-        sendMessage:async(message)=>({ok:true,data:message.type==='session'||message.type==='signIn'?fixtureUser:message.type==='token'?{userId:fixtureUser.id,token:'synthetic.fixture.token'}:message.type==='authInfo'?{redirectUrl:'https://fixture.chromiumapp.org/auth'}:null}),reload:()=>location.reload()},
+        sendMessage:async(message)=>{if(message.type==='signIn')fixtureSignedIn=true;if(message.type==='signOut')fixtureSignedIn=false;return{ok:true,data:message.type==='session'||message.type==='signIn'?(fixtureSignedIn?fixtureUser:null):message.type==='token'?{userId:fixtureUser.id,token:'synthetic.fixture.token'}:message.type==='authInfo'?{redirectUrl:'https://fixture.chromiumapp.org/auth'}:null}},reload:()=>location.reload()},
       storage:{local:{get:async(keys)=>{const data=JSON.parse(localStorage.getItem('fixture-storage')||'{}');return Object.fromEntries((Array.isArray(keys)?keys:[keys]).map(key=>[key,data[key]]));},
         set:async(value)=>localStorage.setItem('fixture-storage',JSON.stringify({...JSON.parse(localStorage.getItem('fixture-storage')||'{}'),...value})),
         remove:async(key)=>{const data=JSON.parse(localStorage.getItem('fixture-storage')||'{}');delete data[key];localStorage.setItem('fixture-storage',JSON.stringify(data));}},onChanged:{addListener:()=>{},removeListener:()=>{}}},
@@ -50,7 +50,7 @@ async function main() {
       if (endpoint === "generate") {
         await new Promise((resolve) => setTimeout(resolve, 800));
         if (body.idea.includes("simulate generation failure")) return json({ error: "Synthetic failure" }, 503);
-        return send("text/plain", body.refinement ? `Shorter version: ${body.refinement.prompt}` : `Help me with this task:\n${body.idea}\n\nInclude: ${body.context?.constraints || "a clear goal and a useful output"}.\nDo not invent missing facts.`);
+        return send("text/plain", body.refinement ? `Shorter version: ${body.refinement.prompt}` : `## Your task\n${body.idea}\n\n## How to help\n- Include ${body.context?.constraints || "a clear goal and a useful output"}.\n- Ask about important missing details instead of inventing them.\n- Keep the language clear and easy to follow.\n\n## Output\nGive me a practical first step, then explain what to do next.`);
       }
       if (endpoint === "score") {
         if (body.generated_prompt.includes("simulate rescore failure") && body.generated_prompt.includes("Applied quality feedback")) return json({ error: "Synthetic score failure" }, 503);

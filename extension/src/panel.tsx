@@ -1,6 +1,6 @@
 import { createRoot } from "react-dom/client";
 import { useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUpRight, BookOpen, Check, Copy, ExternalLink, Github, History, LogOut, PenLine, Plus, RefreshCw, Save, Sparkles, Undo2, WandSparkles, X } from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUpRight, ChevronDown, Globe2, Lightbulb, LockKeyhole, ShieldCheck, SlidersHorizontal, BookOpen, Check, Copy, ExternalLink, Github, History, LogOut, PenLine, Plus, RefreshCw, Save, Sparkles, Undo2, WandSparkles, X } from "lucide-react";
 import { composerCopy } from "../../lib/composer-copy";
 import { TASK_CATEGORIES } from "../../lib/task-categories";
 import { getStarterSuggestions, getSuggestions, hashSeed } from "../../lib/idea-suggestions";
@@ -15,6 +15,9 @@ import { siteOrigin } from "./config";
 import { AuthFlowError, type AuthFailure } from "./auth-flow";
 import { canExpandIdea, editPromptText, MAX_PROMPT_LENGTH } from "../../lib/prompt-editing";
 import "./panel.css";
+import "./premium.css";
+import { premiumCopy } from "./premium-copy";
+import { PromptContent } from "./prompt-content";
 
 function Panel() {
   const [language, setLanguage] = useState<AppLanguage>("en");
@@ -61,7 +64,7 @@ function Panel() {
   const hasResult = canExpandIdea(draft.idea) && draft.resultInput === inputFingerprint(draft);
   const score = draftScore(draft);
   const showResult = (!editingIdea && hasResult) || !!stream;
-  const suggestions = !draft.idea.trim() && draft.category === "auto" ? getStarterSuggestions(suggestionSeed, language).slice(0, 3) : getSuggestions(draft.idea, draft.category, suggestionSeed, 3, language);
+  const suggestions = !draft.idea.trim() && draft.category === "auto" ? getStarterSuggestions(suggestionSeed, language).filter(idea => ["writing", "daily", "research"].includes(idea.category)).slice(0, 3) : getSuggestions(draft.idea, draft.category, suggestionSeed, 3, language);
 
   function commit(next: Draft) {
     setDraft(next); setNotice(""); setError("");
@@ -169,6 +172,8 @@ function Panel() {
     return () => { mounted = false; close(); healthController.current?.abort(); chrome.storage.onChanged.removeListener(accountChanged); window.removeEventListener("pagehide", close); window.removeEventListener("focus", focus); window.removeEventListener("online", online); };
   }, []);
   useEffect(() => { document.documentElement.lang = language; }, [language]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: "instant" }); }, [view]);
+  useEffect(() => { if (showResult && !editingIdea) window.scrollTo({ top: 0, behavior: "instant" }); }, [showResult, editingIdea]);
   useEffect(() => {
     if (!editingIdea || !ideaInput.current) return;
     ideaInput.current.focus();
@@ -327,6 +332,13 @@ function Panel() {
     manualEdit.current = false;
     commit(emptyDraft()); setError(""); setUpgrade(false); setView("prompt"); setEditingResult(false); setEditingIdea(false); ideaEdit.current = null; setRequestStarted(false); setScoreError(""); setTimeout(() => ideaInput.current?.focus(), 0);
   }
+  function chooseIdea(idea: string) {
+    if (disabled) return;
+    // Inspiration is a starting point, not a permanent task-type selection.
+    // The optional category remains available when the user explicitly needs it.
+    commit({ ...draft, idea, category: "auto" });
+    requestAnimationFrame(() => { ideaInput.current?.focus(); ideaInput.current?.scrollIntoView({ block: "center", behavior: "instant" }); });
+  }
   async function copy() {
     try { await navigator.clipboard.writeText(draft.prompt); setNotice(c.copied); setEditingResult(false); }
     catch { setError(c.copyError); }
@@ -336,69 +348,80 @@ function Panel() {
     catch { setError(t.callbackCopyError); }
   }
   const example = c.expansionExample;
-  const exampleView = <section className="example" aria-labelledby="example-title">
-    <div className="example-heading"><BookOpen size={18} aria-hidden="true" /><h2 id="example-title">{example.label}</h2></div>
-    <div className="example-before"><p className="eyebrow">{example.original}</p><p className="original">{example.idea}</p></div>
-    <div className="example-transition" aria-hidden="true"><ArrowDown size={18} /></div>
-    <div className="example-after"><p className="example-result-heading"><WandSparkles size={18} aria-hidden="true" />{example.title}</p>
-      <dl>{[[example.goalLabel, example.goal], [example.detailsLabel, example.details], [example.outputLabel, example.output]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl>
+  const p = premiumCopy(language);
+  const accountName = user?.email?.split("@")[0] || t.connected;
+  const exampleView = <details className="example">
+    <summary><span className="example-icon"><BookOpen size={18} /></span><span><strong>{p.example}</strong><small>{p.exampleNote}</small></span><ChevronDown size={16} className="disclosure-chevron" /></summary>
+    <div className="example-body"><h2 id="example-title">{example.label}</h2><div className="example-before"><p className="eyebrow">{example.original}</p><p className="original">{example.idea}</p></div>
+      <div className="example-transition" aria-hidden="true"><ArrowDown size={18} /></div>
+      <div className="example-after"><p className="example-result-heading"><WandSparkles size={17} />{example.title}</p><dl>{[[example.goalLabel, example.goal], [example.detailsLabel, example.details], [example.outputLabel, example.output]].map(([label, value]) => <div key={label}><dt>{label}</dt><dd>{value}</dd></div>)}</dl></div>
+      {!draft.idea && <button className="text-button" disabled={disabled} onClick={() => chooseIdea(example.idea)}><ArrowUpRight size={16} />{example.use}</button>}
     </div>
-    {!draft.idea && <button className="text-button" disabled={disabled} onClick={() => { commit({ ...draft, idea: example.idea, category: "writing" }); ideaInput.current?.focus(); }}><ArrowUpRight size={18} />{example.use}</button>}
+  </details>;
+
+  const connection = (!user || expired) && ready && <section className="connection" aria-labelledby="connect-title">
+    <div className="connection-heading"><span className="connection-icon"><LockKeyhole size={17} /></span><div><h2 id="connect-title">{t.connect}</h2><p>{p.connectionHint}</p></div></div>
+    <div className="sign-in"><button disabled={disabled || backendError === "reload"} onClick={() => void connect("google")}><span className="provider-g" aria-hidden="true">G</span>{t.google}</button><button disabled={disabled || backendError === "reload"} onClick={() => void connect("github")}><Github size={17} aria-hidden="true" />{t.github}</button></div>
+    {busy === "signIn" && <p className="progress" role="status"><span className="spinner" />{t.connecting}</p>}
+    {authFailure && <div className="error auth-error" role="alert">{t.signInErrors[authFailure]}</div>}
+    <details className="auth-details" open={authHelp} onToggle={event => setAuthHelp(event.currentTarget.open)}><summary>{t.authInfo}<ChevronDown size={13} /></summary>{authFailure && <p>{t.authCode}: <code>{`AUTH_${authFailure.toUpperCase()}`}</code></p>}{callback && <><p>{t.callback}</p><div className="callback-row"><code>{callback}</code><button className="icon" title={t.copyCallback} aria-label={t.copyCallback} onClick={() => void copyCallback()}>{notice === t.callbackCopied ? <Check size={16} /> : <Copy size={16} />}</button></div></>}</details>
   </section>;
 
-  return <>
-    <header><a href={siteOrigin} target="_blank" rel="noreferrer" className="brand"><img src="icons/48.png" width="32" height="32" alt="" />Umprompt</a><div className="header-actions">
-      <label className="sr-only" htmlFor="language">{t.language}</label><select id="language" value={language} disabled={disabled} onChange={(e) => { const lang = e.target.value as AppLanguage; setLanguage(lang); setNotice(""); setError(""); void chrome.storage.local.set({ language: lang }); }}><option value="en">EN</option><option value="ru">RU</option><option value="es">ES</option></select>
-      <button className="icon" title={t.newPrompt} aria-label={t.newPrompt} disabled={disabled} onClick={reset}><Plus size={20} /></button>
+  return <div className="extension-shell">
+    <div className="topbar"><header><a href={siteOrigin} target="_blank" rel="noreferrer" className="brand"><img src="icons/48.png" width="38" height="38" alt="" /><span><strong>Umprompt<span className="brand-period">.</span></strong><small>{p.companion}</small></span></a><div className="header-actions">
+      <div className="language-control"><Globe2 size={14} aria-hidden="true" /><label className="sr-only" htmlFor="language">{t.language}</label><select id="language" value={language} disabled={disabled} onChange={event => { const lang = event.target.value as AppLanguage; setLanguage(lang); setNotice(""); setError(""); void chrome.storage.local.set({ language: lang }); }}><option value="en">EN</option><option value="ru">RU</option><option value="es">ES</option></select></div>
+      <button className="icon new-idea" title={t.newPrompt} aria-label={t.newPrompt} disabled={disabled} onClick={reset}><Plus size={19} /></button>
     </div></header>
-    <nav className="main-tabs" aria-label="Umprompt"><button aria-current={view === "prompt" ? "page" : undefined} disabled={disabled} onClick={() => setView("prompt")}><WandSparkles size={18} />{t.prompt}</button><button aria-current={view === "history" ? "page" : undefined} disabled={disabled || !backendReady || !user || expired} onClick={() => { setView("history"); void loadHistory(); }}><History size={18} />{t.history}</button></nav>
+    <nav className="main-tabs" aria-label="Umprompt"><button aria-current={view === "prompt" ? "page" : undefined} disabled={disabled} onClick={() => setView("prompt")}><WandSparkles size={16} />{t.prompt}</button><button aria-current={view === "history" ? "page" : undefined} disabled={disabled || !backendReady || !user || expired} onClick={() => { setView("history"); void loadHistory(); }}><History size={16} />{t.history}</button></nav></div>
     <main aria-busy={!ready} data-backend-ready={backendReady}>
-      {(!user || expired) && ready && <section className="connection"><h2>{t.connect}</h2><p>{t.connectNote}</p><div className="sign-in"><button disabled={disabled || backendError === "reload"} onClick={() => void connect("google")}>{t.google}</button><button disabled={disabled || backendError === "reload"} onClick={() => void connect("github")}><Github size={18} aria-hidden="true" />{t.github}</button></div>{busy === "signIn" && <p className="progress" role="status"><span className="spinner" />{t.connecting}</p>}
-        {authFailure && <div className="error auth-error" role="alert">{t.signInErrors[authFailure]}</div>}
-        <details className="auth-details" open={authHelp} onToggle={(event) => setAuthHelp(event.currentTarget.open)}><summary>{t.authInfo}</summary>{authFailure && <p>{t.authCode}: <code>{`AUTH_${authFailure.toUpperCase()}`}</code></p>}{callback && <><p>{t.callback}</p><div className="callback-row"><code>{callback}</code><button className="icon" title={t.copyCallback} aria-label={t.copyCallback} onClick={() => void copyCallback()}>{notice === t.callbackCopied ? <Check size={18} aria-hidden="true" /> : <Copy size={18} aria-hidden="true" />}</button></div></>}</details>
-      </section>}
       {backendError && <div className="error" role="alert"><p>{backendError === "network" && siteOrigin.startsWith("http://localhost") ? t.localOffline : t.serviceErrors[backendError]}</p>{backendError === "reload" ? <button className="text-button" disabled={disabled} onClick={() => void reloadExtension()}><RefreshCw size={16} />{t.reloadExtension}</button> : <button className="text-button" disabled={backendChecking} onClick={() => void checkConnection(true)}><RefreshCw size={16} />{backendChecking ? t.checkingConnection : t.retry}</button>}</div>}
-      {error && <div className="error" role="alert">{error}</div>}
-      {storageError && <div className="error" role="alert">{t.storageError}</div>}
-      {upgrade && <a className="plans" href={`${siteOrigin}/plan`} target="_blank" rel="noreferrer">{t.plans}<ExternalLink size={18} /></a>}
+      {error && <div className="error" role="alert">{error}</div>}{storageError && <div className="error" role="alert">{t.storageError}</div>}
+      {upgrade && <a className="plans" href={`${siteOrigin}/plan`} target="_blank" rel="noreferrer"><span>{t.plans}</span><ArrowUpRight size={18} /></a>}
+      {!ready && <div className="loading-state" role="status"><span className="spinner" />{p.loading}</div>}
       {view === "prompt" ? <>
-        <section className="composer"><h1>{hasResult && !editingIdea ? c.result : c.title}</h1>
-          {hasResult && !editingIdea && <div className="idea-summary"><div className="idea-heading"><span>{c.idea}</span><button className="edit-output" aria-label={c.editIdea} disabled={disabled} onClick={beginIdeaEdit}><PenLine size={14} />{c.edit}</button></div><p data-rough-idea>{draft.idea}</p></div>}
-          {(!hasResult || editingIdea) && <div id="idea-form"><div className="idea-heading"><label htmlFor="idea">{c.idea}</label>{editingIdea && <button className="text-button" disabled={disabled} onClick={cancelIdeaEdit}>{c.cancelIdeaEdit}</button>}</div>
-          <textarea ref={ideaInput} id="idea" maxLength={4000} placeholder={c.placeholder} rows={4} value={draft.idea} disabled={disabled} aria-describedby="idea-feedback" onChange={(e) => commit({ ...draft, idea: e.target.value })} />
-          <span className="count">{draft.idea.length} / 4000</span>
-          <p id="idea-feedback" className="input-feedback">{draft.idea.trim() && !canExpandIdea(draft.idea) ? c.ideaTooShort : ""}</p>
-          {!editingIdea && <div className="suggestions"><p>{draft.idea ? c.matching : c.inspiration}</p>{suggestions.map((idea) => <button key={idea.id} disabled={disabled} onClick={() => commit({ ...draft, idea: idea.idea, category: idea.category })}><span>{idea.title}</span><ArrowUpRight size={16} /></button>)}</div>}
-          <details className="details"><summary>{c.context}</summary><label htmlFor="category">{c.category}</label><select id="category" value={draft.category} disabled={disabled} onChange={(e) => commit({ ...draft, category: e.target.value as Draft["category"] })}>{TASK_CATEGORIES.map((category) => <option key={category} value={category}>{c.categories[category]}</option>)}</select><label htmlFor="details">{c.constraints}</label><textarea id="details" value={draft.details} maxLength={1200} rows={3} disabled={disabled} onChange={(e) => commit({ ...draft, details: e.target.value })} /></details>
-          <button className="primary expand" disabled={disabled || !backendReady || !user || expired || !canExpandIdea(draft.idea)} onClick={() => void run("expand")}><WandSparkles size={20} />{busy === "expand" ? c.optimizingRequest : c.optimizeRequest}</button>
-          <p className="privacy">{t.privacy}</p></div>}
-          {busy && ["expand", "simplify", "optimize", "score"].includes(busy) && <div className="progress" role="status"><span className="spinner" />{busy === "score" ? c.checkingQuality : t.working}<button className="icon" aria-label={t.stop} title={t.stop} onClick={() => controller.current?.abort()}><X size={18} /></button></div>}
+        <section className="composer">
+          <div className="intro"><p className="kicker"><span className="sparkle-mark"><Sparkles size={13} /></span>{showResult ? p.resultStep : p.kicker}</p><h1>{showResult && !editingIdea ? c.result : p.hero.split("\n").map((line, index) => <span key={line} className={index ? "title-accent" : undefined}>{line}</span>)}</h1><p className="intro-note">{showResult && !editingIdea ? p.resultIntro : p.intro}</p></div>
+          {connection}
+          {showResult && !editingIdea && <div className="idea-summary"><div className="idea-heading"><span>{t.original}</span><button className="edit-output" aria-label={c.editIdea} disabled={disabled} onClick={beginIdeaEdit}><PenLine size={14} />{c.edit}</button></div><p data-rough-idea>{draft.idea}</p></div>}
+          {(!showResult || editingIdea) && <div id="idea-form">
+            <div className="idea-card"><div className="idea-heading"><label htmlFor="idea">{c.idea}</label>{editingIdea ? <button className="text-button" disabled={disabled} onClick={cancelIdeaEdit}>{c.cancelIdeaEdit}</button> : <span className="step-number" aria-hidden="true">01</span>}</div>
+              <textarea ref={ideaInput} id="idea" maxLength={4000} placeholder={c.placeholder} rows={4} value={draft.idea} disabled={disabled} aria-describedby="idea-feedback" onChange={event => commit({ ...draft, idea: event.target.value })} />
+              <div className="field-meta"><span><Sparkles size={12} />{p.inputHelp}</span><span className="count">{draft.idea.length} / 4000</span></div>
+            </div>
+            <p id="idea-feedback" className="input-feedback">{draft.idea.trim() && !canExpandIdea(draft.idea) ? c.ideaTooShort : ""}</p>
+            <details className="details"><summary><span className="details-symbol"><SlidersHorizontal size={16} /></span><span>{c.context}</span><ChevronDown size={15} className="disclosure-chevron" /></summary><div className="details-body"><label htmlFor="category">{c.category}</label><select id="category" value={draft.category} disabled={disabled} onChange={event => commit({ ...draft, category: event.target.value as Draft["category"] })}>{TASK_CATEGORIES.map(category => <option key={category} value={category}>{c.categories[category]}</option>)}</select><label htmlFor="details">{c.constraints}</label><textarea id="details" value={draft.details} maxLength={1200} rows={3} disabled={disabled} onChange={event => commit({ ...draft, details: event.target.value })} /></div></details>
+            <button className="primary expand" disabled={disabled || !backendReady || !user || expired || !canExpandIdea(draft.idea)} onClick={() => void run("expand")}><WandSparkles size={18} /><span>{busy === "expand" ? c.optimizingRequest : c.optimizeRequest}</span><ArrowRight size={17} /></button>
+            {(!user || expired) && <p className="guest-hint">{p.guestHint}</p>}
+            <p className="privacy"><ShieldCheck size={14} aria-hidden="true" /><span>{t.privacy}</span></p>
+            {!editingIdea && <section className="suggestions" aria-labelledby="suggestion-title"><div className="section-heading"><p id="suggestion-title">{draft.idea ? c.matching : p.suggestions}</p><button className="icon" title={c.refresh} aria-label={c.refresh} disabled={disabled} onClick={() => setSuggestionSeed(hashSeed(String(Date.now())))}><RefreshCw size={14} /></button></div>{suggestions.map((idea, index) => <button key={idea.id} disabled={disabled} onClick={() => chooseIdea(idea.idea)}><span className={`suggestion-symbol suggestion-symbol-${index}`}><Lightbulb size={16} /></span><span>{idea.title}</span><ArrowUpRight size={15} /></button>)}</section>}
+          </div>}
+          {busy && ["expand", "simplify", "optimize", "score"].includes(busy) && <div className="progress progress-card" role="status"><span className="spinner" /><span>{busy === "score" ? c.checkingQuality : t.working}</span><button className="icon" aria-label={t.stop} title={t.stop} onClick={() => controller.current?.abort()}><X size={17} /></button></div>}
         </section>
-        {(showResult || !requestStarted && !editingIdea && !busy && !hasResult) && <section className="result-section">
-          {showResult ? <div id="prompt-panel">
-            <div className="result-header"><p className="ready-label"><span />{stream && busy ? t.working : c.portable}</p><div className="result-tools">{hasResult && <button className="edit-output" disabled={disabled} aria-label={editingResult ? c.done : c.editPrompt} onClick={() => { manualEdit.current = false; setEditingResult(!editingResult); if (!editingResult) setTimeout(() => resultInput.current?.focus(), 0); }}>{editingResult ? <Check size={14} /> : <PenLine size={14} />}{editingResult ? c.done : c.edit}</button>}{!!draft.versions.length && <button className="icon" title={t.undo} aria-label={t.undo} disabled={disabled} onClick={() => { manualEdit.current = false; setEditingResult(false); setScoreError(""); const version = draft.versions.at(-1)!; commit({ ...draft, prompt: version.prompt, versions: draft.versions.slice(0, -1), savedFingerprint: "", score: null, scoreInput: "" }); }}><Undo2 size={18} aria-hidden="true" /></button>}</div></div>
-            {editingResult ? <textarea ref={resultInput} className="output" aria-label={c.result} value={draft.prompt} onChange={(event) => editResult(event.target.value)} onBlur={() => { manualEdit.current = false; }} readOnly={disabled} maxLength={MAX_PROMPT_LENGTH} placeholder={c.promptPlaceholder} rows={8} spellCheck /> : <div className="output output-preview" aria-label={c.result}>{stream || draft.prompt || c.promptPlaceholder}</div>}
+        {(showResult || !requestStarted && !editingIdea && !busy && !hasResult) && <section className="result-section">{showResult ? <div id="prompt-panel">
+          <div className="prompt-card"><div className="result-header"><p className="ready-label"><span />{stream && busy ? t.working : c.portable}</p><div className="result-tools">{hasResult && <button className="edit-output" disabled={disabled} aria-label={editingResult ? c.done : c.editPrompt} onClick={() => { manualEdit.current = false; setEditingResult(!editingResult); if (!editingResult) setTimeout(() => resultInput.current?.focus(), 0); }}>{editingResult ? <Check size={14} /> : <PenLine size={14} />}{editingResult ? c.done : c.edit}</button>}{!!draft.versions.length && <button className="icon" title={t.undo} aria-label={t.undo} disabled={disabled} onClick={() => { manualEdit.current = false; setEditingResult(false); setScoreError(""); const version = draft.versions.at(-1)!; commit({ ...draft, prompt: version.prompt, versions: draft.versions.slice(0, -1), savedFingerprint: "", score: null, scoreInput: "" }); }}><Undo2 size={16} /></button>}</div></div>
+            {editingResult ? <textarea ref={resultInput} className="output" aria-label={c.result} value={draft.prompt} onChange={event => editResult(event.target.value)} onBlur={() => { manualEdit.current = false; }} readOnly={disabled} maxLength={MAX_PROMPT_LENGTH} placeholder={c.promptPlaceholder} rows={8} spellCheck /> : <div className="output output-preview" aria-label={c.result}><PromptContent text={stream || draft.prompt || c.promptPlaceholder} /></div>}
             {editingResult && <div className="editor-meta"><span className="count">{draft.prompt.length} / {MAX_PROMPT_LENGTH}</span></div>}
-              {hasResult && <><div className="result-actions"><button className="text-button" disabled={disabled || !backendReady || !current || expired || !user} onClick={() => void run("simplify")}><WandSparkles size={18} />{t.simplify}</button></div>
-                <button className="primary copy" disabled={disabled || !draft.prompt.trim()} onClick={() => void copy()}>{notice === c.copied ? <Check size={20} /> : <Copy size={20} />}{notice === c.copied ? c.copied : c.copy}</button>
-                <button className="save" disabled={disabled || !backendReady || !current || isSaved(draft) || !user || expired} onClick={() => void save()}>{isSaved(draft) ? <Check size={18} /> : <Save size={18} />}{isSaved(draft) ? t.saved : t.save}</button></>}
-            {hasResult && <section className="quality" aria-labelledby="quality-title"><div className="section-heading"><h2 id="quality-title">{c.quality}</h2>{score && <strong className="quality-score">{score.overall}<span> / 100</span></strong>}</div>
-              <p className="quality-note">{c.qualityNote}</p>
-              {score ? <><button className="primary" disabled={disabled || !backendReady || !current || expired || !user || editingResult} onClick={() => void run("optimize")}><Sparkles size={18} />{busy === "optimize" ? c.optimizing : scoreCopy.autoFix}</button>
-                <details className="quality-details"><summary>{scoreCopy.title}</summary><dl>{score.dimensions.map((dimension) => <div key={dimension.key}><dt><span>{dimension.label}</span><strong>{dimension.score}</strong></dt><dd><progress value={dimension.score} max={100} aria-label={dimension.label} /><p>{dimension.tip || dimension.reason}</p></dd></div>)}</dl></details></>
-                : <button disabled={disabled || !backendReady || !current || expired || !user || editingResult} onClick={() => void checkQuality()}><RefreshCw size={16} />{busy === "score" ? c.checkingQuality : scoreError ? scoreCopy.retryScoring : c.quality}</button>}
+          </div>
+          {hasResult && <>
+            <section className="quality" aria-labelledby="quality-title"><div className="section-heading"><div><p className="eyebrow">{p.detailsHint}</p><h2 id="quality-title">{c.quality}</h2></div>{score && <strong className="quality-score">{score.overall}<span>/100</span></strong>}</div><p className="quality-note">{c.qualityNote}</p>
+              {score ? <><button className="optimize-criteria" disabled={disabled || !backendReady || !current || expired || !user || editingResult} onClick={() => void run("optimize")}><Sparkles size={16} /><span>{busy === "optimize" ? c.optimizing : scoreCopy.autoFix}</span><ArrowRight size={15} /></button><details className="quality-details"><summary>{scoreCopy.title}<ChevronDown size={14} className="disclosure-chevron" /></summary><dl>{score.dimensions.map(dimension => <div key={dimension.key}><dt><span>{dimension.label}</span><strong>{dimension.score}</strong></dt><dd><progress value={dimension.score} max={100} aria-label={dimension.label} /><p>{dimension.tip || dimension.reason}</p></dd></div>)}</dl></details></>
+                : <button className="optimize-criteria" disabled={disabled || !backendReady || !current || expired || !user || editingResult} onClick={() => void checkQuality()}><RefreshCw size={16} />{busy === "score" ? c.checkingQuality : scoreError ? scoreCopy.retryScoring : c.quality}</button>}
               {scoreError && <p className="quality-error" role="alert">{scoreError}</p>}
-            </section>}
-          </div> : exampleView}
-        </section>}
-        <p className="notice" role="status">{notice}</p>
-      </> : <section className="history"><div className="section-heading"><h1>{t.history}</h1><button className="icon" title={t.refresh} aria-label={t.refresh} disabled={disabled || !backendReady || expired} onClick={() => void loadHistory()}><RefreshCw size={20} /></button></div>
+            </section>
+            <div className="result-actions"><button className="text-button" disabled={disabled || !backendReady || !current || expired || !user} onClick={() => void run("simplify")}><WandSparkles size={16} />{t.simplify}</button></div>
+            <div className="action-dock"><div className="copy-save"><button className="primary copy" disabled={disabled || !draft.prompt.trim()} onClick={() => void copy()}>{notice === c.copied ? <Check size={18} /> : <Copy size={18} />}{notice === c.copied ? c.copied : c.copy}</button><button className="save" title={isSaved(draft) ? t.saved : t.save} aria-label={isSaved(draft) ? t.saved : t.save} disabled={disabled || !backendReady || !current || isSaved(draft) || !user || expired} onClick={() => void save()}>{isSaved(draft) ? <Check size={17} /> : <Save size={17} />}{isSaved(draft) ? c.saved : c.save}</button></div><p>{p.copyHint}</p></div>
+          </>}
+        </div> : exampleView}</section>}
+        <p className={`notice${[t.saved, c.copied, t.callbackCopied].includes(notice) ? " sr-only" : ""}`} role="status">{notice}</p>
+      </> : <section className="history"><div className="intro"><p className="kicker"><History size={13} />{t.history}</p><div className="section-heading"><h1>{p.savedSpace}</h1><button className="icon" title={t.refresh} aria-label={t.refresh} disabled={disabled || !backendReady || expired} onClick={() => void loadHistory()}><RefreshCw size={18} /></button></div><p className="intro-note">{p.historyIntro}</p></div>
         {busy === "history" && <div className="progress" role="status"><span className="spinner" />{t.working}</div>}
-        {historyError ? <p role="alert">{t.historyError}<button className="text-button" disabled={disabled} onClick={() => void loadHistory()}>{t.retry}</button></p> : !history.length && !busy ? <p>{t.emptyHistory}</p> : <ul>{history.map((row) => <li key={row.id}><button disabled={disabled} onClick={() => openHistory(row)}><span><strong>{row.title}</strong><span className="history-idea">{row.idea}</span><time>{new Date(row.updated_at).toLocaleDateString(language)}</time></span><ArrowUpRight size={20} /></button></li>)}</ul>}
+        {historyError ? <div className="error" role="alert">{t.historyError}<button className="text-button" disabled={disabled} onClick={() => void loadHistory()}>{t.retry}</button></div> : !history.length && !busy ? <div className="empty-history"><span className="empty-illustration"><BookOpen size={36} strokeWidth={1.2} /><Sparkles size={17} /></span><h2>{p.emptyTitle}</h2><p>{p.emptyNote}</p><button className="primary" disabled={disabled} onClick={reset}>{p.create}<ArrowRight size={17} /></button></div> : <><p className="history-count">{history.length} {p.historyCount}</p><ul>{history.map(row => <li key={row.id}><button disabled={disabled} onClick={() => openHistory(row)}><span className="history-row-icon"><PenLine size={17} /></span><span className="history-row-copy"><strong>{row.title}</strong><span className="history-idea">{row.idea}</span><time>{new Date(row.updated_at).toLocaleDateString(language, { month: "short", day: "numeric" })}</time></span><ArrowUpRight size={17} /></button></li>)}</ul></>}
       </section>}
     </main>
-    <footer>{user && <div className="account"><span>{user.email ?? t.connected}</span><button className="icon" disabled={disabled} aria-label={t.signOut} title={t.signOut} onClick={() => void signOut()}><LogOut size={18} /></button></div>}{usage && <p className="usage">{usage.isPaid ? t.paid : `${usage.remainingThisWeek} ${t.remaining}`}</p>}<div className="footer-links"><a href={siteOrigin} target="_blank" rel="noreferrer">{t.website}<ExternalLink size={16} /></a><a href={`${siteOrigin}/privacy`} target="_blank" rel="noreferrer">{t.privacyLink}</a></div>
+    <footer>{user && <div className="account"><span className="avatar" aria-hidden="true">{accountName.slice(0,1).toUpperCase()}</span><div className="account-copy"><strong>{accountName}</strong><span>{user.email ?? t.connected}</span></div>{usage && <span className={`plan-badge${usage.isPaid ? " is-pro" : ""}`}>{usage?.isPaid ? <><Sparkles size={10} />{p.pro}</> : p.free}</span>}<button className="icon" disabled={disabled} aria-label={t.signOut} title={t.signOut} onClick={() => void signOut()}><LogOut size={16} /></button></div>}
+      {usage && <p className="usage">{usage.isPaid ? <><span className="status-dot" />{t.paid}</> : <><strong>{usage.remainingThisWeek}</strong> {p.usage}</>}</p>}
+      <div className="footer-links"><a href={siteOrigin} target="_blank" rel="noreferrer">{t.website}<ArrowUpRight size={13} /></a><a href={`${siteOrigin}/privacy`} target="_blank" rel="noreferrer"><ShieldCheck size={12} />{t.privacyLink}</a></div>
     </footer>
-  </>;
+  </div>;
 }
 createRoot(document.getElementById("root")!).render(<Panel />);

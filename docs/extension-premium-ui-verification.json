@@ -1,0 +1,209 @@
+{
+  "verifiedAt": "2026-11-09T03:04:23.483Z",
+  "version": "0.2.0",
+  "environment": "Isolated real extension UI with synthetic auth, generation, quality scores and history. No production OAuth, AI, payments or account persistence tested here.",
+  "layouts": [
+    {
+      "heading": "Your idea.A clearer start.",
+      "language": "en",
+      "overflow": false,
+      "screen": "compose",
+      "width": 420
+    },
+    {
+      "heading": "Ваша идея.Понятный запрос.",
+      "language": "ru",
+      "overflow": false,
+      "screen": "compose",
+      "width": 420
+    },
+    {
+      "heading": "Tu idea.Un comienzo claro.",
+      "language": "es",
+      "overflow": false,
+      "screen": "compose",
+      "width": 420
+    },
+    {
+      "heading": "Your idea.A clearer start.",
+      "language": "en",
+      "overflow": false,
+      "screen": "compose",
+      "width": 320
+    },
+    {
+      "heading": "Ваша идея.Понятный запрос.",
+      "language": "ru",
+      "overflow": false,
+      "screen": "compose",
+      "width": 320
+    },
+    {
+      "heading": "Tu idea.Un comienzo claro.",
+      "language": "es",
+      "overflow": false,
+      "screen": "compose",
+      "width": 320
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "en",
+      "overflow": false,
+      "screen": "result",
+      "width": 420
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "ru",
+      "overflow": false,
+      "screen": "result",
+      "width": 420
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "es",
+      "overflow": false,
+      "screen": "result",
+      "width": 420
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "en",
+      "overflow": false,
+      "screen": "result",
+      "width": 320
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "ru",
+      "overflow": false,
+      "screen": "result",
+      "width": 320
+    },
+    {
+      "editable": 0,
+      "example": 0,
+      "language": "es",
+      "overflow": false,
+      "screen": "result",
+      "width": 320
+    },
+    {
+      "language": "en",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 420
+    },
+    {
+      "language": "ru",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 420
+    },
+    {
+      "language": "es",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 420
+    },
+    {
+      "language": "en",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 320
+    },
+    {
+      "language": "ru",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 320
+    },
+    {
+      "language": "es",
+      "overflow": false,
+      "rows": 1,
+      "screen": "history",
+      "width": 320
+    },
+    {
+      "language": "en",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 420
+    },
+    {
+      "language": "ru",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 420
+    },
+    {
+      "language": "es",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 420
+    },
+    {
+      "language": "en",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 320
+    },
+    {
+      "language": "ru",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 320
+    },
+    {
+      "language": "es",
+      "overflow": false,
+      "screen": "signed-out",
+      "signInChoices": 2,
+      "width": 320
+    }
+  ],
+  "checks": {
+    "exampleSelectionUsesAutomaticCategory": true,
+    "readOnlyByDefault": true,
+    "exampleHiddenAfterGeneration": true,
+    "formattedHeadings": 3,
+    "sourceEditExpandsFully": true,
+    "cancelRestoresSource": true,
+    "copyPreservesRawText": true,
+    "criteriaOptimization": true,
+    "explicitSaveAndHistory": true,
+    "failedGenerationPreservesInput": {
+      "status": "visually_confirmed",
+      "inputRemainsEditable": true,
+      "visibleCharacterCount": "54 / 4000",
+      "programmaticReadback": "Inconclusive: textarea value getter was redacted to a ten-character placeholder. Original 54-character input remains visible in the AX tree and screenshot.",
+      "evidence": [
+        "extension-recovery-error.jpg",
+        "extension-recovery-ax.txt"
+      ]
+    },
+    "retryRecovered": true,
+    "simplifyAndUndo": true,
+    "googleEntryFixtureRestoresAccountDraft": true,
+    "githubEntryFixtureRestoresAccountDraft": true,
+    "emptyHistoryVisible": true
+  },
+  "consoleErrors": [],
+  "recheckedAt": "2026-11-09T05:06:25.734Z"
+}

@@ -128,8 +128,8 @@ async function main() {
       throw new Error(`Unmocked API path ${pathname}`);
     });
     const page = await context.newPage();
-    const outputText = () => page.locator(".output").evaluate((el) => el instanceof HTMLTextAreaElement ? el.value : el.textContent);
-    const waitOutput = (value) => page.waitForFunction((text) => { const el = document.querySelector(".output"); return (el?.value ?? el?.textContent) === text; }, value);
+    const outputText = () => page.locator(".output").evaluate((el) => el instanceof HTMLTextAreaElement ? el.value : el.innerText);
+    const waitOutput = (value) => page.waitForFunction((text) => { const el = document.querySelector(".output"); return (el?.value ?? el?.innerText) === text; }, value);
     const editOutput = async () => { if (!await page.locator("textarea.output").count()) await page.getByRole("button", { name: "Edit prompt", exact: true }).click(); };
     page.on("pageerror", (e) => errors.push(e.message));
     page.on("console", (msg) => {
@@ -146,6 +146,7 @@ async function main() {
     assert.equal(await page.getByRole("button", { name: inputAction, exact: true }).isDisabled(), true);
     assert.equal(await page.getByRole("tab").count(), 0, "No result tabs before a prompt exists.");
     assert.equal(await page.locator(".output").count(), 0);
+    await page.locator(".example > summary").click();
     assert.equal(await page.getByRole("heading", { name: "Example expansion", exact: true }).count(), 1);
     assert.equal(await page.getByText("Expanded AI prompt", { exact: true }).count(), 1);
     await page.getByRole("button", { name: "Use this idea", exact: true }).click();

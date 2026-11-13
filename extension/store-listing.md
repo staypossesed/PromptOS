@@ -1,9 +1,14 @@
 # Chrome Web Store Release
 
-The dashboard's Published package was independently observed as **0.1.2** on October 14,
-2026. Update **0.1.3** was uploaded and submitted on October 14. Google confirmed
-"Your extension was submitted for review" and **Pending review**. Automatic publication
-after approval is selected. The update is not approved or published yet.
+**Submitted release: 0.2.0, November 8, 2026 (Arizona).** This redesign was uploaded to
+the existing listing and submitted to Google. The dashboard confirms **Pending review**.
+The Package page shows draft **0.2.0** and published **0.1.3**; 0.2.0 is not yet live.
+See `docs/extension-premium-release.md` for the verification scope and package details.
+
+Historical checkpoint: the dashboard's Published package was observed as **0.1.2** on
+October 14, 2026; **0.1.3** was submitted that day with automatic publication selected.
+That historical pending-review observation is not a statement of today's store status.
+Check the developer dashboard and public listing before reporting a release as live.
 See `docs/extension-security-review.md` for the previous scoped security review.
 
 ## Listing

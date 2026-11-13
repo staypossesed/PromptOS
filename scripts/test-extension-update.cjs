@@ -78,7 +78,7 @@ async function main() {
     assert.equal(await updatedPage.getByRole("alert").count(), 0);
     assert.equal(await updatedPage.locator("#idea").inputValue(), finalIdea, "Reload must flush and preserve the most recent typed draft.");
     const manifest = await updatedPage.evaluate(() => chrome.runtime.getManifest());
-    assert.equal(manifest.version, "0.1.2");
+    assert.equal(manifest.version, JSON.parse(await fs.readFile(path.join(root, "extension/dist/chrome/manifest.json"), "utf8")).version);
     assert.ok(manifest.host_permissions.includes("https://www.umprompt.com/*"));
     assert.match(manifest.content_security_policy.extension_pages, /connect-src https:\/\/www\.umprompt\.com/);
     assert.equal(requests.every((url) => url.endsWith("/health")), true, "Recovery must not generate, authenticate, or save to the live account.");

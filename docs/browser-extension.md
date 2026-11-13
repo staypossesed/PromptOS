@@ -1,5 +1,12 @@
 # Umprompt Chrome Extension
 
+**Design release: 0.2.0, submitted November 8, 2026 (Arizona).** The new warm paper/green
+interface, formatted results, explicit editing and revised history were uploaded to the
+existing Chrome Web Store item. The dashboard confirms **Pending review**; its Package
+page shows draft **0.2.0** and published **0.1.3**. The redesign is not yet published.
+See [the release and verification record](extension-premium-release.md). Historical store
+observations below should not be read as current publication status.
+
 ## Scope
 
 Manifest V3 extension with a toolbar-opened side panel. It expands ideas into prompts rather

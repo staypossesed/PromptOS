@@ -1,0 +1,93 @@
+{
+  "verifiedAt": "2026-11-09T05:09:21.714Z",
+  "version": "0.2.0",
+  "passed": true,
+  "permissions": [
+    "sidePanel",
+    "storage",
+    "identity",
+    "clipboardWrite"
+  ],
+  "hostPermissions": [
+    "https://www.umprompt.com/*",
+    "https://yxprfdhuhwdcjreyahha.supabase.co/*"
+  ],
+  "checks": {
+    "releaseAssetsOnly": true,
+    "noServerOnlyConfiguration": true,
+    "noRemoteStylesOrFonts": true,
+    "noContentScripts": true,
+    "noExternalMessaging": true
+  },
+  "files": [
+    {
+      "name": "THIRD_PARTY_NOTICES.txt",
+      "bytes": 10469,
+      "sha256": "d0c4c408cbeaf85ed00e8ff021886bd75522e489a81a67370cee6a25888da6cb"
+    },
+    {
+      "name": "background.js",
+      "bytes": 207943,
+      "sha256": "aa57078814783887e3db0470ac9aed278243205434aee45d70faa64c7454489c"
+    },
+    {
+      "name": "icons/128.png",
+      "bytes": 22960,
+      "sha256": "03ed5e3d7645968e0a6715ef8ccf1e137880add1b5ad125c05072745ff8346aa"
+    },
+    {
+      "name": "icons/16.png",
+      "bytes": 819,
+      "sha256": "c9bd8145147f109a9ebfe5be8ef6e7906175b3156c2227866bfafc069c7175b8"
+    },
+    {
+      "name": "icons/32.png",
+      "bytes": 2351,
+      "sha256": "26a0c00d30d920c7efe6d114928f3eb58a7843674d252ce8902007fea52918af"
+    },
+    {
+      "name": "icons/48.png",
+      "bytes": 4380,
+      "sha256": "b9f623058e2d7a8ee898ee45c72b1b930b92773f41d78bffb0954c9011a7fb0a"
+    },
+    {
+      "name": "manifest.json",
+      "bytes": 1176,
+      "sha256": "b6c0e2982389a0997318436ac7fdde23a3c12f96a582f4d3b8db03985bfc125a"
+    },
+    {
+      "name": "panel.css",
+      "bytes": 24443,
+      "sha256": "d1f3d036f299f216a8421edc170440eab1cf5ce9cbea678bdb4e1e0580c805d9"
+    },
+    {
+      "name": "panel.html",
+      "bytes": 334,
+      "sha256": "513add4806fbb411208cbab75d91a760fdb36ad3b5395486d60331720f053a7f"
+    },
+    {
+      "name": "panel.js",
+      "bytes": 337877,
+      "sha256": "80043bc248b95e896c37a3574415a99df7cd2ecc292bcea565cf9cf580a1223b"
+    }
+  ],
+  "publishedToStore": false,
+  "storeSubmission": {
+    "verifiedAt": "2026-11-09T05:21:00Z",
+    "itemId": "nfbmeonaffiaicoiahbmmocbkbhekbin",
+    "publisherId": "dde4b186-0907-4d5f-a739-b75be6bbb404",
+    "uploaded": true,
+    "submitted": true,
+    "status": "Pending review",
+    "draftVersion": "0.2.0",
+    "publishedPackageVersion": "0.1.3",
+    "automaticPublicationReconfirmedAfterSubmission": false,
+    "evidence": "chrome-store-0.2.0-submission.jpg"
+  },
+  "archive": {
+    "path": "D:/Coding Projects/Umprompt/extension/artifacts/umprompt-chrome-0.2.0.zip",
+    "bytes": 187776,
+    "sha256": "6fe1d0c56e3ac81141befc96b69ff2d0e58e4bdb72eb6aa536b8d4d176aab398",
+    "rootManifestVerified": true
+  }
+}

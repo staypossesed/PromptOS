@@ -10,6 +10,7 @@ The [daily-use experience](docs/daily-use.md) covers the task-focused home, reus
 
 ## Product Experience
 
+- **Typing assistance:** English, Russian, and Spanish word endings appear inline from versioned public vocabularies on the device. Every included word and proper prefix is checked in the [offline dictionary audit](docs/offline-word-completion.md). A separate visible consent step enables contextual AI continuations; Tab accepts one word and Undo restores the input. See [AI privacy, performance, and verification](docs/contextual-autocomplete.md).
 - **Private library:** create and edit context profiles and reusable playbooks. Requires `supabase/workspace.sql`; there is no silent device-only fallback.
 - **Explicit profile sharing:** saving a profile is separate from applying it. Applying requires a preview/confirmation explaining Anthropic/OpenRouter sharing. Only the confirmed snapshot is included; playbooks do not embed profiles and analytics events exclude library content.
 - **Read-only results by default:** generated and reopened prompts appear as a document. A small Edit control enables manual changes; Done, Copy, or a successful Save returns to read-only view. Typing does not call AI or save to cloud history. Explicit Save persists edits and up to five previous versions.
@@ -54,10 +55,13 @@ See [installation and release checks](docs/browser-extension.md) and the
 [store submission draft](extension/store-listing.md). Production publishing and real-account
 acceptance checks are separate from fixture-based browser tests.
 
-Chrome Web Store version 0.1.2 was submitted on October 11, 2026 and is **Pending review**.
-Automatic publication after approval is selected; it is not publicly available yet.
+The warm, three-language interface redesign is packaged as **0.2.0**. At the last documented dashboard check on November 9, 2026 (05:21 UTC), 0.2.0 was **pending review** and the dashboard listed 0.1.3 as published. Current approval/public availability must be checked separately; building or deploying the website does not update installed store copies. See the [redesign verification and release limits](docs/extension-premium-release.md).
 The [scoped security review](docs/extension-security-review.md) records the release checks,
 deployed mitigations, and remaining dependency findings without claiming a clean audit.
+
+## First-task demonstration
+
+The [published demonstration](https://www.umprompt.com/first-task-demo.html) shows an actual fictional writing task and an edited result from founder QA. It is not a customer testimonial. The [release record](docs/growth/2026-11-09/execution-update-2026-11-12-release.md) separates local tests, live analytics delivery and independent participant outcomes. Private outreach evidence remains local.
 
 ## Architecture
 
