@@ -96,6 +96,7 @@ export async function optimizeForClient(request: NextRequest, supabase: Supabase
   if (!context.data) return NextResponse.json({ error: context.error }, { status: 422 });
   try {
     const improved_prompt = await optimizePrompt({
+      signal: AbortSignal.any([request.signal, AbortSignal.timeout(55000)]),
       idea: b.idea,
       target_tool: b.target_tool,
       context: modelContext(context.data),

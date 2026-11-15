@@ -9,7 +9,7 @@
  */
 
 import { generateText } from "ai";
-import { FACT_PRESERVATION, outputLanguageInstruction } from "@/lib/ai/output-policy";
+import { FACT_PRESERVATION, outputLanguageInstruction, outputMatchesLanguage } from "@/lib/ai/output-policy";
 import type { LanguageModelV1 } from "ai";
 import { getToolProfile } from "@/lib/ai/tool-profiles";
 import { resolveModel } from "@/lib/ai/config";
@@ -17,6 +17,7 @@ import type { ToolId } from "@/lib/mock-data";
 import type { PromptScore, ScoreDimension, PromptContext } from "@/types/prompt";
 
 export interface OptimizeInput {
+  signal?: AbortSignal;
   idea: string;
   target_tool: ToolId;
   context?: PromptContext;
@@ -50,9 +51,11 @@ async function callModel(
   model: LanguageModelV1,
   system: string,
   user: string,
-  temperature: number
+  temperature: number,
+  signal?: AbortSignal
 ): Promise<string> {
   const { text } = await generateText({
+    abortSignal: signal,
     model,
     system,
     messages: [{ role: "user", content: user }],
@@ -151,7 +154,11 @@ Write the improved prompt now. Make each weak dimension clearly better — not a
   const choice = resolveModel({ model: modelId });
   const model = choice.config.factory();
 
-  const improved = await callModel(model, system, user, 0.5);
+  let improved = await callModel(model, system, user, 0.5, input.signal);
+  if (!outputMatchesLanguage(improved, outputLanguage)) {
+    improved = await callModel(model, system, user + "\n\nThe previous result used the wrong language. " + outputLanguageInstruction(outputLanguage), 0.2, input.signal);
+    if (!outputMatchesLanguage(improved, outputLanguage)) throw new Error("OUTPUT_LANGUAGE_MISMATCH");
+  }
 
   // ── Similarity guard ──────────────────────────────────────────────────────
   // If the output is nearly word-for-word the same as the input, the model was
@@ -164,7 +171,9 @@ Write the improved prompt now. Make each weak dimension clearly better — not a
 
 NOTE: Your previous attempt had ${Math.round(sim * 100)}% word overlap with the original — the improvement is not visible enough. You must add substantial new content to every weak dimension above. Add real examples, explicit constraints, concrete context, and exact output format specifications. Produce a clearly superior version now:`;
 
-    return callModel(model, system, retryUser, 0.7);
+    const retry = await callModel(model, system, retryUser, 0.7, input.signal);
+    if (!outputMatchesLanguage(retry, outputLanguage)) throw new Error("OUTPUT_LANGUAGE_MISMATCH");
+    return retry;
   }
 
   return improved;
