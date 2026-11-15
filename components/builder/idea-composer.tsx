@@ -11,7 +11,6 @@ import { composerCopy } from "@/lib/composer-copy";
 import { TASK_CATEGORIES, isTaskCategory } from "@/lib/task-categories";
 import { getSuggestions, getStarterSuggestions } from "@/lib/idea-suggestions";
 import { useIdeaSuggestions } from "@/hooks/useIdeaSuggestions";
-import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
 import type { ClarificationQuestion } from "@/lib/ai/clarify-idea";
 import type { PromptContext } from "@/types/prompt";
 import { track } from "@/lib/analytics";
@@ -140,7 +139,7 @@ export function IdeaComposer({ guest, example, idea, onIdeaChange, context, onCo
     try {
       const response = await fetch("/api/prompts/clarify", {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-        body: JSON.stringify({ idea, category, context, outputLanguage: detectTextLanguage(idea, language) }),
+        body: JSON.stringify({ idea, category, context, outputLanguage: language }),
       });
       const json = await response.json();
       if (json.upgradeRequired) { dispatchPaywallOpen(); return; }

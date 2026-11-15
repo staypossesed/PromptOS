@@ -373,7 +373,7 @@ function BuilderInner() {
     try {
       const response = await fetch("/api/prompts/optimize", {
         method: "POST", headers: { "Content-Type": "application/json" }, signal: controller.signal,
-        body: JSON.stringify({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score, outputLanguage: detectTextLanguage(generatedPrompt, language) }),
+        body: JSON.stringify({ idea, target_tool: tool, context, generated_prompt: generatedPrompt, score, outputLanguage: language }),
       });
       const json = await response.json();
       if (!response.ok) throw new Error(copy.optimizeError);
@@ -414,7 +414,7 @@ function BuilderInner() {
     setPackError(null);
     setPackRequestId(null);
 
-    const outputLanguage = detectTextLanguage(idea, language);
+    const outputLanguage = language;
 
     try {
       const res = await fetch("/api/prompt-packs/generate", {
@@ -464,8 +464,8 @@ function BuilderInner() {
     const effectiveContext = nextContext ?? { ...context, universal: true, category: context.category ?? "auto" };
     setContext(effectiveContext);
 
-    const outputLanguage = detectTextLanguage(idea, language);
-    track("prompt_language_detected", { inputLanguage: outputLanguage, outputLanguage } as never);
+    const outputLanguage = language;
+    track("prompt_language_detected", { inputLanguage: detectTextLanguage(idea, language), outputLanguage } as never);
 
     setIsGenerating(true);
     if (!refinement) { setGeneratedPrompt(""); setScore(null); }

@@ -11,6 +11,7 @@
  */
 
 import { streamText, generateText } from "ai";
+import { outputLanguageInstruction, outputMatchesLanguage } from "@/lib/ai/output-policy";
 import { getToolProfile } from "@/lib/ai/tool-profiles";
 import { resolveModel, type ResolvedModelChoice } from "@/lib/ai/config";
 import type { ToolId } from "@/lib/mock-data";
@@ -40,7 +41,7 @@ export interface GenerateInput {
 // ─── Meta-prompt assembly ─────────────────────────────────────────────────
 // Pure function — easy to unit-test and inspect.
 
-export function buildMetaPrompt(input: GenerateInput): {
+function assembleMetaPrompt(input: GenerateInput): {
   system: string;
   user: string;
 } {
@@ -143,6 +144,11 @@ export function buildMetaPrompt(input: GenerateInput): {
 // Returns the AI SDK StreamText result PLUS the resolved model choice
 // (so the route can include it in headers / DB rows for observability).
 
+export function buildMetaPrompt(input: GenerateInput): { system: string; user: string } {
+  const meta = assembleMetaPrompt(input);
+  return { ...meta, system: [meta.system, outputLanguageInstruction(input.outputLanguage ?? input.context?.preferences?.language)].join("\n\n") };
+}
+
 export interface StreamResult {
   stream: ReturnType<typeof streamText>;
   choice: ResolvedModelChoice;
@@ -196,6 +202,10 @@ export async function generatePromptText(input: GenerateInput): Promise<Generate
     maxTokens: MAX_TOKENS,
     temperature: TEMPERATURE,
   });
+
+  if (!outputMatchesLanguage(result.text, input.outputLanguage ?? input.context?.preferences?.language ?? "en")) {
+    throw new Error("OUTPUT_LANGUAGE_MISMATCH");
+  }
 
   return {
     text: result.text,

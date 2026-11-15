@@ -15,7 +15,7 @@ import { BEGINNER_DRAFT_KEY, parseBeginnerDraft, type BeginnerResult } from "@/l
 import { createClient } from "@/lib/supabase/client";
 import { canExpandIdea } from "@/lib/prompt-editing";
 import { languageLabels, type AppLanguage } from "@/types/language";
-import { detectTextLanguage } from "@/lib/i18n/detect-text-language";
+import { outputMatchesLanguage } from "@/lib/ai/output-policy";
 import { ScorePanel } from "@/components/builder/score-panel";
 import { OutcomeFeedback } from "@/components/builder/outcome-feedback";
 import { PromptRenderer } from "@/components/builder/prompt-output";
@@ -146,7 +146,7 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
     const abort = new AbortController(); controller.current = abort; const timer = setTimeout(() => abort.abort(), 60000);
     try {
       const context = taskContext(); if((context.clarifications?.length??0)>1800){setError(d.detailLimit);return;}
-      const response = await fetch(userId ? "/api/prompts/generate" : "/api/guest/generate", { method: "POST", headers: { "Content-Type": "application/json" }, signal: abort.signal, body: JSON.stringify({ idea, target_tool: "claude", context, outputLanguage: detectTextLanguage(idea, language) }) });
+      const response = await fetch(userId ? "/api/prompts/generate" : "/api/guest/generate", { method: "POST", headers: { "Content-Type": "application/json" }, signal: abort.signal, body: JSON.stringify({ idea, target_tool: "claude", context, outputLanguage: language }) });
       if (!response.ok) {
         const json = await response.json().catch(() => ({}));
         if (response.status === 401) { signIn(); return; }
@@ -157,6 +157,7 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
       }
       const text = userId ? await response.text() : (await response.json()).data;
       if (typeof text !== "string" || !text.trim() || text.length > 16000) throw new Error();
+      if (!outputMatchesLanguage(text, language)) { setError(c.unavailable); return; }
       const next = { idea, text, context }; setResult(next); setScore(null); setQualityOpen(false); setCopied(false); setOutcome(null); setEditing(false); setStep(2);
       const isNewTask = !metric; const nextMetric = nextTaskMetric(metric, isNewTask); setMetric(nextMetric); track("prompt_generated", { ...nextMetric, new_task: isNewTask, action_type:delivery, source:campaign ?? "general", user_segment:userId ? "account" : "guest" }); preserve(next);
     } catch { setError(c.unavailable); } finally { clearTimeout(timer); inFlight.current = false; controller.current = null; setBusy(false); }
@@ -184,9 +185,10 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
     inFlight.current = true; setBusy(true); setError(""); setQualityOpen(true); setQualityError(null); let applied = false;
     try {
       const currentScore = score ?? await readScore(result.text); setScore(currentScore);
-      const response = await fetch("/api/prompts/optimize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea: result.idea, context: result.context, generated_prompt: result.text, target_tool: "claude", score: currentScore, outputLanguage: detectTextLanguage(result.text, language) }) });
+      const response = await fetch("/api/prompts/optimize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea: result.idea, context: result.context, generated_prompt: result.text, target_tool: "claude", score: currentScore, outputLanguage: language }) });
       const json = await response.json(); if (json.upgradeRequired) { setWeeklyLimited(true); setError(c.usageLimit); return; }
       const text = json.data?.improved_prompt; if (!response.ok || typeof text !== "string" || !text.trim() || text.length > 16000) throw new Error();
+      if (!outputMatchesLanguage(text, language)) { setError(c.unavailable); return; }
       const next = { ...result, text, saved: false, context: { ...result.context, versions: rememberVersion(result.context.versions, result.text, "Optimized") } };
       setResult(next); preserve(next); setCopied(false); setOutcome(null); setScore(null); applied = true; setMetric(nextTaskMetric(metric, false)); setScore(await readScore(text));
     } catch { if (!applied) setError(c.unavailable); else setQualityError(composerCopy(language).optimizeRescoreError); } finally { inFlight.current = false; setBusy(false); }
