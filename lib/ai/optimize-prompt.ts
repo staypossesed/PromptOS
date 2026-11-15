@@ -9,7 +9,7 @@
  */
 
 import { generateText } from "ai";
-import { outputLanguageInstruction } from "@/lib/ai/output-policy";
+import { FACT_PRESERVATION, outputLanguageInstruction } from "@/lib/ai/output-policy";
 import type { LanguageModelV1 } from "ai";
 import { getToolProfile } from "@/lib/ai/tool-profiles";
 import { resolveModel } from "@/lib/ai/config";
@@ -100,7 +100,7 @@ export async function optimizePrompt(input: OptimizeInput): Promise<string> {
   // ── System prompt ─────────────────────────────────────────────────────────
 
   const outputLanguage = input.outputLanguage ?? context?.preferences?.language ?? "en";
-  const langInstruction = "\n" + outputLanguageInstruction(outputLanguage) + "\n";
+  const langInstruction = "\n" + outputLanguageInstruction(outputLanguage) + "\n" + FACT_PRESERVATION + "\n";
 
   const system = context?.universal ? `Improve this portable AI request for the actual task. Preserve all user facts and intent. Fix ambiguity and missing deliverable instructions only when useful. Never invent facts, examples of user data, file paths, constraints or evidence. Mark optional defaults as assumptions. Do not force a persona or vendor-specific template, inflate length or optimize merely to raise a numeric score. Output ONLY the improved prompt.${langInstruction}` : `You are an expert prompt engineer. Your task is to produce a substantially improved version of a prompt targeting ${profile.displayName}.
 ${langInstruction}

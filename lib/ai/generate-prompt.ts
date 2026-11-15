@@ -11,7 +11,7 @@
  */
 
 import { streamText, generateText } from "ai";
-import { outputLanguageInstruction, outputMatchesLanguage } from "@/lib/ai/output-policy";
+import { FACT_PRESERVATION, outputLanguageInstruction, outputMatchesLanguage } from "@/lib/ai/output-policy";
 import { getToolProfile } from "@/lib/ai/tool-profiles";
 import { resolveModel, type ResolvedModelChoice } from "@/lib/ai/config";
 import type { ToolId } from "@/lib/mock-data";
@@ -146,7 +146,7 @@ function assembleMetaPrompt(input: GenerateInput): {
 
 export function buildMetaPrompt(input: GenerateInput): { system: string; user: string } {
   const meta = assembleMetaPrompt(input);
-  return { ...meta, system: [meta.system, outputLanguageInstruction(input.outputLanguage ?? input.context?.preferences?.language)].join("\n\n") };
+  return { ...meta, system: [meta.system, FACT_PRESERVATION, outputLanguageInstruction(input.outputLanguage ?? input.context?.preferences?.language)].join("\n\n") };
 }
 
 export interface StreamResult {
