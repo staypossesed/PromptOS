@@ -16,6 +16,7 @@ import { createClient } from "@/lib/supabase/client";
 import { canExpandIdea } from "@/lib/prompt-editing";
 import { languageLabels, type AppLanguage } from "@/types/language";
 import { outputMatchesLanguage } from "@/lib/ai/output-policy";
+import { assistantLinks, beginnerFeedback, handoffSteps } from "@/lib/beginner-feedback";
 import { ScorePanel } from "@/components/builder/score-panel";
 import { OutcomeFeedback } from "@/components/builder/outcome-feedback";
 import { PromptRenderer } from "@/components/builder/prompt-output";
@@ -36,6 +37,7 @@ const icons = [BookOpen, Mail, CalendarDays, Lightbulb, BriefcaseBusiness, Spark
 export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
   const { language, setLanguage } = useTranslations(); const c = beginnerCopy(language); const router = useRouter();
   const [continuing, startContinue] = useTransition();
+  const feedback = beginnerFeedback(language);
   const d = dailyCopy(language); const params = useSearchParams(); const pathname = usePathname();
   const sourceId=params.get("id"); const routineId=params.get("routine") ?? params.get("playbook"); const taskId=params.get("task"); const profileId=params.get("profile"); const fresh=params.has("fresh");
   const explicitSource=!!(sourceId||routineId||taskId||profileId||fresh); const initialExplicitSource=useRef(explicitSource);
@@ -141,12 +143,12 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
     if(appliedProgress)details.push(d.sourceProgress+": "+appliedProgress);
     return { universal: true, category: "auto", delivery, preferences: {answers,extra,language}, clarifications: details.join("\n"), ...(profile ? {profile,profileConsent:true} : {}) };
   }
-  async function generate() {
+  async function generate(mode = delivery) {
     if (inFlight.current || ideaEditing || tailored.loading || !authReady || !canExpandIdea(idea)) return;
     inFlight.current = true; setBusy(true); setError(""); setLimited(false); setWeeklyLimited(false);
     const abort = new AbortController(); controller.current = abort; const timer = setTimeout(() => abort.abort(), 60000);
     try {
-      const context = taskContext(); if((context.clarifications?.length??0)>1800){setError(d.detailLimit);return;}
+      const context = { ...taskContext(), delivery: mode }; if((context.clarifications?.length??0)>1800){setError(d.detailLimit);return;}
       const response = await fetch(userId ? "/api/prompts/generate" : "/api/guest/generate", { method: "POST", headers: { "Content-Type": "application/json" }, signal: abort.signal, body: JSON.stringify({ idea, target_tool: "claude", context, outputLanguage: language }) });
       if (!response.ok) {
         const json = await response.json().catch(() => ({}));
@@ -158,9 +160,9 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
       }
       const text = userId ? await response.text() : (await response.json()).data;
       if (typeof text !== "string" || !text.trim() || text.length > 16000) throw new Error();
-      if (!outputMatchesLanguage(text, language)) { setError(c.unavailable); return; }
+      if (!outputMatchesLanguage(text, language)) { setError(feedback.languageError); return; }
       const next = { idea, text, context }; setResult(next); setScore(null); setQualityOpen(false); setCopied(false); setOutcome(null); setEditing(false); setStep(2);
-      const isNewTask = !metric; const nextMetric = nextTaskMetric(metric, isNewTask); setMetric(nextMetric); track("prompt_generated", { ...nextMetric, new_task: isNewTask, action_type:delivery, source:campaign ?? "general", user_segment:userId ? "account" : "guest" }); preserve(next);
+      const isNewTask = !metric; const nextMetric = nextTaskMetric(metric, isNewTask); setMetric(nextMetric); track("prompt_generated", { ...nextMetric, new_task: isNewTask, action_type:mode, source:campaign ?? "general", user_segment:userId ? "account" : "guest" }); preserve(next);
     } catch { setError(c.unavailable); } finally { clearTimeout(timer); inFlight.current = false; controller.current = null; setBusy(false); }
   }
   async function copy() {
@@ -189,7 +191,7 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
       const response = await fetch("/api/prompts/optimize", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ idea: result.idea, context: result.context, generated_prompt: result.text, target_tool: "claude", score: currentScore, outputLanguage: language }) });
       const json = await response.json(); if (json.upgradeRequired) { setWeeklyLimited(true); setError(c.usageLimit); return; }
       const text = json.data?.improved_prompt; if (!response.ok || typeof text !== "string" || !text.trim() || text.length > 16000) throw new Error();
-      if (!outputMatchesLanguage(text, language)) { setError(c.unavailable); return; }
+      if (!outputMatchesLanguage(text, language)) { setError(feedback.languageError); return; }
       const next = { ...result, text, saved: false, context: { ...result.context, versions: rememberVersion(result.context.versions, result.text, "Optimized") } };
       setResult(next); preserve(next); setCopied(false); setOutcome(null); setScore(null); applied = true; setMetric(nextTaskMetric(metric, false)); setScore(await readScore(text));
     } catch { if (!applied) setError(c.unavailable); else setQualityError(composerCopy(language).optimizeRescoreError); } finally { inFlight.current = false; setBusy(false); }
@@ -247,7 +249,7 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
       {step === 2 && result && <section className="beginner-panel beginner-result"><div className="beginner-original"><span>{c.yourIdea}</span><button disabled={busy} onClick={() => { setEditing(false); setStep(0); setError(""); }}><PenLine size={15} />{c.editIdea}</button><p>{result.idea}</p></div><div className="beginner-result-heading"><span className="beginner-check"><Check size={20} /></span><div><h1>{result.context.delivery === "answer" ? c.answerTitle : c.resultTitle}</h1><p>{result.context.delivery === "answer" ? c.answerResultHelp : c.resultHelp}</p></div></div>
         {result.context.delivery !== "answer" && <button className="beginner-improve" disabled={busy} onClick={() => void improve()}>{busy ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}{c.improve}</button>}<div className="beginner-output-top"><span>{result.context.delivery === "answer" ? c.steps[2] : c.prompt}</span><button disabled={busy} onClick={() => { setEditText(result.text); setEditing(true); setError(""); }}><PenLine size={15} />{c.edit}</button></div>{editing ? <div className="beginner-editing"><textarea aria-label={c.edit} value={editText} maxLength={16000} rows={15} onChange={(e) => setEditText(e.target.value)} /><div><button className="beginner-secondary" onClick={() => { setEditing(false); setError(""); }}>{c.cancel}</button><button className="beginner-primary" disabled={!editText.trim()} onClick={finishEdit}>{c.done}<Check size={16} /></button></div></div> : <div className="beginner-output" tabIndex={0}><PromptRenderer text={result.text} /></div>}
         {!editing && <><div className="beginner-result-actions"><button className="beginner-primary" onClick={() => void copy()}>{copied ? <Check size={19} /> : <Copy size={19} />}{copied ? c.copied : result.context.delivery === "answer" ? c.copyAnswer : c.copy}</button><button className="beginner-secondary" disabled={busy || result.saved} onClick={() => void save()}>{busy ? <Loader2 className="animate-spin" size={18} /> : <Save size={18} />}{result.saved ? c.saved : userId ? c.save : c.signInSave}</button></div>
-          {result.context.delivery !== "answer" && <><div className="beginner-handoff"><h2>{c.handoffTitle}</h2><ol>{c.handoff.map((line, i) => <li key={line}><span>{i + 1}</span>{line}</li>)}</ol></div>{qualityOpen && <ScorePanel score={score} isScoring={busy} error={qualityError} onRetry={async () => { if (inFlight.current) return; inFlight.current = true; setBusy(true); try { setScore(await readScore(result.text)); setQualityError(null); } catch { setQualityError(composerCopy(language).optimizeScoreError); } finally { inFlight.current = false; setBusy(false); } }} onOptimize={() => void improve()} isOptimizing={busy} />}</>}
+          {result.context.delivery !== "answer" && <><div className="beginner-handoff"><h2>{c.handoffTitle}</h2><ol>{handoffSteps(result.idea, language).map((line, i) => <li key={line}><span>{i + 1}</span>{line}</li>)}</ol><div className="beginner-result-actions">{assistantLinks.map(assistant => <a key={assistant.name} className="beginner-secondary" href={assistant.url} target="_blank" rel="noopener noreferrer">{feedback.open} {assistant.name}<ArrowRight size={16} /></a>)}</div><button type="button" className="beginner-primary" disabled={busy} onClick={() => { setDelivery("answer"); void generate("answer"); }}>{busy && !improving ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}{busy && !improving ? c.generating : feedback.here}</button><p>{feedback.hereHelp}</p></div>{qualityOpen && <ScorePanel score={score} isScoring={busy} error={qualityError} onRetry={async () => { if (inFlight.current) return; inFlight.current = true; setBusy(true); try { setScore(await readScore(result.text)); setQualityError(null); } catch { setQualityError(composerCopy(language).optimizeScoreError); } finally { inFlight.current = false; setBusy(false); } }} onOptimize={() => void improve()} isOptimizing={busy} />}</>}
           {userId && <DailyResultTools key={result.savedId??result.idea} idea={result.idea} answers={result.context.preferences?.answers??answers} extra={result.context.preferences?.extra??extra} context={result.context} routine={routine} onSaved={setRoutine} onNext={nextTask} disabled={busy} />}
           {(copied || result.context.delivery === "answer") && metric && <OutcomeFeedback key={metric.result_id} value={outcome} question={result.context.delivery === "answer" ? ({ en: "Was this result useful?", ru: "Результат оказался полезным?", es: "¿Te resultó útil?" })[language] : undefined} onFeedback={(value) => { track("answer_outcome_feedback", { ...metric, outcome: value }); if (value !== "not_tried") { setOutcome(value === "useful"); if (value === "useful") track("prompt_result_confirmed", { ...metric, outcome: value }); } }} />}{!userId && <aside className="beginner-signup"><h2>{c.signupTitle}</h2><p>{c.signup}</p><button className="beginner-secondary" onClick={signIn}>{c.signIn}<ArrowRight size={17} /></button></aside>}<button className="beginner-back beginner-new" disabled={busy} onClick={reset}>{c.next}<ArrowRight size={17} /></button></>}
       </section>}
