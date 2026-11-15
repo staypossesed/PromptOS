@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowRight, ArrowLeft, BookOpen, Mail, CalendarDays, Lightbulb, BriefcaseBusiness, Sparkles, Check, Copy, PenLine, Save, Globe, Loader2, ShieldCheck } from "lucide-react";
 import { Examples, FounderNote } from "@/components/public/examples";
@@ -35,6 +35,7 @@ import { nextTaskMetric, type TaskMetric } from "@/lib/task-metrics";
 const icons = [BookOpen, Mail, CalendarDays, Lightbulb, BriefcaseBusiness, Sparkles];
 export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
   const { language, setLanguage } = useTranslations(); const c = beginnerCopy(language); const router = useRouter();
+  const [continuing, startContinue] = useTransition();
   const d = dailyCopy(language); const params = useSearchParams(); const pathname = usePathname();
   const sourceId=params.get("id"); const routineId=params.get("routine") ?? params.get("playbook"); const taskId=params.get("task"); const profileId=params.get("profile"); const fresh=params.has("fresh");
   const explicitSource=!!(sourceId||routineId||taskId||profileId||fresh); const initialExplicitSource=useRef(explicitSource);
@@ -122,7 +123,7 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
     const timer = setTimeout(() => { try { sessionStorage.setItem(BEGINNER_DRAFT_KEY, JSON.stringify({ owner: userId, ...(draftQuestions?.length ? {questions:draftQuestions}:{}), ...(routine ? {routineId:routine.id}:{}), idea, answers, extra, delivery, result, metric, outcome, createdAt: Date.now() })); } catch {} }, 250);
     return () => clearTimeout(timer);
   }, [draftReady, userId, idea, answers, extra, delivery, result, metric, outcome, routine, questions]);
-  function begin(value = idea) { if (!canExpandIdea(value)) { setError(c.invalid); return; } setIdea(value); setStep(1); track("task_started", {language, user_segment:userId ? "account" : "guest", source:campaign ?? "general"}); setError(""); setLimited(false); setWeeklyLimited(false); }
+  function begin(value = idea) { if (!canExpandIdea(value)) { setError(c.invalid); return; } setIdea(value); startContinue(() => setStep(1)); track("task_started", {language, user_segment:userId ? "account" : "guest", source:campaign ?? "general"}); setError(""); setLimited(false); setWeeklyLimited(false); }
   function pick(value: string) { setQuestionSnapshot(undefined); setIdea(value); setAnswers({}); setCustom({}); setExtra(""); setDelivery("prompt"); setError(""); if (value) {setStep(1);track("task_started", {language, user_segment:userId ? "account" : "guest", source:campaign ?? "example"});} else document.getElementById("beginner-idea")?.focus(); }
   function updateReviewedIdea(value: string) {
     if (value === idea) return;
@@ -228,7 +229,8 @@ export function StartExperience({ campaign }: {campaign?: "email"} = {}) {
             <IdeaPlaceholder key={language} active={!idea && !inputFocused} examples={campaign ? [c.tasks[1].idea] : c.tasks.map((task) => task.idea).filter(Boolean)} pauseLabel={composerCopy(language).pauseExamples} resumeLabel={composerCopy(language).resumeExamples} />
           </WritingAssistant>
           <p className="beginner-reassurance"><Sparkles size={15} />{c.reassurance}</p>
-          <button className="beginner-primary" type="submit" disabled={!canExpandIdea(idea)}>{c.continue}<ArrowRight size={19} /></button><p className="beginner-next-step">{ec.next}</p>
+          {/* Keep focus until click so the suggestion cannot move the submit target. */}
+          <button className="beginner-primary" type="submit" aria-busy={continuing} onPointerDown={event => event.preventDefault()} disabled={continuing || !canExpandIdea(idea)}>{c.continue}{continuing ? <Loader2 className="animate-spin" size={19} /> : <ArrowRight size={19} />}</button><p className="beginner-next-step">{ec.next}</p>
         </form>
         <p className="beginner-provider beginner-clarify-disclosure">{qc.notice}</p><div className="beginner-below"><p><ShieldCheck size={15} />{c.free}</p><button type="button" onClick={() => ideas.current?.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start" })}>{c.browse}<ArrowRight size={15} /></button></div>
       </div><aside className="beginner-preview" aria-label={c.previewLabel}><p className="beginner-preview-label">{c.previewLabel}</p><StudyIllustration /><p className="beginner-preview-from">{preview ? preview.idea : c.previewFrom}</p><div className="beginner-preview-line"><ArrowRight size={20} /></div><div className="beginner-preview-to"><span className="beginner-check"><Check size={18} /></span><h2>{preview ? ec.prompt : c.previewTo}</h2><p>{preview ? preview.prompt : c.previewDetails}</p></div><button type="button" onClick={() => pick(c.tasks[campaign ? 1 : 0].idea)}>{c.useIdea}<ArrowRight size={17} /></button><small>{preview ? ec.sampleNote : c.previewNote}</small></aside></section>
