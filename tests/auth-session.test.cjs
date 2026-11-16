@@ -37,6 +37,7 @@ function setup(user, value) {
     "next/server": { NextResponse },
     "@/lib/supabase/server": server,
     "@/lib/admin": { isAdminUser: () => false },
+    "@/lib/admin-generator/access": loadWithImports("lib/admin-generator/access.ts", {}),
   }).middleware;
 }
 
@@ -80,4 +81,28 @@ test("login and non-admin redirects retain refreshed cookies", async () => {
     assert.equal(response.cookies.get("sb-test-auth-token").value, "refreshed-test-session");
     assert.equal(response.headers.get("cache-control"), "private, no-store");
   }
+});
+
+test("private generator accepts only the verified owner without granting general admin access", async () => {
+  const owner = { id: "owner", email: "vanarnold.etsy@gmail.com", email_confirmed_at: "2026-01-01T00:00:00Z" };
+  for (const route of ["/admin-generator", "/admin-generator/"]) {
+    const allowed = await setup(owner, "owner-session")(new NextRequest(`http://localhost:3000${route}`));
+    assert.equal(allowed.status, 200);
+    assert.equal(allowed.cookies.get("sb-test-auth-token").value, "owner-session");
+    for (const user of [{ ...owner, email: "another@example.test" }, { ...owner, email_confirmed_at: null }, { ...owner, is_anonymous: true }]) {
+      const denied = await setup(user, "refreshed-session")(new NextRequest(`http://localhost:3000${route}?draft=private`));
+      const location = new URL(denied.headers.get("location"));
+      assert.equal(location.pathname, "/dashboard");
+      assert.equal(location.search, "");
+      assert.equal(denied.cookies.get("sb-test-auth-token").value, "refreshed-session");
+    }
+  }
+  for (const route of ["/admin", "/admin/users", "/model-lab"]) {
+    const response = await setup(owner, "owner-session")(new NextRequest(`http://localhost:3000${route}`));
+    assert.equal(new URL(response.headers.get("location")).pathname, "/dashboard");
+  }
+  const anonymous = await setup(null, "")(new NextRequest("http://localhost:3000/admin-generator"));
+  const destination = new URL(anonymous.headers.get("location"));
+  assert.equal(destination.pathname, "/login");
+  assert.equal(destination.searchParams.get("next"), "/admin-generator");
 });
