@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
+import { canUseStudyCoach } from "@/lib/study-coach/access";
 
 /**
  * Routes that require an active session.
  * Any path that starts with these prefixes will be guarded.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/library", "/settings", "/templates", "/model-lab", "/admin"];
+const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/library", "/settings", "/templates", "/model-lab", "/admin", "/study-coach"];
 
 /**
  * Routes that authenticated users should not see.
@@ -62,6 +63,14 @@ export async function middleware(request: NextRequest) {
     // Preserve the intended destination so we can redirect back after sign-in
     redirectUrl.search = "";
     redirectUrl.searchParams.set("next", pathname + request.nextUrl.search);
+    return redirectWithSession(redirectUrl);
+  }
+
+  // This private tool has its own verified-account gate, independent of ADMIN_EMAILS.
+  if (user && (pathname === "/study-coach" || pathname.startsWith("/study-coach/")) && !canUseStudyCoach(user)) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = "/dashboard";
+    redirectUrl.search = "";
     return redirectWithSession(redirectUrl);
   }
 
