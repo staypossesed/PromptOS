@@ -241,6 +241,8 @@ Provider-backed scripts use synthetic tasks, not saved user prompts, and incur A
 
 The application is deployed with Vercel. The existing linked project is named `prompt-os`; its public product name is Umprompt.
 
+Automatic Git-triggered deployments are disabled in `vercel.json`, and Vercel comments on pull requests and commits are suppressed. Deploy a preview or production release only when the user explicitly requests it. Committing, pushing, opening a pull request, or checking a build does not authorize a deployment. The commands below are manual release actions, not part of the normal commit workflow.
+
 ```bash
 vercel login
 vercel env ls
@@ -255,7 +257,7 @@ After reviewing the preview, production can be deployed explicitly:
 vercel deploy --prod
 ```
 
-Run that command only when a production release is intended. If the Git integration is enabled, pushing to Vercel's configured production branch can also trigger a production deployment. Use a feature branch for preview-only review.
+Run that command only after an explicit request for a production deployment. Keep the automatic-deployment block in `vercel.json`; use the CLI or Vercel dashboard for a specifically requested deployment.
 
 Vercel-protected previews may require a Vercel account to view. Do not disable deployment protection or expose secrets simply to share a preview.
 
