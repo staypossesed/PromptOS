@@ -6,7 +6,7 @@ import { Check, Copy, Download, Loader2, RefreshCw, ShieldCheck, Sparkles, Squar
 import { createClient } from "@/lib/supabase/client";
 import { canUseAdminGenerator } from "@/lib/admin-generator/access";
 import { GENERATOR_ERRORS, type GeneratorErrorCode } from "@/lib/admin-generator/errors";
-import { parseGeneratorInput, type GeneratorFormat, type GeneratorModel } from "@/lib/admin-generator/prompt";
+import { parseGeneratorInput, type GeneratorFormat, type GeneratorModel } from "@/lib/admin-generator/input";
 import type { GeneratorConfiguration } from "@/lib/admin-generator/provider";
 
 const primary = "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-emerald-700 px-4 py-2.5 text-sm font-medium text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50";

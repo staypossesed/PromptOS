@@ -5,6 +5,9 @@ const { generateText } = require("ai");
 const { loadTS } = require("../scripts/load-ts.cjs");
 const { resolveGeneratorModel, VENICE_MODEL_ID } = loadTS("lib/admin-generator/provider.ts");
 const { generatorErrorCode } = loadTS("lib/admin-generator/errors.ts");
+const { buildAdminGeneratorPrompt } = loadTS("lib/admin-generator/prompt.ts");
+const { ADMIN_GENERATOR_SYSTEM_PROMPT } = loadTS("lib/admin-generator/system-prompt.ts");
+const transportInput = { action: "generate", model: "configured", idea: "PRIVATE_TRANSPORT_IDEA: a detailed landscape.", constraints: "PRIVATE_TRANSPORT_CONSTRAINT: preserve dramatic lighting.", format: "image", language: "en", negativePrompt: false };
 
 function response(text = "Write the requested prompt with the supplied style and constraints.", finishReason = "stop") {
   return new Response(JSON.stringify({
@@ -32,7 +35,8 @@ async function withTransport(handler, run) {
 test("real OpenRouter SDK serializes the selected model, role instructions and token limit correctly", async () => {
   await withTransport(() => response(), async requests => {
     const selected = resolveGeneratorModel("venice");
-    const result = await generateText({ model: selected.model, system: "Create the requested prompt.", prompt: "An adult fashion editorial.", maxTokens: 120, maxRetries: 0, abortSignal: AbortSignal.timeout(5000) });
+    const built = buildAdminGeneratorPrompt({ ...transportInput, model: "venice" });
+    const result = await generateText({ model: selected.model, ...built, maxTokens: 120, maxRetries: 0, abortSignal: AbortSignal.timeout(5000) });
     assert.equal(result.finishReason, "stop");
     assert.match(result.text, /requested prompt/);
     assert.equal(requests.length, 1);
@@ -40,7 +44,12 @@ test("real OpenRouter SDK serializes the selected model, role instructions and t
     assert.equal(requests[0].body.model, VENICE_MODEL_ID);
     assert.equal(requests[0].body.max_tokens, 120);
     assert.equal(requests[0].body.messages[0].role, "system");
-    assert.equal(requests[0].body.messages[1].content, "An adult fashion editorial.");
+    assert.equal(requests[0].body.messages[0].content, built.system);
+    assert.ok(requests[0].body.messages[0].content.startsWith(ADMIN_GENERATOR_SYSTEM_PROMPT));
+    assert.doesNotMatch(requests[0].body.messages[0].content, /PRIVATE_TRANSPORT_IDEA|PRIVATE_TRANSPORT_CONSTRAINT/);
+    assert.equal(requests[0].body.messages[1].role, "user");
+    assert.equal(requests[0].body.messages[1].content, built.prompt);
+    assert.deepEqual(JSON.parse(requests[0].body.messages[1].content), { idea: transportInput.idea, constraints: transportInput.constraints });
   });
 });
 
@@ -98,15 +107,21 @@ test("real Claude SDK uses the existing Anthropic key and Messages API without O
   await withClaudeTransport(() => claudeResponse(), async requests => {
     const selected = resolveGeneratorModel("configured");
     assert.equal(selected.provider, "anthropic");
-    const result = await generateText({ model: selected.model, system: "Create the requested prompt.", prompt: "A detailed landscape prompt.", maxTokens: 120, maxRetries: 0 });
+    const built = buildAdminGeneratorPrompt(transportInput);
+    const result = await generateText({ model: selected.model, ...built, maxTokens: 120, maxRetries: 0 });
     assert.equal(result.finishReason, "stop");
     assert.match(result.text, /requested prompt/);
     assert.equal(requests.length, 1);
     assert.equal(requests[0].headers.get("x-api-key"), "synthetic-claude-generator-key");
     assert.equal(requests[0].body.model, "claude-sonnet-4-6");
     assert.equal(requests[0].body.max_tokens, 120);
-    assert.equal(requests[0].body.system[0].text, "Create the requested prompt.");
-    assert.equal(requests[0].body.messages[0].content[0].text, "A detailed landscape prompt.");
+    assert.equal(requests[0].body.system[0].text, built.system);
+    assert.ok(requests[0].body.system[0].text.startsWith(ADMIN_GENERATOR_SYSTEM_PROMPT));
+    assert.doesNotMatch(requests[0].body.system[0].text, /PRIVATE_TRANSPORT_IDEA|PRIVATE_TRANSPORT_CONSTRAINT/);
+    assert.equal(requests[0].body.messages.length, 1);
+    assert.equal(requests[0].body.messages[0].role, "user");
+    assert.equal(requests[0].body.messages[0].content[0].text, built.prompt);
+    assert.deepEqual(JSON.parse(requests[0].body.messages[0].content[0].text), { idea: transportInput.idea, constraints: transportInput.constraints });
   });
 });
 test("real Claude SDK failures remain safe and make no automatic retries", async () => {

@@ -218,3 +218,35 @@ test("cancelled study-coach routes are removed and deployment stays manual",()=>
   const ui=fs.readFileSync(path.join(root,"components/admin-generator/admin-prompt-generator.tsx"),"utf8");assert.match(ui,/Check API connection/);assert.match(ui,/useState<GeneratorModel>\("configured"\)/);assert.match(ui,/No Umprompt generation quota for this account/);assert.doesNotMatch(ui,/localStorage|sessionStorage|\/api\/prompts/);assert.equal(ui.slice(ui.indexOf("  async function run("),ui.indexOf("  async function refreshConfiguration(")).includes("setResult(null)"),false);
   const config=JSON.parse(fs.readFileSync(path.join(root,"vercel.json"),"utf8"));assert.equal(config.git.deploymentEnabled,false);assert.equal(config.github.silent,true);
 });
+
+test("the detailed server template stays separate from user data for every format and UI language",async()=>{
+  const {ADMIN_GENERATOR_SYSTEM_PROMPT}=await load("lib/admin-generator/system-prompt.ts");
+  const {parseGeneratorInput,buildAdminGeneratorPrompt}=await load("lib/admin-generator/prompt.ts");
+  for(const format of ["general","image","writing","coding"]){
+    for(const [language,label] of [["en","English"],["ru","Russian"],["es","Spanish"]]){
+      const idea="PRIVATE_USER_IDEA_MARKER: preserve the requested wording.";
+      const constraints="PRIVATE_USER_CONSTRAINT_MARKER: use the intended tool.";
+      const parsed=parseGeneratorInput({...input,idea,constraints,format,language});
+      const built=buildAdminGeneratorPrompt(parsed);
+      assert.ok(built.system.startsWith(ADMIN_GENERATOR_SYSTEM_PROMPT));
+      assert.doesNotMatch(built.system,/PRIVATE_USER_IDEA_MARKER|PRIVATE_USER_CONSTRAINT_MARKER/);
+      assert.deepEqual(JSON.parse(built.prompt),{idea,constraints});
+      assert.ok(built.system.includes("Required output language: "+label));
+      assert.equal(built.system.split(ADMIN_GENERATOR_SYSTEM_PROMPT).length,2);
+    }
+  }
+  const check=buildAdminGeneratorPrompt(parseGeneratorInput({action:"check",model:"configured",idea:"PRIVATE_USER_IDEA_MARKER"}));
+  assert.doesNotMatch(check.system+check.prompt,/PRIVATE_USER_IDEA_MARKER|профессиональный составитель промптов/);
+  assert.equal(check.prompt,"Reply with exactly OK.");
+});
+
+test("only an authenticated owner generation receives the detailed template as system instructions",async()=>{
+  const {ADMIN_GENERATOR_SYSTEM_PROMPT}=await load("lib/admin-generator/system-prompt.ts");
+  const t=await fixture();
+  const response=await t.route.POST(t.request({...input,model:"configured",system:"CLIENT_SYSTEM_REPLACEMENT",idea:"PRIVATE_ROLE_SEPARATION_IDEA",constraints:"PRIVATE_ROLE_SEPARATION_CONSTRAINT"}));
+  assert.equal(response.status,200);
+  assert.ok(t.f.calls[0].system.startsWith(ADMIN_GENERATOR_SYSTEM_PROMPT));
+  assert.doesNotMatch(t.f.calls[0].system,/CLIENT_SYSTEM_REPLACEMENT|PRIVATE_ROLE_SEPARATION/);
+  assert.deepEqual(JSON.parse(t.f.calls[0].prompt),{idea:"PRIVATE_ROLE_SEPARATION_IDEA",constraints:"PRIVATE_ROLE_SEPARATION_CONSTRAINT"});
+  assert.equal(t.f.limits.length,0);
+});

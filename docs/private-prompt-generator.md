@@ -8,6 +8,12 @@ Only a Supabase-verified, non-anonymous account with the exact normalized email 
 
 The generator returns a prompt for general tasks, images, writing or coding. It preserves the user's requested subject/style and applies no additional application content-screening step. The selected upstream provider/model can still refuse or filter a request; no unrestricted-output guarantee is made and no alternate model is silently substituted.
 
+## Server instructions and user ideas
+
+The detailed, approved prompt-writing instructions live in `lib/admin-generator/system-prompt.ts`. The private route sends those instructions through the AI SDK's `system` field and sends only the user's idea and constraints as JSON in its `prompt` field, which the SDK serializes as a separate user message. Input parsing/types live in `input.ts` so the client does not import the server template. Client-supplied system instructions are ignored.
+
+The template preserves subject, tone, intensity, facts, tool fit and the explicitly selected output language. It is adapted to this single-submit interface: missing essential facts become placeholders instead of an unanswered clarification question. Request format, negative-prompt selection and language are server-owned instructions. The tiny connection check retains its fixed `OK` system and user messages and never includes the private draft or detailed template. The template does not disable upstream provider restrictions.
+
 ## Providers
 
 - **Venice Uncensored** uses OpenRouter model ID `cognitivecomputations/dolphin-mistral-24b-venice-edition` and requires the server-only `OPENROUTER_API_KEY`.
