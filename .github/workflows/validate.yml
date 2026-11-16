@@ -24,7 +24,11 @@ jobs:
         with:
           node-version: "24"
           cache: npm
-      - run: npm ci
-      - run: npm test
-      - run: npx tsc --noEmit
-      - run: npm run build
+      - id: dependencies
+        run: npm ci
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npm test
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npx tsc --noEmit
+      - if: ${{ !cancelled() && steps.dependencies.outcome == 'success' }}
+        run: npm run build

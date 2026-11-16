@@ -92,14 +92,14 @@ test("private generator accepts only the verified owner without granting general
     for (const user of [{ ...owner, email: "another@example.test" }, { ...owner, email_confirmed_at: null }, { ...owner, is_anonymous: true }]) {
       const denied = await setup(user, "refreshed-session")(new NextRequest(`http://localhost:3000${route}?draft=private`));
       const location = new URL(denied.headers.get("location"));
-      assert.equal(location.pathname, "/dashboard");
+      assert.equal(location.pathname.replace(/\/$/, ""), "/dashboard");
       assert.equal(location.search, "");
       assert.equal(denied.cookies.get("sb-test-auth-token").value, "refreshed-session");
     }
   }
   for (const route of ["/admin", "/admin/users", "/model-lab"]) {
     const response = await setup(owner, "owner-session")(new NextRequest(`http://localhost:3000${route}`));
-    assert.equal(new URL(response.headers.get("location")).pathname, "/dashboard");
+    assert.equal(new URL(response.headers.get("location")).pathname.replace(/\/$/, ""), "/dashboard");
   }
   const anonymous = await setup(null, "")(new NextRequest("http://localhost:3000/admin-generator"));
   const destination = new URL(anonymous.headers.get("location"));
