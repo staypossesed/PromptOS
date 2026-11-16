@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { usePromptUsage } from "@/hooks/usePromptUsage";
 import { checkIsAdmin } from "@/app/actions/admin";
-import { canUseStudyCoach } from "@/lib/study-coach/access";
+import { canUseAdminGenerator } from "@/lib/admin-generator/access";
 import {
   Home,
   Wand2,
@@ -126,7 +126,7 @@ export function Sidebar() {
           ))}
         </NavGroup></details>
 
-        {canUseStudyCoach(user) && <NavGroup label="Private tools" className="mt-6"><NavLink label="Study coach" href="/study-coach" icon={BookOpen} active={pathname === "/study-coach"} /></NavGroup>}
+        {canUseAdminGenerator(user) && <NavGroup label="Private tools" className="mt-6"><NavLink label="Prompt generator" href="/admin-generator" icon={BookOpen} active={pathname === "/admin-generator"} /></NavGroup>}
 
         {isAdmin && (
           <NavGroup label="Admin" className="mt-6">

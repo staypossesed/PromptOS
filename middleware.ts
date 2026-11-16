@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createMiddlewareClient } from "@/lib/supabase/server";
 import { isAdminUser } from "@/lib/admin";
-import { canUseStudyCoach } from "@/lib/study-coach/access";
+import { canUseAdminGenerator } from "@/lib/admin-generator/access";
 
 /**
  * Routes that require an active session.
  * Any path that starts with these prefixes will be guarded.
  */
-const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/library", "/settings", "/templates", "/model-lab", "/admin", "/study-coach"];
+const PROTECTED_PREFIXES = ["/dashboard", "/builder", "/history", "/library", "/settings", "/templates", "/model-lab", "/admin", "/admin-generator"];
 
 /**
  * Routes that authenticated users should not see.
@@ -67,7 +67,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // This private tool has its own verified-account gate, independent of ADMIN_EMAILS.
-  if (user && (pathname === "/study-coach" || pathname.startsWith("/study-coach/")) && !canUseStudyCoach(user)) {
+  if (user && (pathname === "/admin-generator" || pathname.startsWith("/admin-generator/")) && !canUseAdminGenerator(user)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     redirectUrl.search = "";
@@ -75,7 +75,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // ── Authenticated non-admin hits /model-lab or /admin ───────────────────
-  if (user && (pathname.startsWith("/model-lab") || pathname.startsWith("/admin")) && !isAdminUser(user.email)) {
+  if (user && (pathname === "/model-lab" || pathname.startsWith("/model-lab/") || pathname === "/admin" || pathname.startsWith("/admin/")) && !isAdminUser(user.email)) {
     const redirectUrl = request.nextUrl.clone();
     redirectUrl.pathname = "/dashboard";
     return redirectWithSession(redirectUrl);
