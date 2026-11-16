@@ -1,12 +1,11 @@
-export type GeneratorErrorCode = "UNAUTHENTICATED" | "FORBIDDEN" | "INVALID_ORIGIN" | "INVALID_REQUEST" | "REQUEST_TOO_LARGE" | "RATE_LIMITED" | "MISSING_PROVIDER_KEY" | "MODEL_CONFIGURATION" | "PROVIDER_AUTH" | "PROVIDER_BALANCE" | "PROVIDER_RATE_LIMIT" | "MODEL_UNAVAILABLE" | "PROVIDER_DECLINED" | "OUTPUT_LANGUAGE_MISMATCH" | "OUTPUT_TRUNCATED" | "EMPTY_RESPONSE" | "PROVIDER_TIMEOUT" | "GENERATOR_UNAVAILABLE";
+export type GeneratorErrorCode = "UNAUTHENTICATED" | "FORBIDDEN" | "INVALID_ORIGIN" | "INVALID_REQUEST" | "REQUEST_TOO_LARGE" | "MISSING_PROVIDER_KEY" | "MODEL_CONFIGURATION" | "PROVIDER_AUTH" | "PROVIDER_BALANCE" | "PROVIDER_RATE_LIMIT" | "MODEL_UNAVAILABLE" | "PROVIDER_DECLINED" | "OUTPUT_LANGUAGE_MISMATCH" | "OUTPUT_TRUNCATED" | "EMPTY_RESPONSE" | "PROVIDER_TIMEOUT" | "GENERATOR_UNAVAILABLE";
 export const GENERATOR_ERRORS: Record<GeneratorErrorCode, string> = {
   UNAUTHENTICATED: "Sign in again with the account authorized for this private generator.",
   FORBIDDEN: "This private generator is not available for this account.",
   INVALID_ORIGIN: "The request must come from this Umprompt website.",
   INVALID_REQUEST: "Check your idea and generator settings, then try again.",
   REQUEST_TOO_LARGE: "The request is too large. Shorten the idea or additional constraints.",
-  RATE_LIMITED: "The generator request limit has been reached. Keep your draft and try again later.",
-  MISSING_PROVIDER_KEY: "The selected provider has no server API key configured. Venice requires OPENROUTER_API_KEY; the configured default requires its provider key.",
+  MISSING_PROVIDER_KEY: "The selected provider has no server API key configured. Claude requires ANTHROPIC_API_KEY; Venice requires OPENROUTER_API_KEY.",
   MODEL_CONFIGURATION: "The selected model is not configured correctly on the server.",
   PROVIDER_AUTH: "The provider rejected its API key. Update that provider's server configuration.",
   PROVIDER_BALANCE: "The provider account needs credits or has reached its spending limit.",

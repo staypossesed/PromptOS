@@ -11,14 +11,20 @@ export class GeneratorConfigurationError extends Error {
   readonly code: "MISSING_PROVIDER_KEY" | "MODEL_CONFIGURATION";
   constructor(code: "MISSING_PROVIDER_KEY" | "MODEL_CONFIGURATION") { super(code); this.code = code; this.name = "GeneratorConfigurationError"; }
 }
+function configuredClaude() {
+  const choice = resolveModel();
+  // Reuse an existing Claude selection; this private default never selects OpenRouter.
+  return choice.provider === "anthropic" ? choice : resolveModel({ model: "claude-sonnet-4-6" });
+}
 export function generatorConfiguration(): GeneratorConfiguration {
-  const models: GeneratorModelOption[] = [{ value: "venice", name: "Venice Uncensored", provider: "openrouter", modelId: VENICE_MODEL_ID, configured: !!process.env.OPENROUTER_API_KEY?.trim() }];
+  const models: GeneratorModelOption[] = [];
   try {
-    const choice = resolveModel();
-    models.push({ value: "configured", name: choice.config.displayName, provider: choice.provider, modelId: choice.model, configured: !!(choice.provider === "openrouter" ? process.env.OPENROUTER_API_KEY?.trim() : process.env.ANTHROPIC_API_KEY?.trim()) });
+    const choice = configuredClaude();
+    models.push({ value: "configured", name: choice.config.displayName + " (default)", provider: choice.provider, modelId: choice.model, configured: !!process.env.ANTHROPIC_API_KEY?.trim() });
   } catch {
-    models.push({ value: "configured", name: "Configured default", provider: "unavailable", modelId: "", configured: false });
+    models.push({ value: "configured", name: "Claude (default)", provider: "anthropic", modelId: "", configured: false });
   }
+  models.push({ value: "venice", name: "Venice Uncensored", provider: "openrouter", modelId: VENICE_MODEL_ID, configured: !!process.env.OPENROUTER_API_KEY?.trim() });
   return { models };
 }
 export function resolveGeneratorModel(selected: GeneratorModel): { model: LanguageModelV1; provider: string; modelId: string } {
@@ -28,8 +34,8 @@ export function resolveGeneratorModel(selected: GeneratorModel): { model: Langua
     const client = createOpenRouter({ apiKey, fetch: boundedProviderFetch, headers: { "HTTP-Referer": process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000", "X-Title": "Umprompt Private Generator" } });
     return { model: client.chat(VENICE_MODEL_ID), provider: "openrouter", modelId: VENICE_MODEL_ID };
   }
-  const choice = resolveModel();
-  const key = choice.provider === "openrouter" ? process.env.OPENROUTER_API_KEY : process.env.ANTHROPIC_API_KEY;
-  if (!key?.trim()) throw new GeneratorConfigurationError("MISSING_PROVIDER_KEY");
+  if (selected !== "configured") throw new GeneratorConfigurationError("MODEL_CONFIGURATION");
+  if (!process.env.ANTHROPIC_API_KEY?.trim()) throw new GeneratorConfigurationError("MISSING_PROVIDER_KEY");
+  const choice = configuredClaude();
   return { model: choice.config.factory(), provider: choice.provider, modelId: choice.model };
 }

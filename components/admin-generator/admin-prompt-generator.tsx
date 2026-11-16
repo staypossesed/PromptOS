@@ -18,7 +18,7 @@ type Connection = { model: GeneratorModel; modelId: string; checkedAt: string };
 export function AdminPromptGenerator({ ownerId, initialConfiguration }: { ownerId: string; initialConfiguration: GeneratorConfiguration }) {
   const router = useRouter();
   const [configuration, setConfiguration] = useState(initialConfiguration);
-  const [model, setModel] = useState<GeneratorModel>("venice");
+  const [model, setModel] = useState<GeneratorModel>("configured");
   const [format, setFormat] = useState<GeneratorFormat>("general");
   const [language, setLanguage] = useState<"en" | "ru" | "es">("en");
   const [idea, setIdea] = useState("");
@@ -123,6 +123,7 @@ export function AdminPromptGenerator({ ownerId, initialConfiguration }: { ownerI
     </div></header>
     <main className="mx-auto max-w-6xl px-4 py-8 sm:px-8">
       <div className="mb-7"><p className="mb-2 text-xs font-semibold uppercase tracking-wider text-emerald-700">Your private workspace</p><h1 className="font-serif text-3xl font-medium">Private prompt generator</h1><p className="mt-2 max-w-2xl text-sm leading-relaxed text-ink-500">Describe what you want. Generate a prompt for text, images, writing or code, then copy it into your chosen tool.</p></div>
+      <p className="mb-6 text-sm text-emerald-800">No Umprompt generation quota for this account. Provider usage is billed separately.</p>
       <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <section className="min-w-0 rounded-2xl border border-ink-100 bg-white p-5 sm:p-6" aria-label="Prompt settings">
           <form className="space-y-5" onSubmit={event => { event.preventDefault(); void run("generate"); }}>

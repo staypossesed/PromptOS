@@ -6,15 +6,14 @@ import { buildAdminGeneratorPrompt, isGeneratorRefusal, parseGeneratorInput } fr
 import { generatorConfiguration, resolveGeneratorModel } from "@/lib/admin-generator/provider";
 import { GENERATOR_ERRORS, generatorErrorCode, type GeneratorErrorCode } from "@/lib/admin-generator/errors";
 import { outputMatchesLanguage } from "@/lib/ai/output-policy";
-import { rateLimit } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 const MAX_REQUEST_BYTES = 32768;
 const headers = { "Cache-Control": "private, no-store", Vary: "Cookie" };
-function failure(error: GeneratorErrorCode, status: number, extra: Record<string, string> = {}) {
-  return NextResponse.json({ error, message: GENERATOR_ERRORS[error] }, { status, headers: { ...headers, ...extra } });
+function failure(error: GeneratorErrorCode, status: number) {
+  return NextResponse.json({ error, message: GENERATOR_ERRORS[error] }, { status, headers });
 }
 async function authenticatedOwner() {
   const supabase = await createClient();
@@ -65,10 +64,7 @@ export async function POST(request: NextRequest) {
     catch (error) { return failure(error instanceof Error && error.message === "REQUEST_TOO_LARGE" ? "REQUEST_TOO_LARGE" : "INVALID_REQUEST", 400); }
     const input = parseGeneratorInput(body);
     if (!input) return failure("INVALID_REQUEST", 422);
-    for (const action of ["admin_generator_burst", "admin_generator"] as const) {
-      const limit = await rateLimit(access.user.id, action);
-      if (!limit.allowed) return failure("RATE_LIMITED", 429, { "Retry-After": String(Math.max(1, Math.ceil((limit.resetAt - Date.now()) / 1000))) });
-    }
+    // Access was verified above. This owner's private generator has no Umprompt usage quota.
     const selected = resolveGeneratorModel(input.model);
     const { system, prompt } = buildAdminGeneratorPrompt(input);
     providerSignal = AbortSignal.any([request.signal, AbortSignal.timeout(input.action === "check" ? 15000 : 45000)]);

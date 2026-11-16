@@ -31,7 +31,7 @@ async function fixture(options = {}) {
     "next/server": "export const NextResponse={json:(data,options)=>Response.json(data,options)};",
     "@/lib/supabase/server": shared + "export async function createClient(){return {auth:{getUser:async()=>({data:{user:f.user},error:f.authError??null})}};}",
     "@/lib/rate-limit": shared + "export async function rateLimit(id,action){f.limits.push({id,action});if(f.rateFailure)throw Error('distributed-rate-unavailable');return {allowed:f.deniedAction!==action,resetAt:Date.now()+60000};}",
-    "@/lib/admin-generator/provider": shared + "export function generatorConfiguration(){return {models:[{value:'venice',configured:true,name:'Venice Uncensored',provider:'openrouter',modelId:'fixed-server-model'}]};}export function resolveGeneratorModel(selected){f.resolved.push(selected);if(f.configError)throw {code:f.configError};return {model:{},provider:'openrouter',modelId:'fixed-server-model'};}",
+    "@/lib/admin-generator/provider": shared + "export function generatorConfiguration(){return {models:[{value:'configured',configured:true,name:'Claude (default)',provider:'anthropic',modelId:'fixed-claude-model'},{value:'venice',configured:true,name:'Venice Uncensored',provider:'openrouter',modelId:'fixed-server-model'}]};}export function resolveGeneratorModel(selected){f.resolved.push(selected);if(f.configError)throw {code:f.configError};return {model:{},provider:selected==='configured'?'anthropic':'openrouter',modelId:selected==='configured'?'fixed-claude-model':'fixed-server-model'};}",
     ai: shared + "export async function generateText(payload){f.calls.push(payload);if(payload.abortSignal.aborted)throw payload.abortSignal.reason;if(f.throwError)throw f.throwError;return {text:f.text,finishReason:f.finishReason};}",
   })("app/api/admin-generator/route.ts");
   function request(body=input,headers={},signal) {
@@ -102,7 +102,7 @@ test("GET and POST deny unauthenticated, unverified and other accounts before pr
 
 test("configuration GET exposes safe metadata and makes no inference request",async()=>{
   const t=await fixture();const response=await t.route.GET();const body=await response.json();
-  assert.equal(response.status,200);assert.equal(body.models[0].value,"venice");assert.equal(t.f.calls.length,0);
+  assert.equal(response.status,200);assert.equal(body.models[0].value,"configured");assert.equal(t.f.calls.length,0);
   assert.equal(response.headers.get("cache-control"),"private, no-store");
 });
 
@@ -119,7 +119,7 @@ test("successful generation uses the selected model, no retries and the user's e
   assert.equal(response.status,200);assert.equal(body.prompt,t.f.text);assert.deepEqual(t.f.resolved,["venice"]);
   const call=t.f.calls[0];assert.equal(call.maxRetries,0);assert.equal(call.maxTokens,2400);
   assert.equal(JSON.parse(call.prompt).idea,input.idea);assert.doesNotMatch(call.system,/INJECTED_SYSTEM_MARKER|CLIENT_SECRET_MARKER/);
-  assert.deepEqual(t.f.limits.map(l=>l.action),["admin_generator_burst","admin_generator"]);
+  assert.equal(t.f.limits.length,0);
 });
 
 test("a connection check verifies a provider response but never returns a draft as a prompt",async()=>{
@@ -127,10 +127,27 @@ test("a connection check verifies a provider response but never returns a draft 
   assert.equal(response.status,200);assert.equal(body.ok,true);assert.equal(body.prompt,undefined);assert.ok(Date.parse(body.checkedAt));assert.equal(t.f.calls[0].maxTokens,8);assert.equal(t.f.calls[0].temperature,0);
 });
 
-test("configuration and rate failures do not call the model",async()=>{
-  for(const options of [{configError:"MISSING_PROVIDER_KEY"},{deniedAction:"admin_generator_burst"},{deniedAction:"admin_generator"},{rateFailure:true}]){
-    const t=await fixture(options);const response=await t.route.POST(t.request());assert.equal(response.status,options.deniedAction?429:503);assert.equal(t.f.calls.length,0);
+test("missing configuration never calls the model",async()=>{
+  const t=await fixture({configError:"MISSING_PROVIDER_KEY"});
+  const response=await t.route.POST(t.request());
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).error,"MISSING_PROVIDER_KEY");
+  assert.equal(t.f.calls.length,0);
+});
+
+test("the verified owner can exceed former daily and minute caps without quota or Redis dependencies",async()=>{
+  const t=await fixture({rateFailure:true,deniedAction:"admin_generator"});
+  for(let i=0;i<205;i++){
+    const response=await t.route.POST(t.request({...input,model:"configured"}));
+    assert.equal(response.status,200,"generation "+(i+1));
+    assert.equal((await response.json()).provider,"anthropic");
   }
+  assert.equal(t.f.calls.length,205);
+  assert.equal(t.f.limits.length,0);
+  assert.equal(t.f.resolved.every(model=>model==="configured"),true);
+  const check=await t.route.POST(t.request({action:"check",model:"configured"}));
+  assert.equal(check.status,200);
+  assert.equal(t.f.limits.length,0);
 });
 
 test("provider auth, balance, unavailable-model and rate errors are safe and never become prompts",async()=>{
@@ -152,24 +169,52 @@ test("cancellation is passed to inference and returned without leaking internal 
   assert.equal(t.f.calls[0].abortSignal.aborted,true);assert.equal(body.error,"PROVIDER_TIMEOUT");assert.doesNotMatch(JSON.stringify(body),/PRIVATE_ABORT_MARKER/);
 });
 
-test("the real private provider adapter uses the documented model and never exposes keys in config",async()=>{
-  const old=process.env.OPENROUTER_API_KEY;process.env.OPENROUTER_API_KEY="SYNTHETIC_PROVIDER_KEY";
-  globalThis[Symbol.for("umprompt:provider-options")]=[];
+test("private provider configuration defaults to Claude, keeps provider selection explicit and never exposes keys",async()=>{
+  const oldRouter=process.env.OPENROUTER_API_KEY;
+  const oldClaude=process.env.ANTHROPIC_API_KEY;
+  process.env.OPENROUTER_API_KEY="SYNTHETIC_ROUTER_KEY";
+  process.env.ANTHROPIC_API_KEY="SYNTHETIC_CLAUDE_KEY";
+  const state={defaultProvider:"anthropic",defaultModel:"claude-opus-4-7",factories:[]};
+  globalThis[Symbol.for("umprompt:private-provider-state")]=state;
   const provider=await loader({
-    "@openrouter/ai-sdk-provider":"export function createOpenRouter(options){globalThis[Symbol.for('umprompt:provider-options')].push(options);return {chat:id=>({id})};}",
-    "@/lib/ai/config":"export function resolveModel(){return {provider:'anthropic',model:'claude-sonnet-4-6',config:{displayName:'Claude Sonnet 4.6',factory:()=>({id:'configured'})}};}",
+    "@openrouter/ai-sdk-provider":"export function createOpenRouter(){return {chat:id=>({id})};}",
+    "@/lib/ai/config":`const state=globalThis[Symbol.for("umprompt:private-provider-state")];export function resolveModel(override){const provider=override?.model?"anthropic":state.defaultProvider;const model=override?.model??state.defaultModel;return {provider,model,config:{displayName:provider==="anthropic"?"Claude":"Other provider",factory:()=>{state.factories.push({provider,model});return {id:model};}}};}`,
     "@/lib/ai/bounded-fetch":"export async function boundedProviderFetch(){throw Error('no network in this test');}",
   })("lib/admin-generator/provider.ts");
   try {
-    const config=provider.generatorConfiguration();assert.doesNotMatch(JSON.stringify(config),/SYNTHETIC_PROVIDER_KEY/);
-    const selected=provider.resolveGeneratorModel("venice");assert.equal(selected.modelId,"cognitivecomputations/dolphin-mistral-24b-venice-edition");assert.equal(selected.model.id,selected.modelId);
-    delete process.env.OPENROUTER_API_KEY;assert.throws(()=>provider.resolveGeneratorModel("venice"),/MISSING_PROVIDER_KEY/);
-  } finally {if(old===undefined)delete process.env.OPENROUTER_API_KEY;else process.env.OPENROUTER_API_KEY=old;}
+    const config=provider.generatorConfiguration();
+    assert.equal(config.models[0].value,"configured");
+    assert.equal(config.models[0].provider,"anthropic");
+    assert.equal(config.models[0].modelId,"claude-opus-4-7");
+    assert.equal(config.models[0].configured,true);
+    assert.doesNotMatch(JSON.stringify(config),/SYNTHETIC_ROUTER_KEY|SYNTHETIC_CLAUDE_KEY/);
+    assert.equal(state.factories.length,0);
+    assert.equal(provider.resolveGeneratorModel("configured").modelId,"claude-opus-4-7");
+    state.defaultProvider="openrouter";state.defaultModel="moonshotai/kimi-k2.6";
+    const privateDefault=provider.generatorConfiguration().models[0];
+    assert.equal(privateDefault.provider,"anthropic");
+    assert.equal(privateDefault.modelId,"claude-sonnet-4-6");
+    assert.equal(provider.resolveGeneratorModel("configured").provider,"anthropic");
+    delete process.env.OPENROUTER_API_KEY;
+    assert.equal(provider.resolveGeneratorModel("configured").provider,"anthropic");
+    assert.throws(()=>provider.resolveGeneratorModel("venice"),/MISSING_PROVIDER_KEY/);
+    process.env.OPENROUTER_API_KEY="SYNTHETIC_ROUTER_KEY";
+    const selected=provider.resolveGeneratorModel("venice");
+    assert.equal(selected.modelId,"cognitivecomputations/dolphin-mistral-24b-venice-edition");
+    assert.equal(selected.model.id,selected.modelId);
+    delete process.env.ANTHROPIC_API_KEY;
+    assert.equal(provider.generatorConfiguration().models[0].configured,false);
+    assert.throws(()=>provider.resolveGeneratorModel("configured"),/MISSING_PROVIDER_KEY/);
+    assert.throws(()=>provider.resolveGeneratorModel("other"),/MODEL_CONFIGURATION/);
+  } finally {
+    if(oldRouter===undefined)delete process.env.OPENROUTER_API_KEY;else process.env.OPENROUTER_API_KEY=oldRouter;
+    if(oldClaude===undefined)delete process.env.ANTHROPIC_API_KEY;else process.env.ANTHROPIC_API_KEY=oldClaude;
+  }
 });
 
 test("cancelled study-coach routes are removed and deployment stays manual",()=>{
   for(const file of ["app/study-coach/page.tsx","app/api/study-coach/route.ts","components/study-coach/study-coach.tsx"])assert.equal(fs.existsSync(path.join(root,file)),false);
   const middleware=fs.readFileSync(path.join(root,"middleware.ts"),"utf8");assert.match(middleware,/canUseAdminGenerator/);assert.match(middleware,/pathname === "\/admin" \|\| pathname.startsWith\("\/admin\/"\)/);assert.doesNotMatch(middleware,/study-coach/);
-  const ui=fs.readFileSync(path.join(root,"components/admin-generator/admin-prompt-generator.tsx"),"utf8");assert.match(ui,/Check API connection/);assert.doesNotMatch(ui,/localStorage|sessionStorage|\/api\/prompts/);assert.equal(ui.slice(ui.indexOf("  async function run("),ui.indexOf("  async function refreshConfiguration(")).includes("setResult(null)"),false);
+  const ui=fs.readFileSync(path.join(root,"components/admin-generator/admin-prompt-generator.tsx"),"utf8");assert.match(ui,/Check API connection/);assert.match(ui,/useState<GeneratorModel>\("configured"\)/);assert.match(ui,/No Umprompt generation quota for this account/);assert.doesNotMatch(ui,/localStorage|sessionStorage|\/api\/prompts/);assert.equal(ui.slice(ui.indexOf("  async function run("),ui.indexOf("  async function refreshConfiguration(")).includes("setResult(null)"),false);
   const config=JSON.parse(fs.readFileSync(path.join(root,"vercel.json"),"utf8"));assert.equal(config.git.deploymentEnabled,false);assert.equal(config.github.silent,true);
 });
